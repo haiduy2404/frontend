@@ -1,0 +1,1581 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import "../../../styles/ImportOrderDetailPage.css";
+import { getGoods } from "../../../services/goodsService";
+import { getCompanies } from "../../../services/companyService";
+import { getWarehouses } from "../../../services/warehouseService";
+import {
+  createWarehouseReceipt,
+  updateWarehouseReceipt,
+  getWarehouseReceiptByCode,
+} from "../../../services/warehouseReceiptService";
+
+import { lookupCompanyByTaxCode } from "../../../services/externalService";
+import {
+  RiAddLine,
+  RiDeleteBin6Line,
+  RiEdit2Line,
+  RiCheckboxLine,
+  RiTruckLine,
+  RiKeyboardBoxLine,
+  RiSettings3Line,
+  RiQuestionLine,
+  RiCloseLine,
+  RiSearchLine,
+  RiCalendarLine,
+  RiLoader4Line,
+  RiPrinterLine,
+} from "react-icons/ri";
+
+function ImportOrderDetailPage() {
+    const navigate = useNavigate();
+    const { id } = useParams();
+
+    const isCreateMode = !id;
+    const [companyLoading, setCompanyLoading] = useState(false);
+    const [bankAccountOptions, setBankAccountOptions] = useState([]);
+    const [showBankDropdown, setShowBankDropdown] = useState(false);
+    const [warehouseList, setWarehouseList] = useState([]);
+    const [warehouseLoading, setWarehouseLoading] = useState(false);
+    const [goodsList, setGoodsList] = useState([]);
+    const [goodsPage, setGoodsPage] = useState(1);
+    const [goodsTotalPages, setGoodsTotalPages] = useState(1);
+    const [goodsLoading, setGoodsLoading] = useState(false);
+    const [showGoodsDropdown, setShowGoodsDropdown] = useState(false);
+    const [activeGoodsRowId, setActiveGoodsRowId] = useState(null);
+    const [goodsKeyword, setGoodsKeyword] = useState("");
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [receiptId, setReceiptId] = useState(null);
+    const [searchParams] = useSearchParams();
+    const isPrintMode = searchParams.get("mode") === "print";
+    const isEditReceivedMode = searchParams.get("mode") === "edit-items";
+    const isLockedWhenReceived = isPrintMode || isEditReceivedMode;
+    const isLockedOnlyPrint = isPrintMode;
+    const [showPrintReasonModal, setShowPrintReasonModal] = useState(false);
+    const [printReason, setPrintReason] = useState("");
+    const [showReceiptPrintModal, setShowReceiptPrintModal] = useState(false);
+    const [receiptWarehouseKeeper, setReceiptWarehouseKeeper] = useState("");
+    const handlePrint = () => {
+      window.print();
+    };
+    
+
+    const formatISOToViDate = (value) => {
+      if (!value) return "";
+
+      const dateOnly = String(value).split("T")[0];
+      const [year, month, day] = dateOnly.split("-");
+
+      if (!year || !month || !day) return "";
+
+      return `${day}/${month}/${year}`;
+    };
+
+      const handleLoadCompanyByTaxCode = async () => {
+      const taxCode = headerData.tax_code.trim();
+
+      if (!taxCode) {
+        alert("Vui lòng nhập MST trước khi load công ty");
+        return;
+      }
+
+      try {
+        setCompanyLoading(true);
+
+        const internalCompanyResponse = await getCompanies({
+          search: taxCode,
+          page: 1,
+          page_size: 10,
+        });
+
+      const internalPayload =
+        internalCompanyResponse?.data || internalCompanyResponse;
+
+      const internalResults = Array.isArray(internalPayload)
+        ? internalPayload
+        : Array.isArray(internalPayload?.data?.results)
+        ? internalPayload.data.results
+        : Array.isArray(internalPayload?.results)
+        ? internalPayload.results
+        : Array.isArray(internalPayload?.data)
+        ? internalPayload.data
+        : [];
+
+        const duplicatedCompany = internalResults.find((item) => {
+        return String(item.tax_code || item.tax_office_code || "").trim() === taxCode;
+        });
+
+          if (duplicatedCompany) {
+            const duplicatedBankAccounts =
+              Array.isArray(duplicatedCompany.list_of_bank) &&
+              duplicatedCompany.list_of_bank.length > 0
+                ? duplicatedCompany.list_of_bank.map((bank) => ({
+                    id: bank.id || "",
+
+                    // Load MST dùng field này
+                    bank_account_name: bank.bank_name || "",
+                    bank_account_number: bank.account_number || "",
+                  }))
+                : Array.isArray(duplicatedCompany.bank_accounts) &&
+                  duplicatedCompany.bank_accounts.length > 0
+                ? duplicatedCompany.bank_accounts.map((bank) => ({
+                    id: bank.id || bank.bank_account_id || "",
+
+                    // Nếu endpoint này trả kiểu mới thì vẫn ăn
+                    bank_account_name: bank.bank_account_name || "",
+                    bank_account_number: bank.bank_account_number || "",
+                  }))
+                : duplicatedCompany.bank_name || duplicatedCompany.account_number
+                ? [
+                    {
+                      id: duplicatedCompany.bank_account_id || "",
+                      bank_account_name: duplicatedCompany.bank_name || "",
+                      bank_account_number: duplicatedCompany.account_number || "",
+                    },
+                  ]
+                : [];
+
+            setBankAccountOptions(duplicatedBankAccounts);
+            setShowBankDropdown(duplicatedBankAccounts.length > 0);
+
+            setHeaderData((prev) => ({
+              ...prev,
+              supplier_code:
+                duplicatedCompany.supplier_code ||
+                duplicatedCompany.code ||
+                prev.supplier_code,
+
+              supplier_name:
+                duplicatedCompany.supplier_name ||
+                duplicatedCompany.name ||
+                prev.supplier_name,
+
+              tax_code:
+                duplicatedCompany.tax_code ||
+                duplicatedCompany.tax_office_code ||
+                prev.tax_code,
+
+              address:
+                duplicatedCompany.address ||
+                duplicatedCompany.address_tax_office ||
+                prev.address,
+                  bank_account_id: duplicatedBankAccounts[0]?.id || "",
+                  bank_account_name: duplicatedBankAccounts[0]?.bank_account_name || "",
+                  bank_account_number: duplicatedBankAccounts[0]?.bank_account_number || "",
+            }));
+
+            return;
+          }
+ 
+
+        setBankAccountOptions([]);
+        setShowBankDropdown(false);
+
+        const result = await lookupCompanyByTaxCode(taxCode);
+        const company = result?.data || result;
+
+        setHeaderData((prev) => ({
+          ...prev,
+          supplier_code:
+            company.supplier_code ||
+            company.code ||
+            company.customer_code ||
+            company.tax_code ||
+            prev.supplier_code,
+
+          supplier_name:
+            company.supplier_name ||
+            company.name ||
+            company.company_name ||
+            company.title ||
+            prev.supplier_name,
+
+          tax_code:
+            company.tax_code ||
+            company.taxCode ||
+            company.tax_office_code ||
+            prev.tax_code,
+
+          address:
+            company.address ||
+            company.full_address ||
+            company.address_tax_office ||
+            prev.address,
+
+            bank_account_id: "",
+            bank_account_name: "",
+            bank_account_number: "",
+        }));
+      } catch (error) {
+        console.error("LOAD COMPANY ERROR:", error.response?.data || error);
+        setBankAccountOptions([]);
+        setShowBankDropdown(false);
+        alert("Không tìm thấy công ty theo MST. Bạn có thể nhập tay.");
+      } finally {
+        setCompanyLoading(false);
+      }
+    };
+
+        const fetchWarehouseList = async () => {
+        try {
+        setWarehouseLoading(true);
+
+        const data = await getWarehouses({
+          search: "",
+          page: 1,
+          page_size: 100,
+        });
+
+        const results = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data?.results)
+          ? data.data.results
+          : Array.isArray(data?.results)
+          ? data.results
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
+
+        setWarehouseList(results);
+      } catch (error) {
+        console.error("LOAD WAREHOUSE LIST ERROR:", error.response?.data || error);
+        alert("Không tải được danh sách kho");
+        setWarehouseList([]);
+      } finally {
+        setWarehouseLoading(false);
+      }
+    };
+
+    useEffect(() => {
+        fetchWarehouseList();
+    }, []);
+
+    const [items, setItems] = useState([
+        {
+          id: 1,
+          goods_id: "",
+          goods_code: "",
+          goods_name: "",
+          unit_id: "",
+          unit: "",
+          unit_options: [],
+          requested_quantity: "1,00",
+          actual_quantity: "0,00",
+          marked_old: false,
+          unit_price: "0,00",
+          amount: "0,00",
+        },
+    ]);
+
+    const [headerData, setHeaderData] = useState({
+      terms: "",
+      inward_date: "",
+      warehouse_id: "",
+      delivery_person: "",
+      vat_rate: "",
+      invoice_symbol: "",
+      invoice_no: "",
+      invoice_date: "",
+      supplier_code: "",
+      supplier_name: "",
+      tax_code: "",
+      address: "",
+      description: "",
+      bank_account_id: "",
+      bank_account_name: "",
+      bank_account_number: "",
+    });
+
+    const handleHeaderChange = (e) => {
+      const { name, value } = e.target;
+
+      setHeaderData((prev) => ({
+        ...prev,
+        [name]: value,
+        ...(name === "bank_account_name" || name === "bank_account_number"
+          ? { bank_account_id: "" }
+          : {}),
+      }));
+
+      if (name === "tax_code") {
+        setBankAccountOptions([]);
+        setShowBankDropdown(false);
+      }
+    };
+
+    const handleSelectBankAccount = (bank) => {
+      setHeaderData((prev) => ({
+        ...prev,
+        bank_account_id: bank.id || "",
+        bank_account_name: bank.bank_account_name || "",
+        bank_account_number: bank.bank_account_number || "",
+      }));
+
+      setShowBankDropdown(false);
+    };
+
+    const handleAddRow = () => {
+        setItems((prev) => [
+        ...prev,
+        {
+            id: Date.now(),
+            goods_id: "",
+            goods_code: "",
+            goods_name: "",
+            unit: "",
+            requested_quantity: "1,00",
+            actual_quantity: "0,00",
+            marked_old: false,
+            unit_price: "0,00",
+            amount: "0,00",
+            unit_id: "",
+            unit_options: [],
+        },
+        ]);
+    };
+
+    const handleDeleteAllRows = () => {
+        setItems([]);
+    };
+
+    const handleDeleteRow = (rowId) => {
+        setItems((prev) => prev.filter((item) => item.id !== rowId));
+    };
+
+    const fetchGoodsDropdown = async ({
+        keyword = "",
+        pageNumber = 1,
+        append = false,
+    } = {}) => {
+        if (goodsLoading) return;
+
+        try {
+            setGoodsLoading(true);
+
+            const data = await getGoods({
+            search: keyword,
+            page: pageNumber,
+            page_size: 30,
+            });
+
+            const results = Array.isArray(data)
+              ? data
+              : Array.isArray(data?.data?.results)
+              ? data.data.results
+              : Array.isArray(data?.results)
+              ? data.results
+              : Array.isArray(data?.data)
+              ? data.data
+              : [];
+
+            const totalPages =
+              data?.data?.total_pages ||
+              data?.total_pages ||
+              Math.ceil((data?.data?.count || data?.count || results.length) / 30) ||
+              1;
+
+            setGoodsList((prev) => (append ? [...prev, ...results] : results));
+            setGoodsPage(pageNumber);
+            setGoodsTotalPages(totalPages);
+        } catch (error) {
+            console.error("LOAD GOODS DROPDOWN ERROR:", error.response?.data || error);
+            alert("Không tải được danh sách hàng hóa");
+        } finally {
+            setGoodsLoading(false);
+        }
+    };
+
+    const handleGoodsDropdownScroll = (e) => {
+    const element = e.currentTarget;
+
+    const isBottom =
+        element.scrollTop + element.clientHeight >= element.scrollHeight - 8;
+
+    if (isBottom && !goodsLoading && goodsPage < goodsTotalPages) {
+        fetchGoodsDropdown({
+        keyword: goodsKeyword,
+        pageNumber: goodsPage + 1,
+        append: true,
+        });
+    }
+    };
+
+    const parseNumber = (value) => {
+  if (value === null || value === undefined || value === "") return 0;
+
+  if (typeof value === "number") return value;
+
+  const text = String(value).trim();
+
+  if (text.includes(",")) {
+    return Number(text.replace(/\./g, "").replace(",", "."));
+  }
+
+  return Number(text);
+};
+
+  const formatViNumber = (value, fractionDigits = 2) => {
+  const number = Number(value || 0);
+
+  return number.toLocaleString("vi-VN", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+};
+
+    const handleSelectGoods = (goods) => {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.id !== activeGoodsRowId) {
+            return item;
+          }
+
+          const quantity = parseNumber(item.requested_quantity || 0);
+          const unitPrice = parseNumber(
+            goods.unit_price || goods.price || goods.purchase_price || 0
+          );
+
+          const unitOptions = Array.isArray(goods.units)
+            ? goods.units.map((unitItem) => ({
+                unit_id: unitItem.unit_id || unitItem.unit?.id || "",
+                unit_name:
+                  unitItem.unit_name ||
+                  unitItem.unit?.name ||
+                  unitItem.name ||
+                  "",
+                conversion_ratio: Number(unitItem.conversion_ratio || 1),
+                is_default: Boolean(unitItem.is_default),
+              }))
+            : [];
+
+          const defaultUnit =
+            unitOptions.find((unitItem) => unitItem.is_default) ||
+            unitOptions[0] ||
+            null;
+
+          return {
+            ...item,
+            goods_id: goods.id,
+            goods_code: goods.code || goods.goods_code || "",
+            goods_name: goods.name || goods.goods_name || "",
+
+            unit_id: defaultUnit?.unit_id || goods.unit_id || "",
+            unit:
+              defaultUnit?.unit_name ||
+              goods.unit ||
+              goods.unit_name ||
+              goods.goods_unit_name ||
+              goods.main_unit ||
+              "",
+            unit_options: unitOptions,
+
+            unit_price: formatViNumber(unitPrice, 2),
+            amount: formatViNumber(quantity * unitPrice, 2),
+          };
+        })
+      );
+
+      setShowGoodsDropdown(false);
+      setActiveGoodsRowId(null);
+      setGoodsKeyword("");
+    };
+
+    const handleChangeItemUnit = (rowId, unitId) => {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.id !== rowId) return item;
+
+          const selectedUnit = item.unit_options?.find(
+            (unitItem) => String(unitItem.unit_id) === String(unitId)
+          );
+
+          return {
+            ...item,
+            unit_id: unitId,
+            unit: selectedUnit?.unit_name || item.unit,
+          };
+        })
+      );
+    };
+
+    const handleChangeItemField = (rowId, field, value) => {
+    setItems((prev) =>
+        prev.map((item) => {
+        if (item.id !== rowId) {
+            return item;
+        }
+
+        const nextItem = {
+            ...item,
+            [field]: value,
+        };
+
+        const quantity = parseNumber(
+            field === "requested_quantity" ? value : nextItem.requested_quantity
+        );
+
+        const unitPrice = parseNumber(
+            field === "unit_price" ? value : nextItem.unit_price
+        );
+
+        if (field === "requested_quantity" || field === "unit_price") {
+            nextItem.amount = formatViNumber(quantity * unitPrice, 2);
+        }
+
+        return nextItem;
+        })
+    );
+    };
+  const totalAmount = items.reduce((sum, item) => {
+    return sum + parseNumber(item.amount);
+}  , 0);
+
+    const vatRate = parseNumber(headerData.vat_rate || 0);
+    const vatAmount = totalAmount * (vatRate / 100);
+    const grandTotal = totalAmount + vatAmount;
+
+  const convertDateToISO = (value) => {
+  if (!value) return null;
+
+  const [day, month, year] = value.split("/");
+
+  if (!day || !month || !year) return value;
+
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+};
+
+const buildReceiptPayload = (status) => {
+  return {
+    terms: headerData.terms || null,
+    receipt_date: convertDateToISO(headerData.inward_date),
+    warehouse_id: headerData.warehouse_id,
+    delivery_persion: headerData.delivery_person || null,
+    vat: headerData.vat_rate || "0",
+    contract_code: headerData.invoice_symbol || null,
+    invoice_code: headerData.invoice_no || null,
+    invoice_date: headerData.invoice_date
+      ? convertDateToISO(headerData.invoice_date)
+      : null,
+    company_code: headerData.supplier_code,
+    company_name: headerData.supplier_name,
+    company_address: headerData.address || null,
+    company_tax_code: headerData.tax_code,
+    description: headerData.description || null,
+    inventory: items
+      .filter((item) => item.goods_id)
+      .map((item) => ({
+        goods_id: item.goods_id,
+        quantity: parseNumber(item.actual_quantity || item.requested_quantity),
+        unit_price: parseNumber(item.unit_price),
+      })),
+
+    bank_account_id: headerData.bank_account_id || null,
+    bank_name: headerData.bank_account_name.trim(),
+    bank_account_name: headerData.bank_account_name.trim(),
+    bank_account_number: headerData.bank_account_number.trim(),
+
+    status, 
+  };
+};
+
+const handleComplete = async () => {
+  try {
+    if (!headerData.bank_account_name.trim()) {
+      alert("Vui lòng nhập tên ngân hàng");
+      return;
+    }
+
+    if (!headerData.bank_account_number.trim()) {
+      alert("Vui lòng nhập số tài khoản ngân hàng");
+      return;
+    }
+
+    if (!headerData.inward_date) {
+      alert("Vui lòng nhập ngày nhập kho");
+      return;
+    }
+
+    if (!headerData.warehouse_id) {
+      alert("Vui lòng chọn kho nhập");
+      return;
+    }
+
+    if (!headerData.supplier_code || !headerData.supplier_name || !headerData.tax_code) {
+      alert("Vui lòng nhập đầy đủ thông tin nhà cung cấp");
+      return;
+    }
+
+    const validItems = items.filter((item) => item.goods_id);
+
+    if (validItems.length === 0) {
+      alert("Vui lòng chọn ít nhất một hàng hóa");
+      return;
+    }
+
+    const payload = buildReceiptPayload("RECEIVED");
+
+    console.log("SUBMIT BANK:", {
+      bank_account_id: payload.bank_account_id,
+      bank_account_name: payload.bank_account_name,
+      bank_account_number: payload.bank_account_number,
+}   );
+
+    if (id && id !== "new" && receiptId) {
+      await updateWarehouseReceipt(receiptId, payload);
+      alert("Cập nhật phiếu nhập kho thành công");
+    } else {
+      await createWarehouseReceipt(payload);
+      alert("Tạo phiếu nhập kho thành công");
+    }
+
+    navigate("/dashboard/activity/import/order");
+  } catch (error) {
+    console.error("CREATE WAREHOUSE RECEIPT ERROR:", error.response?.data || error);
+    alert("Tạo phiếu nhập kho thất bại");
+  }
+};
+
+  const handleFillActualQuantity = () => {
+  setItems((prev) =>
+    prev.map((item) => ({
+      ...item,
+      actual_quantity: item.requested_quantity,
+      marked_old: true,
+    }))
+  );
+};
+
+    const fetchReceiptDetail = async (receiptCode) => {
+      if (!receiptCode || receiptCode === "new") return;
+
+      try {
+        setDetailLoading(true);
+
+        const response = await getWarehouseReceiptByCode(receiptCode);
+        const data = response?.data || response;
+        setReceiptId(data.id);
+
+        setHeaderData((prev) => ({
+          ...prev,
+          terms: data.terms || "",
+          inward_date: formatISOToViDate(data.receipt_date),
+          warehouse_id: data.warehouse_id || data.warehouse?.id || "",
+          delivery_person: data.delivery_persion || "",
+          vat_rate: data.vat ? String(Number(data.vat)) : "",
+          invoice_symbol: data.contract_code || "",
+          invoice_no: data.invoice_code || "",
+          invoice_date: formatISOToViDate(data.invoice_date),
+          supplier_code: data.company?.code || "",
+          supplier_name: data.company?.name || "",
+          tax_code: data.company?.tax_office_code || "",
+          address: data.company?.address || data.company?.address_tax_office || "",
+          description: data.description || "",
+          bank_account_id:
+            data.bank_account_id ||
+            data.bank_account?.id ||
+            data.company?.bank_account_id ||
+            "",
+          bank_account_name: data.bank_account_name || data.company?.bank_account_name || "",
+          bank_account_number:
+            data.bank_account_number || data.company?.bank_account_number || "",
+        }));
+
+        const lines = data.inventory_lines || [];
+
+        setItems(
+          lines.length > 0
+            ? lines.map((line, index) => {
+                const quantity = Number(line.original_quantity || 0);
+                const unitPrice = Number(line.unit_price || 0);
+
+                return {
+                  id: line.inventory_id || line.goods_id || index + 1,
+                  goods_id: line.goods_id || "",
+                  goods_code: line.goods_code || "",
+                  goods_name: line.goods_name || "",
+                  unit: line.unit_name || "",
+                  requested_quantity: formatViNumber(quantity, 2),
+                  actual_quantity: formatViNumber(quantity, 2),
+                  marked_old: true,
+                  unit_price: formatViNumber(unitPrice, 2),
+                  amount: formatViNumber(quantity * unitPrice, 2),
+                };
+              })
+            : [
+                {
+                  id: 1,
+                  goods_id: "",
+                  goods_code: "",
+                  goods_name: "",
+                  unit: "",
+                  requested_quantity: "1,00",
+                  actual_quantity: "0,00",
+                  marked_old: false,
+                  unit_price: "0,00",
+                  amount: "0,00",
+                },
+              ]
+        );
+      } catch (error) {
+        console.error("LOAD RECEIPT DETAIL ERROR:", error.response?.data || error);
+        alert("Không tải được chi tiết phiếu nhập");
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+
+    useEffect(() => {
+      if (id && id !== "new") {
+        fetchReceiptDetail(id);
+      }
+    }, [id]);
+  
+  const handleSaveDraft = async () => {
+  try {
+    if (!headerData.inward_date) {
+      alert("Vui lòng nhập ngày nhập kho");
+      return;
+    }
+
+    if (!headerData.warehouse_id) {
+      alert("Vui lòng chọn kho nhập");
+      return;
+    }
+
+    if (!headerData.supplier_code || !headerData.supplier_name || !headerData.tax_code) {
+      alert("Vui lòng nhập đầy đủ thông tin nhà cung cấp");
+      return;
+    }
+
+    const validItems = items.filter((item) => item.goods_id);
+
+    if (validItems.length === 0) {
+      alert("Vui lòng chọn ít nhất một hàng hóa");
+      return;
+    }
+
+    const payload = buildReceiptPayload("WAITING_DELIVERY");
+
+    if (id && id !== "new" && receiptId) {
+      await updateWarehouseReceipt(receiptId, payload);
+      alert("Lưu tạm phiếu nhập kho thành công");
+    } else {
+      await createWarehouseReceipt(payload);
+      alert("Lưu tạm phiếu nhập kho thành công");
+    }
+
+    navigate("/dashboard/activity/import/order");
+  } catch (error) {
+    console.error("SAVE DRAFT WAREHOUSE RECEIPT ERROR:", error.response?.data || error);
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Lưu tạm phiếu nhập kho thất bại"
+    );
+  }
+};
+
+  const handleOpenTransferPrint = () => {
+    if (!id || id === "new") {
+      alert("Cần lưu phiếu trước khi in giấy đề nghị chuyển tiền");
+      return;
+    }
+
+    setPrintReason(headerData.description || "");
+    setShowPrintReasonModal(true);
+  };
+
+  const handleOpenReceiptPrint = () => {
+    if (!id || id === "new") {
+      alert("Cần lưu phiếu trước khi in phiếu nhập kho");
+      return;
+    }
+
+    setReceiptWarehouseKeeper("");
+    setShowReceiptPrintModal(true);
+  };
+
+  const handleConfirmReceiptPrint = () => {
+  if (!receiptWarehouseKeeper.trim()) {
+    alert("Vui lòng nhập người thủ kho");
+    return;
+  }
+
+  const vatRate = parseNumber(headerData.vat_rate || 0);
+
+  if (vatRate > 0) {
+    navigate(`/dashboard/activity/import/order/${id}/receipt-print-vat`, {
+      state: {
+        signerThuKho: receiptWarehouseKeeper.trim(),
+      },
+    });
+    return;
+  }
+
+  navigate(`/dashboard/activity/import/order/${id}/receipt-print-no-vat`, {
+    state: {
+      signerThuKho: receiptWarehouseKeeper.trim(),
+    },
+  });
+};
+
+  const handleConfirmTransferPrint = () => {
+    if (!printReason.trim()) {
+      alert("Vui lòng nhập lý do in phiếu");
+      return;
+    }
+
+    navigate(`/dashboard/activity/import/order/${id}/transfer-request-print`, {
+      state: {
+        printReason: printReason.trim(),
+      },
+    });
+  };
+
+  return (
+    <div className="import-order-detail-page">
+      <div className="import-order-detail-header">
+        <div className="detail-header-left">
+          <h2>
+            {isCreateMode
+              ? "Lệnh nhập kho mua hàng"
+              : `Lệnh nhập kho mua hàng ${id}`}
+          </h2>
+
+          <select className="header-select" defaultValue="purchase">
+            <option value="purchase">Nhập kho mua hàng</option>
+            <option value="goods">Nhập kho hàng hóa</option>
+          </select>
+
+          <div className="order-search-box">
+            <input placeholder="Nhập số đơn mua hàng" />
+            <button>
+              <RiSearchLine />
+            </button>
+          </div>
+        </div>
+
+        <div className="detail-header-actions">
+          <button className="delivery-btn">
+            <RiTruckLine />
+            <span>Đọc phiếu giao hàng</span>
+          </button>
+
+          <button className="header-icon-btn">
+            <RiKeyboardBoxLine />
+          </button>
+
+          <button className="header-icon-btn">
+            <RiSettings3Line />
+          </button>
+
+          <button className="header-icon-btn">
+            <RiQuestionLine />
+          </button>
+
+          <button
+            className="header-icon-btn"
+            onClick={() => navigate("/dashboard/activity/import/order")}
+          >
+            <RiCloseLine />
+          </button>
+        </div>
+      </div>
+
+      <div className="import-order-detail-body">
+        <div className="info-section-title">Thông tin phiếu nhập kho</div>
+
+        <div className="import-voucher-card">
+        <div className="voucher-grid">
+            <div className="form-group">
+            <label>Kỳ</label>
+              <input
+                name="terms"
+                value={headerData.terms}
+                onChange={handleHeaderChange}
+                placeholder="Nhập kỳ"
+                disabled={isLockedWhenReceived}
+              />
+            </div>
+
+          <div className="form-group">
+            <label>Số phiếu NK</label>
+            <input value={id && id !== "new" ? id : "Tự động tạo khi hoàn thành"} readOnly disabled={isPrintMode} />
+          </div>
+
+            <div className="form-group">
+            <label>
+                Ngày, tháng, năm NK <span>*</span>
+            </label>
+            <div className="input-with-icon">
+                <input
+                name="inward_date"
+                value={headerData.inward_date}
+                onChange={handleHeaderChange}
+                placeholder="dd/mm/yyyy"
+                disabled={isLockedWhenReceived}
+                />
+                <button type="button">
+                <RiCalendarLine />
+                </button>
+            </div>
+            </div>
+
+            <div className="form-group">
+            <label>
+                Nhập kho <span>*</span>
+            </label>
+            <select
+                name="warehouse_id"
+                value={headerData.warehouse_id}
+                onChange={handleHeaderChange}
+                disabled={isLockedWhenReceived}
+                >
+                <option value="">
+                    {warehouseLoading ? "Đang tải danh sách kho..." : "Chọn kho nhập"}
+                </option>
+
+                {warehouseList.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>
+                    {warehouse.code} - {warehouse.name}
+                    </option>
+            ))}
+            </select>
+            </div>
+
+            <div className="form-group">
+            <label>Người giao hàng</label>
+            <input
+                name="delivery_person"
+                value={headerData.delivery_person}
+                onChange={handleHeaderChange}
+                placeholder="Nhập người giao hàng"
+                disabled={isLockedOnlyPrint}            
+              />
+            </div>
+
+            <div className="form-group">
+            <label>Thuế VAT</label>
+            <select
+                name="vat_rate"
+                value={headerData.vat_rate}
+                onChange={handleHeaderChange}
+                disabled={isLockedOnlyPrint}            
+            >
+                <option value="">Chọn thuế VAT</option>
+                <option value="0">0%</option>
+                <option value="5">5%</option>
+                <option value="8">8%</option>
+                <option value="10">10%</option>
+            </select>
+            </div>
+
+            <div className="form-group">
+            <label>Ký hiệu HĐ</label>
+            <input
+                name="invoice_symbol"
+                value={headerData.invoice_symbol}
+                onChange={handleHeaderChange}
+                placeholder="Nhập ký hiệu hóa đơn"
+                disabled={isLockedOnlyPrint}            
+            />
+            </div>
+
+            <div className="form-group">
+            <label>Số hóa đơn</label>
+            <input
+                name="invoice_no"
+                value={headerData.invoice_no}
+                onChange={handleHeaderChange}
+                placeholder="Nhập số hóa đơn"
+                disabled={isLockedOnlyPrint}            
+            />
+            </div>
+
+            <div className="form-group">
+            <label>Ngày, tháng, năm hóa đơn</label>
+            <div className="input-with-icon">
+                <input
+                name="invoice_date"
+                value={headerData.invoice_date}
+                onChange={handleHeaderChange}
+                placeholder="dd/mm/yyyy"
+                disabled={isLockedOnlyPrint}            
+                />
+                <button type="button">
+                <RiCalendarLine />
+                </button>
+            </div>
+            </div>
+
+            <div className="form-group">
+            <label>Mã KH</label>
+            <input
+                name="supplier_code"
+                value={headerData.supplier_code}
+                onChange={handleHeaderChange}
+                placeholder="Nhập mã khách hàng / NCC"
+                disabled={isLockedOnlyPrint}            
+            />
+            </div>
+
+            <div className="form-group">
+            <label>Tên đơn vị cung cấp</label>
+            <input
+                name="supplier_name"
+                value={headerData.supplier_name}
+                onChange={handleHeaderChange}
+                placeholder="Nhập tên đơn vị cung cấp"
+                disabled={isLockedOnlyPrint}            
+            />
+            </div>
+
+            <div className="form-group">
+                <label>MST</label>
+
+                <div className="tax-code-load-row">
+                    <input
+                    name="tax_code"
+                    value={headerData.tax_code}
+                    onChange={handleHeaderChange}
+                    placeholder="Nhập mã số thuế"
+                    disabled={isLockedOnlyPrint}            
+                    />
+
+                    <button
+                      type="button"
+                      className="load-company-btn"
+                      title="Load công ty theo MST"
+                      onClick={handleLoadCompanyByTaxCode}
+                      disabled={companyLoading || isLockedOnlyPrint}            
+                    >
+                    <RiLoader4Line className={companyLoading ? "loading-icon" : ""} />
+                </button>
+            </div>
+            </div>
+
+            <div className="form-group">
+            <label>Địa chỉ</label>
+            <input
+                name="address"
+                value={headerData.address}
+                onChange={handleHeaderChange}
+                placeholder="Nhập địa chỉ"
+                disabled={isPrintMode}
+            />
+            </div>
+          <div className="form-group bank-dropdown-group">
+            <label>
+              Tên ngân hàng <span>*</span>
+            </label>
+
+            <div className="bank-dropdown-box">
+              <input
+                name="bank_account_name"
+                value={headerData.bank_account_name}
+                onChange={handleHeaderChange}
+                onFocus={() => {
+                  if (bankAccountOptions.length > 0) {
+                    setShowBankDropdown(true);
+                  }
+                }}
+                placeholder={
+                  bankAccountOptions.length > 0
+                    ? "Chọn ngân hàng đã lưu hoặc nhập mới"
+                    : "Nhập tên ngân hàng"
+                }
+                disabled={isPrintMode}
+              />
+
+              {bankAccountOptions.length > 0 && !isPrintMode && (
+                <button
+                  type="button"
+                  className="bank-dropdown-toggle"
+                  onClick={() => setShowBankDropdown((prev) => !prev)}
+                >
+                  ▾
+                </button>
+              )}
+
+              {showBankDropdown && bankAccountOptions.length > 0 && !isPrintMode && (
+                <div className="bank-dropdown-list">
+                  <div className="bank-dropdown-header">
+                    <span>Tên ngân hàng</span>
+                    <span>Số tài khoản</span>
+                  </div>
+
+                  {bankAccountOptions.map((bank, index) => (
+                    <div
+                      key={index}
+                      className="bank-dropdown-item"
+                      onClick={() => handleSelectBankAccount(bank)}
+                    >
+                      <span>
+                        {bank.bank_account_name || bank.bank_name || bank.name || ""}
+                      </span>
+                      <span>
+                        {bank.bank_account_number || bank.account_number || ""}
+                      </span>
+                    </div>
+                  ))}
+
+                  <div className="bank-dropdown-note">
+                    Không chọn nếu muốn nhập tài khoản mới
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>
+              Số tài khoản ngân hàng <span>*</span>
+            </label>
+            <input
+              name="bank_account_number"
+              value={headerData.bank_account_number}
+              onChange={handleHeaderChange}
+              placeholder="Nhập số tài khoản ngân hàng"
+              disabled={isPrintMode}
+            />
+          </div>
+
+            <div className="form-group description-group">
+            <label>Diễn giải</label>
+            <input
+                name="description"
+                value={headerData.description}
+                onChange={handleHeaderChange}
+                placeholder="Nhập diễn giải"
+                disabled={isPrintMode}
+            />
+            </div>
+        </div>
+        </div>
+
+        <div className="status-row-card">
+        <span>Theo dõi tình trạng</span>
+        <strong>Chưa thực hiện</strong>
+        </div>
+
+        <div className="detail-section-title">Chi tiết</div>
+
+        <div className="detail-card">
+          <div className="detail-search">
+            <RiSearchLine />
+            <input placeholder="Tìm kiếm" />
+          </div>
+
+          <div className="order-detail-table-wrapper">
+            <table className="order-detail-table">
+                <colgroup>
+                    <col className="col-stt" />
+                    <col className="col-code" />
+                    <col className="col-name" />
+                    <col className="col-unit" />
+                    <col className="col-qty" />
+                    <col className="col-qty" />
+                    <col className="col-check" />
+                    <col className="col-price" />
+                    <col className="col-amount" />
+                    <col className="col-action" />
+                </colgroup>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Mã hàng</th>
+                  <th>Tên hàng</th>
+                  <th>ĐVT</th>
+                  <th>SL yêu cầu</th>
+                  <th>SL thực nhập</th>
+                  <th>Đánh dấu đủ</th>
+                  <th>Đơn giá</th>
+                  <th>Thành tiền</th>
+                  <th></th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {items.map((item, index) => (
+                  <tr
+                    key={item.id}
+                    className={activeGoodsRowId === item.id ? "goods-dropdown-active-row" : ""}
+                  >
+                    <td>{index + 1}</td>
+                    <td className="goods-code-dropdown-cell">
+                    <div className="goods-code-dropdown-box">
+                        <input
+                        value={item.goods_code}
+                        placeholder="Chọn mã hàng"
+                        onFocus={() => {
+                            setActiveGoodsRowId(item.id);
+                            setShowGoodsDropdown(true);
+                            setGoodsKeyword(item.goods_code || "");
+
+                            fetchGoodsDropdown({
+                            keyword: item.goods_code || "",
+                            pageNumber: 1,
+                            append: false,
+                            });
+                        }}
+                        onChange={(e) => {
+                            const value = e.target.value;
+
+                            handleChangeItemField(item.id, "goods_code", value);
+
+                            setActiveGoodsRowId(item.id);
+                            setShowGoodsDropdown(true);
+                            setGoodsKeyword(value);
+
+                            fetchGoodsDropdown({
+                            keyword: value,
+                            pageNumber: 1,
+                            append: false,
+                            });
+                        }}
+                        />
+
+                        <button
+                        type="button"
+                        onClick={() => {
+                            setActiveGoodsRowId(item.id);
+                            setShowGoodsDropdown(!showGoodsDropdown);
+                            setGoodsKeyword(item.goods_code || "");
+
+                            fetchGoodsDropdown({
+                            keyword: item.goods_code || "",
+                            pageNumber: 1,
+                            append: false,
+                            });
+                        }}
+                        >
+                        ▾
+                        </button>
+
+                        {showGoodsDropdown && activeGoodsRowId === item.id && (
+                        <div
+                            className="goods-code-dropdown-list"
+                            onScroll={handleGoodsDropdownScroll}
+                        >
+                            <div className="goods-code-dropdown-header">
+                            <span>Mã hàng</span>
+                            <span>Tên hàng</span>
+                            </div>
+
+                            {goodsList.map((goods) => (
+                            <div
+                                key={goods.id}
+                                className="goods-code-dropdown-item"
+                                onClick={() => handleSelectGoods(goods)}
+                            >
+                                <span>{goods.code || goods.goods_code}</span>
+                                <span>{goods.name || goods.goods_name}</span>
+                            </div>
+                            ))}
+
+                            {goodsLoading && (
+                            <div className="goods-code-dropdown-status">Đang tải...</div>
+                            )}
+
+                            {!goodsLoading && goodsList.length === 0 && (
+                            <div className="goods-code-dropdown-status">Không có dữ liệu</div>
+                            )}
+                        </div>
+                        )}
+                    </div>
+                    </td>
+                    <td>{item.goods_name}</td>
+                    <td>
+                      <select
+                        className="table-unit-select"
+                        value={item.unit_id || ""}
+                        onChange={(e) => handleChangeItemUnit(item.id, e.target.value)}
+                        disabled={isPrintMode || !item.goods_id}
+                      >
+                        {item.unit_options && item.unit_options.length > 0 ? (
+                          item.unit_options.map((unitItem) => (
+                            <option key={unitItem.unit_id} value={unitItem.unit_id}>
+                              {unitItem.unit_name}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="">{item.unit || "Chọn ĐVT"}</option>
+                        )}
+                      </select>
+                  </td>
+                    <td className="number-col">
+                    <input
+                        className="table-number-input"
+                        value={item.requested_quantity}
+                        onChange={(e) =>
+                        handleChangeItemField(item.id, "requested_quantity", e.target.value)
+                        }
+                        disabled={isPrintMode}
+                    />
+                    </td>
+                    <td className="number-col">
+                    <input
+                        className="table-number-input"
+                        value={item.actual_quantity}
+                        onChange={(e) =>
+                        handleChangeItemField(item.id, "actual_quantity", e.target.value)
+                        }
+                        disabled={isPrintMode}
+                    />
+                    </td>
+                    <td className="center-col">
+                      <input
+                          type="checkbox"
+                          checked={item.marked_old}
+                          onChange={(e) =>
+                            handleChangeItemField(item.id, "marked_old", e.target.checked)
+                        }
+                          disabled={isPrintMode}
+                      />
+                    </td>
+                    <td className="number-col">
+                    <input
+                        className="table-number-input"
+                        value={item.unit_price}
+                        onChange={(e) =>
+                        handleChangeItemField(item.id, "unit_price", e.target.value)
+                        }
+                        disabled={isPrintMode}
+                    />
+                    </td>
+                    <td className="number-col">{item.amount}</td>
+                    <td className="delete-row-col">
+                    <button
+                        className="delete-row-btn"
+                        onClick={() => handleDeleteRow(item.id)}
+                        disabled={isPrintMode}
+                    >
+                        <RiDeleteBin6Line />
+                    </button>
+                    </td>
+                  </tr>
+                ))}
+
+                <tr className="table-total-row">
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td className="number-col">
+                    {formatViNumber(
+                    items.reduce((sum, item) => sum + parseNumber(item.requested_quantity), 0),
+                    2
+                    )}
+                </td>
+                <td className="number-col">
+                    {formatViNumber(
+                    items.reduce((sum, item) => sum + parseNumber(item.actual_quantity), 0),
+                    2
+                    )}
+                </td>
+                <td></td>
+                <td></td>
+                <td className="number-col">{formatViNumber(totalAmount, 2)}</td>
+                <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        <table className="order-money-table">
+        <colgroup>
+            <col className="col-stt" />
+            <col className="col-code" />
+            <col className="col-name" />
+            <col className="col-unit" />
+            <col className="col-qty" />
+            <col className="col-qty" />
+            <col className="col-check" />
+            <col className="col-price" />
+            <col className="col-amount" />
+            <col className="col-action" />
+        </colgroup>
+        <tbody>
+            <tr>
+                <td className="money-empty" colSpan={7}></td>
+                <td className="money-label">Cộng</td>
+                <td className="money-value">{formatViNumber(totalAmount, 2)}</td>
+                <td className="money-empty"></td>
+            </tr>
+
+            <tr>
+                <td className="money-empty" colSpan={7}></td>
+                <td className="money-label">Tiền thuế VAT</td>
+                <td className="money-value">{formatViNumber(vatAmount, 2)}</td>
+                <td className="money-empty"></td>
+            </tr>
+
+            <tr>
+                <td className="money-empty" colSpan={7}></td>
+                <td className="money-label">Tổng cộng</td>
+                <td className="money-value">{formatViNumber(grandTotal, 2)}</td>
+                <td className="money-empty"></td>
+            </tr>
+        </tbody>
+        </table>
+
+          <div className="table-bottom-bar">
+            <div>
+              Tổng số: <strong>{items.length}</strong>
+            </div>
+
+            <div className="table-pagination">
+              <span>Số dòng/trang</span>
+              <select defaultValue={20}>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <strong>1 - {items.length}</strong>
+              <button disabled>‹</button>
+              <button disabled>›</button>
+            </div>
+          </div>
+
+          <div className="detail-action-row">
+            <button className="outline-primary-btn" onClick={handleAddRow} disabled={isPrintMode}>
+              <RiAddLine />
+              <span>Thêm dòng</span>
+            </button>
+
+            <button className="outline-btn" onClick={handleFillActualQuantity} disabled={isPrintMode}>
+              <RiCheckboxLine />
+              <span>Nhập đủ tất cả VTHH</span>
+            </button>
+
+            <button className="outline-btn" disabled={isPrintMode}>
+              <RiEdit2Line />
+              <span>Thêm ghi chú</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <div className="import-order-detail-footer">
+        <button
+          className="cancel-footer-btn"
+          onClick={() => navigate("/dashboard/activity/import/order")}
+        >
+          {isPrintMode ? "Quay lại" : "Hủy"}
+        </button>
+
+        {isPrintMode ? (
+          <>
+            <button className="complete-btn" onClick={handleOpenReceiptPrint}>
+              <RiPrinterLine />
+              <span>In Phiếu nhập kho</span>
+            </button>
+
+            <button className="complete-btn" onClick={handleOpenTransferPrint}>
+              <RiPrinterLine />
+              <span>In Giấy Đề Nghị Chuyển tiền</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="save-draft-btn" onClick={handleSaveDraft}>
+                Lưu tạm
+            </button>
+
+            <button className="complete-btn" onClick={handleComplete}>
+              Hoàn thành
+            </button>
+          </>
+        )}
+      </div>
+          {showReceiptPrintModal && (
+            <div className="print-reason-modal-overlay">
+              <div className="print-reason-modal">
+                <div className="print-reason-modal-header">
+                  <h3>Người thủ kho</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowReceiptPrintModal(false)}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="print-reason-modal-body">
+                  <label>Người thủ kho</label>
+                  <input
+                    value={receiptWarehouseKeeper}
+                    onChange={(e) => setReceiptWarehouseKeeper(e.target.value)}
+                    placeholder="Nhập tên người thủ kho"
+                  />
+                </div>
+
+                <div className="print-reason-modal-footer">
+                  <button
+                    type="button"
+                    className="print-reason-cancel-btn"
+                    onClick={() => setShowReceiptPrintModal(false)}
+                  >
+                    Hủy
+                  </button>
+
+                  <button
+                    type="button"
+                    className="print-reason-confirm-btn"
+                    onClick={handleConfirmReceiptPrint}
+                  >
+                    Đồng ý in
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {showPrintReasonModal && (
+          <div className="print-reason-modal-overlay">
+            <div className="print-reason-modal">
+              <div className="print-reason-modal-header">
+                <h3>Lý do in Phiếu nhập tiền</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowPrintReasonModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="print-reason-modal-body">
+                <label>Lý do</label>
+                <textarea
+                  value={printReason}
+                  onChange={(e) => setPrintReason(e.target.value)}
+                  placeholder="Nhập lý do in phiếu"
+                  rows={4}
+                />
+              </div>
+
+              <div className="print-reason-modal-footer">
+                <button
+                  type="button"
+                  className="print-reason-cancel-btn"
+                  onClick={() => setShowPrintReasonModal(false)}
+                >
+                  Hủy
+                </button>
+
+                <button
+                  type="button"
+                  className="print-reason-confirm-btn"
+                  onClick={handleConfirmTransferPrint}
+                >
+                  Đồng ý in
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+    </div>
+  );
+}
+
+export default ImportOrderDetailPage;

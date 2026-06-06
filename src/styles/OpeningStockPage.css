@@ -1,0 +1,903 @@
+.opening-stock-page {
+  background: white;
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.opening-stock-toolbar {
+  height: 48px;
+  padding: 8px 12px;
+  flex: 0 0 48px;
+  border-bottom: 1px solid #e5e7eb;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  min-width: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.opening-stock-search {
+  width: 220px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.opening-stock-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.opening-stock-table-area {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: auto;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+}
+
+.opening-stock-table-header {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.opening-stock-table-body {
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+}
+
+.opening-stock-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.opening-stock-table th,
+.opening-stock-table td {
+  height: 36px;
+  padding: 0 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-btn {
+  height: 32px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 4px;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.opening-stock-table-header table,
+.opening-stock-table-body table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.opening-stock-table th {
+  background: #f9fafb;
+  font-weight: 700;
+  color: #374151;
+}
+
+.opening-stock-table th:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 0;
+
+  width: 1px;
+  height: calc(100% - 16px);
+
+  background-color: #e5e7eb;
+}
+
+.checkbox-col {
+  width: 36px;
+  text-align: center;
+}
+
+.number-col {
+  text-align: right !important;
+}
+
+.opening-stock-table tbody tr:hover {
+  background: #f3f4f6;
+}
+
+.opening-stock-pagination {
+  height: 56px;
+  padding: 0 20px;
+  flex: 0 0 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  background: white;
+  flex-shrink: 0;
+}
+
+.pagination-left {
+  font-size: 14px;
+  color: #374151;
+}
+
+.pagination-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.pagination-right select {
+  height: 36px;
+  min-width: 90px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0 10px;
+  background: white;
+}
+
+.pagination-right button {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.pagination-right button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.import-excel-btn {
+  height: 32px;
+  padding: 0 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+
+  background: white;
+  color: #107c41;
+
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.import-excel-btn svg {
+  font-size: 18px;
+}
+
+.import-excel-btn:hover {
+  background: #107c41;
+  color: white;
+}
+
+.opening-stock-actions .icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.opening-stock-actions .icon-btn svg {
+  font-size: 18px;
+}
+
+.setting-modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.3);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 999;
+}
+
+.setting-modal {
+  width: 550px;
+
+  background: white;
+
+  border-radius: 8px;
+
+  overflow: hidden;
+}
+
+.setting-modal-header {
+  height: 56px;
+
+  padding: 0 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.setting-modal-header h3 {
+  margin: 0;
+}
+
+.setting-modal-header button {
+  border: none;
+  background: transparent;
+
+  font-size: 24px;
+
+  cursor: pointer;
+}
+
+.setting-modal-body {
+  padding: 20px;
+
+  max-height: 500px;
+
+  overflow-y: auto;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 10px 0;
+
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.setting-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setting-row input[type="number"] {
+  width: 100px;
+
+  height: 32px;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 4px;
+
+  padding: 0 8px;
+}
+
+.setting-modal-footer {
+  height: 60px;
+  padding: 0 20px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  border-top: 1px solid #e5e7eb;
+}
+
+.setting-footer-right {
+  display: flex;
+  gap: 10px;
+}
+
+.reset-btn {
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 6px;
+  background: #e5e7eb;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.setting-modal-footer .save-btn {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 6px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.opening-stock-action-col {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+.opening-stock-row-actions {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.opening-stock-row:hover .opening-stock-row-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.row-edit-btn,
+.row-delete-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.row-edit-btn:hover {
+  background: #e5e7eb;
+}
+
+.row-delete-btn {
+  color: #dc2626;
+}
+
+.row-delete-btn:hover {
+  background: #fee2e2;
+}
+
+.opening-stock-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.opening-stock-modal {
+  width: 1000px;
+  max-width: calc(100vw - 40px);
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.opening-stock-modal-header {
+  height: 58px;
+  padding: 0 16px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.opening-stock-modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #111827;
+}
+
+.modal-close-btn {
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.opening-stock-form {
+  padding: 18px 14px 28px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: flex-end;
+}
+
+.form-row.full {
+  width: 50%;
+  gap: 0;
+}
+
+.form-row.four-cols {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.form-row.two-cols {
+  display: grid;
+  grid-template-columns: repeat(2, 300px);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.form-group label span {
+  color: #dc2626;
+}
+
+.form-group input,
+.form-group select {
+  height: 38px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 15px;
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #2563eb;
+}
+
+.goods-group select {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.small-add-btn {
+  width: 48px;
+  height: 38px;
+  border: 1px solid #d1d5db;
+  border-left: none;
+  background: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  border-radius: 0 4px 4px 0;
+}
+
+.opening-stock-modal-footer {
+  height: 62px;
+  padding: 0 14px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.cancel-btn,
+.save-more-btn,
+.save-btn {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #111827;
+}
+
+.save-more-btn {
+  background: #fff;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+}
+
+.save-btn {
+  background: #2563eb;
+  border: 1px solid #2563eb;
+  color: #fff;
+}
+
+.goods-list-link-btn {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: white;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.goods-list-link-btn svg {
+  font-size: 18px;
+}
+
+.goods-list-link-btn:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  text-decoration: none;
+}
+
+.opening-stock-search-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulk-delete-btn {
+  width: 34px;
+  height: 32px;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  background: #fff;
+  color: #dc2626;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 18px;
+}
+
+.bulk-delete-btn:hover {
+  background: #fee2e2;
+}
+
+.opening-stock-total-row {
+  background-color: #e5e7eb;
+  color: #111827;
+  font-weight: 700;
+}
+
+.opening-stock-total-row td {
+  background-color: #e5e7eb;
+  color: #111827;
+  border-top: 2px solid #d1d5db;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.opening-stock-total-row .number-col {
+  text-align: right;
+}
+
+.goods-dropdown-box {
+  position: relative;
+  width: 100%;
+  display: flex;
+}
+
+.goods-dropdown-input {
+  flex: 1;
+  height: 38px;
+  border: 1px solid #d1d5db;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  padding: 0 10px;
+  font-size: 15px;
+  outline: none;
+}
+
+.goods-dropdown-input:focus {
+  border-color: #2563eb;
+}
+
+.goods-dropdown-toggle {
+  width: 44px;
+  height: 38px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.goods-dropdown-list {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  width: calc(100% + 44px);
+  max-height: 320px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+}
+
+.goods-dropdown-header,
+.goods-dropdown-item {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  align-items: center;
+  column-gap: 12px;
+}
+
+.goods-dropdown-header {
+  position: sticky;
+  top: 0;
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 0 12px;
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 1;
+}
+
+.goods-dropdown-item {
+  min-height: 38px;
+  padding: 0 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.goods-dropdown-item:hover {
+  background: #eff6ff;
+}
+
+.goods-dropdown-code {
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goods-dropdown-name {
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goods-dropdown-status {
+  padding: 10px 12px;
+  text-align: center;
+  color: #6b7280;
+}
+
+/* ===== Goods dropdown in opening stock modal ===== */
+
+.opening-stock-modal-overlay {
+  overflow: visible !important;
+}
+
+.opening-stock-modal {
+  overflow: visible !important;
+}
+
+.opening-stock-form,
+.opening-stock-form .form-row,
+.opening-stock-form .form-group,
+.goods-group,
+.goods-dropdown-box {
+  overflow: visible !important;
+}
+
+.goods-dropdown-box {
+  position: relative;
+  width: 100%;
+  display: flex;
+  z-index: 2000;
+}
+
+.goods-dropdown-list {
+  position: absolute;
+  top: 40px;
+  left: 0;
+
+  width: 700px;
+  max-width: calc(100vw - 80px);
+  max-height: 360px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+
+  z-index: 99999;
+}
+
+.goods-dropdown-header,
+.goods-dropdown-item {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  align-items: center;
+  column-gap: 14px;
+}
+
+.goods-dropdown-header {
+  position: sticky;
+  top: 0;
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 0 14px;
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 1;
+}
+
+.goods-dropdown-item {
+  min-height: 40px;
+  padding: 0 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.goods-dropdown-item:hover {
+  background: #eff6ff;
+}
+
+.goods-dropdown-code,
+.goods-dropdown-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== Fix opening stock table layout ===== */
+
+.opening-stock-table-area {
+  overflow: auto;
+}
+
+.opening-stock-table-header,
+.opening-stock-table-body {
+  overflow: visible;
+}
+
+.opening-stock-table-header table,
+.opening-stock-table-body table,
+.opening-stock-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+/* Không cho td action thành flex vì sẽ phá layout table */
+.opening-stock-action-col,
+.opening-stock-row-actions {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+}
+
+td.opening-stock-row-actions {
+  display: table-cell !important;
+  text-align: center;
+  vertical-align: middle;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.opening-stock-row:hover td.opening-stock-row-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+td.opening-stock-row-actions .row-edit-btn,
+td.opening-stock-row-actions .row-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin: 0 3px;
+}
+
+/* Dòng tổng không cần chiếm action */
+.opening-stock-total-row td.opening-stock-row-actions {
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* Cho header divider không bị lệch */
+.opening-stock-table th {
+  position: relative;
+}
+
+.resizable-th {
+  position: relative;
+}
+
+.column-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 5;
+}
+
+.column-resizer:hover {
+  background: #93c5fd;
+}
+
+.resizable-th:hover .column-resizer {
+  background: rgba(37, 99, 235, 0.25);
+}
+
+.opening-stock-actions .excel-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: #107c41;
+}
+
+.opening-stock-actions .excel-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  flex: 0 0 auto;
+  transform: translateY(0.5px);
+}
+
+.opening-stock-actions .excel-btn:hover {
+  background: #ecfdf5;
+  border-color: #86efac;
+  color: #107c41;
+}

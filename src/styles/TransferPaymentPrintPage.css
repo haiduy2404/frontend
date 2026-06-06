@@ -1,0 +1,247 @@
+.transfer-print-page {
+  min-height: 100vh;
+  background: #e5e7eb;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.transfer-print-toolbar {
+  width: 210mm;
+  margin: 0 auto 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.transfer-print-toolbar button {
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.transfer-paper {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  position: relative;
+  background: #ffffff;
+  padding: 10mm 14mm 12mm;
+  box-sizing: border-box;
+  color: #000000;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 18px;
+}
+
+.transfer-paper,
+.transfer-paper * {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.transfer-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10mm;
+  align-items: start;
+}
+
+.transfer-company,
+.transfer-national {
+  text-align: center;
+  font-weight: 700;
+}
+
+.transfer-company div {
+  display: block;
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.transfer-company strong {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.transfer-national strong {
+  display: block;
+  white-space: nowrap;
+  font-size: 13.5px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.transfer-national > span {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 700;
+  border-bottom: 1px solid #000000;
+  padding-bottom: 1px;
+}
+
+.transfer-paper h1 {
+  margin: 4mm 0 15mm;
+  text-align: center;
+  font-size: 23px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.transfer-content {
+  width: 100%;
+  margin-top: 0;
+}
+
+.transfer-row {
+  display: grid;
+  grid-template-columns: 48mm 1fr;
+  align-items: baseline;
+  font-size: 18px;
+  line-height: 1.25;
+  margin: 0 0 2mm;
+}
+
+.transfer-row label {
+  font-weight: 700;
+}
+
+.transfer-row span {
+  min-height: 0mm;
+}
+
+.transfer-row-company span {
+  white-space: normal;
+}
+
+.signature-row {
+  margin-top: 5mm;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  text-align: center;
+  column-gap: 8mm;
+}
+
+.signature-row div {
+  min-height: 24mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.signature-row strong {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.signature-row span {
+  margin-top: 2mm;
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.25;
+}
+
+.transfer-print-loading {
+  padding: 24px;
+  font-size: 16px;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .transfer-print-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 0;
+    margin: 0;
+    background: #ffffff;
+    overflow: visible;
+    display: block;
+  }
+
+  .transfer-print-toolbar {
+    display: none;
+  }
+
+  .transfer-paper {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: 10mm 14mm 12mm;
+    box-sizing: border-box;
+    box-shadow: none;
+  }
+}
+
+.transfer-row-text-money span {
+  white-space: normal;
+  line-height: 1.2;
+  font-style: italic;
+}
+
+.transfer-value-bold {
+  font-weight: 700;
+}
+
+.transfer-value-bold-italic {
+  font-weight: 700;
+  font-style: italic;
+}
+
+.transfer-row-text-money span {
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.transfer-date-line {
+  position: absolute;
+  top: 35mm;
+  right: 14mm;
+  width: 80mm;
+  font-size: 15px;
+  line-height: 1.35;
+  font-style: italic;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.transfer-branch-name {
+  display: inline-block;
+  position: relative;
+  width: fit-content;
+  text-align: center;
+  white-space: nowrap;
+  padding-bottom: 2mm;
+}
+
+.transfer-branch-name::after {
+  content: "";
+  position: absolute;
+  left: 10mm;
+  right: 10mm;
+  bottom: 1.2mm;
+  border-bottom: 1px solid #000000;
+}

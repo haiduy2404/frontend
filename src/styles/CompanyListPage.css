@@ -1,0 +1,579 @@
+.company-list-page {
+  width: 100%;
+  height: 100%;
+  background: #eef2f7;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Toolbar */
+.company-list-toolbar {
+  height: 48px;
+  flex: 0 0 48px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #d1d5db;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.company-list-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.company-search-input {
+  width: 320px;
+  height: 32px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+}
+
+.company-search-input:focus {
+  border-color: #2563eb;
+}
+
+.company-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn,
+.add-btn,
+.delete-btn,
+.cancel-btn,
+.save-btn {
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.icon-btn {
+  width: 32px;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.icon-btn svg,
+.add-btn svg,
+.delete-btn svg {
+  font-size: 18px;
+}
+
+.icon-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.add-btn {
+  padding: 0 12px;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.add-btn:hover {
+  background: #1d4ed8;
+}
+
+.delete-btn {
+  padding: 0 12px;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+/* Content */
+.company-list-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Table */
+.company-table-wrapper {
+  flex: 1;
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  overflow: auto;
+}
+
+.company-table {
+  width: 100%;
+  min-width: 1280px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.company-table th,
+.company-table td {
+  height: 38px;
+  padding: 0 10px;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.company-table th {
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 700;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.company-table tbody tr {
+  cursor: pointer;
+}
+
+.company-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.company-table tbody tr.selected {
+  background: #dbeafe;
+}
+
+.checkbox-col {
+  text-align: center !important;
+}
+
+.action-col {
+  text-align: center !important;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.row-actions button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.row-actions button svg {
+  font-size: 17px;
+}
+
+.row-actions button:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.row-actions .row-delete-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.empty-cell {
+  height: 120px !important;
+  text-align: center;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Form panel */
+.company-form-panel {
+  width: 360px;
+  flex: 0 0 360px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.company-form-header {
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+
+  display: flex;
+  align-items: center;
+
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  box-sizing: border-box;
+}
+
+.company-form-body {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.company-form-body label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.company-form-body label span {
+  color: #dc2626;
+}
+
+.company-form-body input {
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.company-form-body input:focus {
+  border-color: #2563eb;
+}
+
+.company-form-actions {
+  height: 50px;
+  flex: 0 0 50px;
+  padding: 8px 12px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.cancel-btn {
+  padding: 0 12px;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.cancel-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.save-btn {
+  padding: 0 14px;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.save-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .company-list-content {
+    flex-direction: column;
+  }
+
+  .company-form-panel {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  .company-search-input {
+    width: 240px;
+  }
+}
+
+
+/* Modal thêm / sửa công ty */
+.company-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.company-modal {
+  width: 620px;
+  max-height: calc(100vh - 48px);
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  overflow: hidden;
+}
+
+.company-modal-header {
+  height: 48px;
+  padding: 0 14px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.company-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modal-close-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn svg {
+  font-size: 20px;
+}
+
+.modal-close-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.company-modal-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+}
+
+.company-modal-body label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.company-modal-body label span {
+  color: #dc2626;
+}
+
+.company-modal-body input {
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.company-modal-body input:focus {
+  border-color: #2563eb;
+}
+
+.company-modal-actions {
+  height: 50px;
+  padding: 8px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.tax-code-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tax-code-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.load-tax-btn {
+  width: 42px;
+  height: 34px;
+  flex: 0 0 42px;
+  border: none;
+  border-radius: 4px;
+  background: #eef2ff;
+  color: #2563eb;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.load-tax-btn svg {
+  font-size: 20px;
+}
+
+.load-tax-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.load-tax-btn:active svg {
+  animation: tax-load-spin 0.5s linear;
+}
+
+@keyframes tax-load-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bank-account-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 58px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.bank-account-row input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+}
+
+.remove-bank-btn {
+  height: 34px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #b91c1c;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.remove-bank-btn:hover {
+  background: #fecaca;
+}
+
+.add-bank-btn {
+  height: 34px;
+  width: fit-content;
+  padding: 0 12px;
+  border: none;
+  border-radius: 4px;
+  background: #e0f2fe;
+  color: #0369a1;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.add-bank-btn:hover {
+  background: #bae6fd;
+}
+@media (max-width: 640px) {
+  .company-modal {
+    width: calc(100vw - 24px);
+  }
+
+  .bank-account-row {
+    grid-template-columns: 1fr;
+  }
+
+  .remove-bank-btn {
+    width: fit-content;
+  }
+}
+
+.resizable-th {
+  position: relative;
+}
+
+.resizable-th span:first-child {
+  display: inline-block;
+  max-width: calc(100% - 8px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.column-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 5;
+}
+
+.column-resizer:hover {
+  background: #bfdbfe;
+}

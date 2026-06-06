@@ -1,0 +1,264 @@
+.app-header {
+  height: 56px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 20px;
+  position: relative;
+  z-index: 20;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.app-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+
+  position: relative;
+  padding-right: 55px;
+}
+
+.app-name::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 1px;
+  height: 28px;
+  background-color: #9ca3af;
+}
+
+.company-name {
+  font-size: 15px;
+  font-weight: 500;
+  margin-left: -25px;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.header-icon-button {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #4b5563;
+}
+
+.header-icon-button:hover {
+  background: #f3f4f6;
+}
+
+.user-avatar {
+  width: 42px;
+  height: 42px;
+
+  border-radius: 50%;
+  border: 3px solid #3b82f6;
+
+  background: #ff6b2c;
+  color: white;
+
+  font-weight: 800;
+  font-size: 16px;
+
+  cursor: pointer;
+  position: relative;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 52px;
+  right: 0;
+
+  width: 360px;
+  background: white;
+  border-radius: 4px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  padding: 24px;
+
+  z-index: 999;
+}
+
+.dropdown-avatar {
+  width: 82px;
+  height: 82px;
+  margin: 0 auto 12px;
+
+  border-radius: 50%;
+  border: 4px solid #3b82f6;
+
+  background: #ff6b2c;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.user-dropdown h3 {
+  text-align: center;
+  font-size: 24px;
+  margin: 0;
+  color: #222;
+}
+
+.user-phone {
+  text-align: center;
+  color: #666;
+  margin: 8px 0 20px;
+}
+
+.profile-progress {
+  background: #fff1f2;
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+}
+
+.profile-progress p {
+  color: #16a34a;
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.progress-bar {
+  height: 10px;
+  background: #fecaca;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  width: 60%;
+  height: 100%;
+  background: #16a34a;
+}
+
+.profile-progress span {
+  color: #333;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.company-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 18px;
+
+  color: #222;
+  line-height: 1.5;
+  font-size: 15px;
+}
+
+.dropdown-item {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px 4px;
+  color: #333;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  color: #2563eb;
+}
+
+.logout-button {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.header-logo {
+  width: 50px;
+  height: 50px;
+
+  border-radius: 10px;
+  margin-left: -10px;
+
+
+  background-image: url("../assets/logoCircle.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.dashboard-page {
+  width: 100vw;
+  height: 100vh;
+  background-color: #f1f5f9;
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-body {
+  flex: 1;
+  min-height: 0;
+
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  padding: 24px;
+  overflow: hidden;
+}
