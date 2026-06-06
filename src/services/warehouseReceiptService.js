@@ -32,7 +32,7 @@ export const updateWarehouseReceipt = async (id, payload) => {
 };
 
 export const updateWarehouseReceiptStatus = async (id, statusPayload) => {
-  const response = await axiosInstance.patch(
+  const response = await axiosInstance.put(
     `/inventory/warehouse-receipts/${id}/status`,
     statusPayload
   );

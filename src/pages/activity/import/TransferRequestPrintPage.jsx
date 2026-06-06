@@ -50,9 +50,9 @@ function TransferRequestPrintPage() {
         }
 
         const dateOnly = String(value).split("T")[0];
-        const [year, month, day] = dateOnly.split("-");
+        const [day, month, year] = dateOnly.split("-");
 
-        if (!year || !month || !day) {
+        if (!day || !month || !year) {
             return "Ngày      tháng      năm";
         }
 
