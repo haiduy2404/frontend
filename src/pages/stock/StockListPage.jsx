@@ -557,9 +557,9 @@ const fetchWarehouses = async (
                 </div>
 
                 <div className="form-group wide">
-                  <label>Địa chỉ</label>
+                  <label>Địa chỉ <span>*</span> </label>
                   <textarea
-                    name="address"
+                    name="addres s"
                     value={formData.address}
                     onChange={handleChange}
                   />
@@ -586,6 +586,8 @@ const fetchWarehouses = async (
 
             <div className="modal-footer">
               <button
+                type="button"
+                className="modal-footer-close-btn"
                 onClick={() => {
                   setShowModal(false);
                   setEditingWarehouseId(null);
