@@ -4,7 +4,6 @@
   width: 100%;
   min-width: 0;
   overflow: hidden;
-
   display: flex;
   flex-direction: column;
 }
@@ -14,15 +13,19 @@
   padding: 8px 12px;
   flex: 0 0 48px;
   border-bottom: 1px solid #e5e7eb;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-
   min-width: 0;
   overflow: hidden;
   flex-shrink: 0;
+}
+
+.opening-stock-search-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .opening-stock-search {
@@ -40,14 +43,136 @@
   gap: 8px;
 }
 
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.opening-stock-actions .icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.opening-stock-actions .icon-btn svg {
+  font-size: 18px;
+}
+
+.opening-stock-actions .excel-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: #107c41;
+}
+
+.opening-stock-actions .excel-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  flex: 0 0 auto;
+  transform: translateY(0.5px);
+}
+
+.opening-stock-actions .excel-btn:hover {
+  background: #ecfdf5;
+  border-color: #86efac;
+  color: #107c41;
+}
+
+.add-btn {
+  height: 32px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 4px;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.import-excel-btn {
+  height: 32px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  color: #107c41;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.import-excel-btn svg {
+  font-size: 18px;
+}
+
+.import-excel-btn:hover {
+  background: #107c41;
+  color: white;
+}
+
+.goods-list-link-btn {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: white;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.goods-list-link-btn svg {
+  font-size: 18px;
+}
+
+.goods-list-link-btn:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  text-decoration: none;
+}
+
+.bulk-delete-btn {
+  width: 34px;
+  height: 32px;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  background: #fff;
+  color: #dc2626;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.bulk-delete-btn:hover {
+  background: #fee2e2;
+}
+
+/* ===== TABLE ===== */
+
 .opening-stock-table-area {
   flex: 1;
   min-height: 0;
   min-width: 0;
-
   display: flex;
   flex-direction: column;
-
   overflow: auto;
   border-bottom: 1px solid #e5e7eb;
   background: white;
@@ -64,12 +189,17 @@
   overflow: visible;
 }
 
+.opening-stock-table-header table,
+.opening-stock-table-body table,
 .opening-stock-table {
   width: max-content;
   min-width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
   table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.opening-stock-table {
+  font-size: 14px;
 }
 
 .opening-stock-table th,
@@ -82,34 +212,8 @@
   box-sizing: border-box;
 }
 
-
-.icon-btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #d1d5db;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.add-btn {
-  height: 32px;
-  padding: 0 16px;
-  border: none;
-  border-radius: 4px;
-  background: #2563eb;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.opening-stock-table-header table,
-.opening-stock-table-body table {
-  width: max-content;
-  min-width: 100%;
-}
-
 .opening-stock-table th {
+  position: relative;
   background: #f9fafb;
   font-weight: 700;
   color: #374151;
@@ -120,25 +224,143 @@
   position: absolute;
   top: 8px;
   right: 0;
-
   width: 1px;
   height: calc(100% - 16px);
-
   background-color: #e5e7eb;
 }
 
+.opening-stock-table tbody tr:hover {
+  background: #f3f4f6;
+}
+
 .checkbox-col {
-  width: 36px;
-  text-align: center;
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  padding: 0 !important;
+  text-align: center !important;
+  box-sizing: border-box;
 }
 
 .number-col {
   text-align: right !important;
 }
 
-.opening-stock-table tbody tr:hover {
-  background: #f3f4f6;
+.opening-stock-action-col,
+.opening-stock-row-actions {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  box-sizing: border-box;
 }
+
+td.opening-stock-row-actions {
+  display: table-cell !important;
+  text-align: center;
+  vertical-align: middle;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.opening-stock-row:hover td.opening-stock-row-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+td.opening-stock-row-actions .row-edit-btn,
+td.opening-stock-row-actions .row-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin: 0 3px;
+}
+
+.row-edit-btn,
+.row-delete-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.row-edit-btn:hover {
+  background: #e5e7eb;
+}
+
+.row-delete-btn {
+  color: #dc2626;
+}
+
+.row-delete-btn:hover {
+  background: #fee2e2;
+}
+
+/* ===== TOTAL ROW: thẳng hàng với các cột phía trên ===== */
+
+.opening-stock-total-row {
+  background-color: #e5e7eb;
+  color: #111827;
+  font-weight: 700;
+}
+
+.opening-stock-total-row td {
+  background-color: #e5e7eb;
+  color: #111827;
+  border-top: 2px solid #d1d5db;
+  border-bottom: 1px solid #d1d5db;
+  box-sizing: border-box;
+}
+
+.opening-stock-total-row .checkbox-col {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  padding: 0 !important;
+}
+
+.opening-stock-total-row .number-col {
+  text-align: right !important;
+}
+
+.opening-stock-total-row td.opening-stock-row-actions {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  display: table-cell !important;
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* ===== RESIZE COLUMN ===== */
+
+.resizable-th {
+  position: relative;
+}
+
+.column-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 5;
+}
+
+.column-resizer:hover {
+  background: #93c5fd;
+}
+
+.resizable-th:hover .column-resizer {
+  background: rgba(37, 99, 235, 0.25);
+}
+
+/* ===== PAGINATION ===== */
 
 .opening-stock-pagination {
   height: 56px;
@@ -147,7 +369,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   background: white;
   flex-shrink: 0;
 }
@@ -187,75 +408,31 @@
   cursor: not-allowed;
 }
 
-.import-excel-btn {
-  height: 32px;
-  padding: 0 12px;
-
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-
-  background: white;
-  color: #107c41;
-
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.import-excel-btn svg {
-  font-size: 18px;
-}
-
-.import-excel-btn:hover {
-  background: #107c41;
-  color: white;
-}
-
-.opening-stock-actions .icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.opening-stock-actions .icon-btn svg {
-  font-size: 18px;
-}
+/* ===== SETTING MODAL ===== */
 
 .setting-modal-overlay {
   position: fixed;
   inset: 0;
-
   background: rgba(0, 0, 0, 0.3);
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   z-index: 999;
 }
 
 .setting-modal {
   width: 550px;
-
   background: white;
-
   border-radius: 8px;
-
   overflow: hidden;
 }
 
 .setting-modal-header {
   height: 56px;
-
   padding: 0 20px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -266,17 +443,13 @@
 .setting-modal-header button {
   border: none;
   background: transparent;
-
   font-size: 24px;
-
   cursor: pointer;
 }
 
 .setting-modal-body {
   padding: 20px;
-
   max-height: 500px;
-
   overflow-y: auto;
 }
 
@@ -284,9 +457,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   padding: 10px 0;
-
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -298,24 +469,18 @@
 
 .setting-row input[type="number"] {
   width: 100px;
-
   height: 32px;
-
   border: 1px solid #d1d5db;
-
   border-radius: 4px;
-
   padding: 0 8px;
 }
 
 .setting-modal-footer {
   height: 60px;
   padding: 0 20px;
-
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   border-top: 1px solid #e5e7eb;
 }
 
@@ -345,50 +510,7 @@
   font-weight: 600;
 }
 
-.opening-stock-action-col {
-  width: 80px;
-  min-width: 80px;
-  max-width: 80px;
-}
-
-.opening-stock-row-actions {
-  width: 80px;
-  min-width: 80px;
-  max-width: 80px;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.opening-stock-row:hover .opening-stock-row-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.row-edit-btn,
-.row-delete-btn {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 18px;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-}
-
-.row-edit-btn:hover {
-  background: #e5e7eb;
-}
-
-.row-delete-btn {
-  color: #dc2626;
-}
-
-.row-delete-btn:hover {
-  background: #fee2e2;
-}
+/* ===== OPENING STOCK MODAL ===== */
 
 .opening-stock-modal-overlay {
   position: fixed;
@@ -398,6 +520,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: visible !important;
 }
 
 .opening-stock-modal {
@@ -405,7 +528,7 @@
   max-width: calc(100vw - 40px);
   background: #fff;
   border-radius: 6px;
-  overflow: hidden;
+  overflow: visible !important;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
 }
 
@@ -434,6 +557,13 @@
 
 .opening-stock-form {
   padding: 18px 14px 28px;
+  overflow: visible !important;
+}
+
+.opening-stock-form .form-row,
+.opening-stock-form .form-group,
+.goods-group {
+  overflow: visible !important;
 }
 
 .form-row {
@@ -544,79 +674,14 @@
   color: #fff;
 }
 
-.goods-list-link-btn {
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: white;
-  color: #2563eb;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.goods-list-link-btn svg {
-  font-size: 18px;
-}
-
-.goods-list-link-btn:hover {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  text-decoration: none;
-}
-
-.opening-stock-search-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.bulk-delete-btn {
-  width: 34px;
-  height: 32px;
-  border: 1px solid #fecaca;
-  border-radius: 4px;
-  background: #fff;
-  color: #dc2626;
-  cursor: pointer;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 18px;
-}
-
-.bulk-delete-btn:hover {
-  background: #fee2e2;
-}
-
-.opening-stock-total-row {
-  background-color: #e5e7eb;
-  color: #111827;
-  font-weight: 700;
-}
-
-.opening-stock-total-row td {
-  background-color: #e5e7eb;
-  color: #111827;
-  border-top: 2px solid #d1d5db;
-  border-bottom: 1px solid #d1d5db;
-}
-
-.opening-stock-total-row .number-col {
-  text-align: right;
-}
+/* ===== GOODS DROPDOWN ===== */
 
 .goods-dropdown-box {
   position: relative;
   width: 100%;
   display: flex;
+  z-index: 2000;
+  overflow: visible !important;
 }
 
 .goods-dropdown-input {
@@ -648,110 +713,15 @@
   position: absolute;
   top: 40px;
   left: 0;
-  width: calc(100% + 44px);
-  max-height: 320px;
-  overflow-y: auto;
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
-  z-index: 100;
-}
-
-.goods-dropdown-header,
-.goods-dropdown-item {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  align-items: center;
-  column-gap: 12px;
-}
-
-.goods-dropdown-header {
-  position: sticky;
-  top: 0;
-  background: #f3f4f6;
-  color: #374151;
-  font-weight: 700;
-  min-height: 36px;
-  padding: 0 12px;
-  border-bottom: 1px solid #e5e7eb;
-  z-index: 1;
-}
-
-.goods-dropdown-item {
-  min-height: 38px;
-  padding: 0 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.goods-dropdown-item:hover {
-  background: #eff6ff;
-}
-
-.goods-dropdown-code {
-  font-weight: 600;
-  color: #111827;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.goods-dropdown-name {
-  color: #374151;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.goods-dropdown-status {
-  padding: 10px 12px;
-  text-align: center;
-  color: #6b7280;
-}
-
-/* ===== Goods dropdown in opening stock modal ===== */
-
-.opening-stock-modal-overlay {
-  overflow: visible !important;
-}
-
-.opening-stock-modal {
-  overflow: visible !important;
-}
-
-.opening-stock-form,
-.opening-stock-form .form-row,
-.opening-stock-form .form-group,
-.goods-group,
-.goods-dropdown-box {
-  overflow: visible !important;
-}
-
-.goods-dropdown-box {
-  position: relative;
-  width: 100%;
-  display: flex;
-  z-index: 2000;
-}
-
-.goods-dropdown-list {
-  position: absolute;
-  top: 40px;
-  left: 0;
-
   width: 700px;
   max-width: calc(100vw - 80px);
   max-height: 360px;
-
   overflow-y: auto;
   overflow-x: hidden;
-
   background: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 4px;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
-
   z-index: 99999;
 }
 
@@ -786,6 +756,15 @@
   background: #eff6ff;
 }
 
+.goods-dropdown-code {
+  font-weight: 600;
+  color: #111827;
+}
+
+.goods-dropdown-name {
+  color: #374151;
+}
+
 .goods-dropdown-code,
 .goods-dropdown-name {
   overflow: hidden;
@@ -793,111 +772,8 @@
   white-space: nowrap;
 }
 
-/* ===== Fix opening stock table layout ===== */
-
-.opening-stock-table-area {
-  overflow: auto;
-}
-
-.opening-stock-table-header,
-.opening-stock-table-body {
-  overflow: visible;
-}
-
-.opening-stock-table-header table,
-.opening-stock-table-body table,
-.opening-stock-table {
-  width: max-content;
-  min-width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-}
-
-/* Không cho td action thành flex vì sẽ phá layout table */
-.opening-stock-action-col,
-.opening-stock-row-actions {
-  width: 80px !important;
-  min-width: 80px !important;
-  max-width: 80px !important;
-}
-
-td.opening-stock-row-actions {
-  display: table-cell !important;
+.goods-dropdown-status {
+  padding: 10px 12px;
   text-align: center;
-  vertical-align: middle;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.opening-stock-row:hover td.opening-stock-row-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-td.opening-stock-row-actions .row-edit-btn,
-td.opening-stock-row-actions .row-delete-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
-  margin: 0 3px;
-}
-
-/* Dòng tổng không cần chiếm action */
-.opening-stock-total-row td.opening-stock-row-actions {
-  opacity: 1;
-  pointer-events: none;
-}
-
-/* Cho header divider không bị lệch */
-.opening-stock-table th {
-  position: relative;
-}
-
-.resizable-th {
-  position: relative;
-}
-
-.column-resizer {
-  position: absolute;
-  top: 0;
-  right: -3px;
-  width: 6px;
-  height: 100%;
-  cursor: col-resize;
-  user-select: none;
-  z-index: 5;
-}
-
-.column-resizer:hover {
-  background: #93c5fd;
-}
-
-.resizable-th:hover .column-resizer {
-  background: rgba(37, 99, 235, 0.25);
-}
-
-.opening-stock-actions .excel-btn {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  color: #107c41;
-}
-
-.opening-stock-actions .excel-btn svg {
-  width: 18px;
-  height: 18px;
-  display: block;
-  flex: 0 0 auto;
-  transform: translateY(0.5px);
-}
-
-.opening-stock-actions .excel-btn:hover {
-  background: #ecfdf5;
-  border-color: #86efac;
-  color: #107c41;
+  color: #6b7280;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createGoods, updateGoods } from "../services/goodsService";
+import { createGoods, updateGoods, getGoods  } from "../services/goodsService";
 import { getGoodsUnits } from "../services/goodsUnitService";
 import "../styles/GoodsListPage.css";
 
@@ -23,6 +23,23 @@ function GoodsFormModal({
   });
 
   const editingGoodsId = editingGoods?.id || null;
+
+  const generateRandomGoodsCode = (existingCodes = []) => {
+  const codeSet = new Set(
+    existingCodes.map((code) => String(code || "").trim().toUpperCase())
+  );
+
+  for (let i = 0; i < 1000; i += 1) {
+    const randomNumber = Math.floor(Math.random() * 1000);
+    const code = `VT${String(randomNumber).padStart(3, "0")}`;
+
+    if (!codeSet.has(code)) {
+      return code;
+    }
+  }
+
+  return `VT${Date.now().toString().slice(-3)}`;
+};
 
   const getUnitNameById = (unitId) => {
     return unitList.find((unit) => String(unit.id) === String(unitId))?.name || "";
@@ -58,9 +75,74 @@ function GoodsFormModal({
     }
   };
 
+  const fetchExistingGoodsCodes = async () => {
+  try {
+    let page = 1;
+    let totalPages = 1;
+    const allCodes = [];
+
+    do {
+      const response = await getGoods({
+        search: "",
+        page,
+        page_size: 100,
+      });
+
+      const payload = response?.data || response;
+
+      const results = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.results)
+        ? payload.results
+        : Array.isArray(payload?.data?.results)
+        ? payload.data.results
+        : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
+
+      allCodes.push(
+        ...results
+          .map((item) => item.code || item.goods_code)
+          .filter(Boolean)
+      );
+
+      totalPages =
+        payload?.total_pages ||
+        payload?.data?.total_pages ||
+        Math.ceil(
+          (payload?.count || payload?.data?.count || results.length) / 100
+        ) ||
+        1;
+
+      page += 1;
+    } while (page <= totalPages);
+
+    return allCodes;
+  } catch (error) {
+    console.error("GET EXISTING GOODS CODES ERROR:", error.response?.data || error);
+    return [];
+  }
+};
+
   useEffect(() => {
     fetchGoodsUnits();
   }, []);
+
+  useEffect(() => {
+  if (editingGoods) return;
+
+  const initRandomCode = async () => {
+    const existingCodes = await fetchExistingGoodsCodes();
+    const randomCode = generateRandomGoodsCode(existingCodes);
+
+    setFormData((prev) => ({
+      ...prev,
+      code: prev.code || randomCode,
+    }));
+  };
+
+  initRandomCode();
+}, [editingGoods]);
 
   useEffect(() => {
     if (!editingGoods) return;

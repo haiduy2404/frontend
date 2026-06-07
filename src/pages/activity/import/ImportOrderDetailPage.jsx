@@ -66,13 +66,38 @@ function ImportOrderDetailPage() {
     const formatISOToViDate = (value) => {
       if (!value) return "";
 
-      const dateOnly = String(value).split("T")[0];
-      const [year, month, day] = dateOnly.split("-");
-
-      if (!year || !month || !day) return "";
-
-      return `${day}/${month}/${year}`;
+      return String(value).split("T")[0];
     };
+
+
+  const getCurrentTerms = () => {
+    const today = new Date();
+
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const year = today.getFullYear();
+
+    return `${month}/${year}`;
+  };
+
+const getTodayViDate = () => {
+  const today = new Date();
+
+  const day = String(today.getDate()).padStart(2, "0");
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const year = today.getFullYear();
+
+  return `${day}/${month}/${year}`;
+};
+
+const formatPickerDateToViDate = (value) => {
+  if (!value) return "";
+
+  const [year, month, day] = value.split("-");
+
+  if (!year || !month || !day) return value;
+
+  return `${day}/${month}/${year}`;
+};
 
       const handleLoadCompanyByTaxCode = async () => {
       const taxCode = headerData.tax_code.trim();
@@ -274,8 +299,8 @@ function ImportOrderDetailPage() {
     ]);
 
     const [headerData, setHeaderData] = useState({
-      terms: "",
-      inward_date: "",
+      terms: getCurrentTerms(),
+      inward_date: getTodayViDate(),
       warehouse_id: "",
       delivery_person: "",
       vat_rate: "",
@@ -588,15 +613,11 @@ function ImportOrderDetailPage() {
     const vatAmount = totalAmount * (vatRate / 100);
     const grandTotal = totalAmount + vatAmount;
 
-  const convertDateToISO = (value) => {
-  if (!value) return null;
+    const convertDateToISO = (value) => {
+      if (!value) return null;
 
-  const [day, month, year] = value.split("/");
-
-  if (!day || !month || !year) return value;
-
-  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-};
+      return String(value).trim();
+    };
 
   const buildReceiptPayload = (status) => {
   const inventoryPayloadItems = [
@@ -975,18 +996,30 @@ const handleComplete = async () => {
             <label>
                 Ngày, tháng, năm NK <span>*</span>
             </label>
-            <div className="input-with-icon">
+              <div className="input-with-icon">
                 <input
-                name="inward_date"
-                value={headerData.inward_date}
-                onChange={handleHeaderChange}
-                placeholder="dd/mm/yyyy"
-                disabled={isLockedWhenReceived}
+                  name="inward_date"
+                  value={headerData.inward_date}
+                  onChange={handleHeaderChange}
+                  placeholder="dd/mm/yyyy"
+                  disabled={isLockedWhenReceived}
                 />
-                <button type="button">
-                <RiCalendarLine />
+
+                <button type="button" disabled={isLockedWhenReceived}>
+                  <RiCalendarLine />
+                  <input
+                    type="date"
+                    className="calendar-native-input"
+                    disabled={isLockedWhenReceived}
+                    onChange={(e) =>
+                      setHeaderData((prev) => ({
+                        ...prev,
+                        inward_date: formatPickerDateToViDate(e.target.value),
+                      }))
+                    }
+                  />
                 </button>
-            </div>
+              </div>
             </div>
 
             <div className="form-group">
@@ -1072,18 +1105,30 @@ const handleComplete = async () => {
 
             <div className="form-group">
             <label>Ngày, tháng, năm hóa đơn</label>
-            <div className="input-with-icon">
+              <div className="input-with-icon">
                 <input
-                name="invoice_date"
-                value={headerData.invoice_date}
-                onChange={handleHeaderChange}
-                placeholder="dd/mm/yyyy"
-                disabled={isLockedOnlyPrint}            
+                  name="invoice_date"
+                  value={headerData.invoice_date}
+                  onChange={handleHeaderChange}
+                  placeholder="dd/mm/yyyy"
+                  disabled={isLockedOnlyPrint}
                 />
-                <button type="button">
-                <RiCalendarLine />
+
+                <button type="button" disabled={isLockedOnlyPrint}>
+                  <RiCalendarLine />
+                  <input
+                    type="date"
+                    className="calendar-native-input"
+                    disabled={isLockedOnlyPrint}
+                    onChange={(e) =>
+                      setHeaderData((prev) => ({
+                        ...prev,
+                        invoice_date: formatPickerDateToViDate(e.target.value),
+                      }))
+                    }
+                  />
                 </button>
-            </div>
+              </div>
             </div>
 
             <div className="form-group">
@@ -1232,12 +1277,6 @@ const handleComplete = async () => {
             </div>
         </div>
         </div>
-
-        <div className="status-row-card">
-        <span>Theo dõi tình trạng</span>
-        <strong>Chưa thực hiện</strong>
-        </div>
-
         <div className="detail-section-title">Chi tiết</div>
 
         <div className="detail-card">
