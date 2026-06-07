@@ -11,6 +11,7 @@ import {
 } from "../../../services/warehouseReceiptService";
 
 import { lookupCompanyByTaxCode } from "../../../services/externalService";
+import GoodsFormModal from "../../../components/GoodsFormModal";
 import {
   RiAddLine,
   RiDeleteBin6Line,
@@ -55,6 +56,8 @@ function ImportOrderDetailPage() {
     const [printReason, setPrintReason] = useState("");
     const [showReceiptPrintModal, setShowReceiptPrintModal] = useState(false);
     const [receiptWarehouseKeeper, setReceiptWarehouseKeeper] = useState("");
+    const [showAddGoodsModal, setShowAddGoodsModal] = useState(false);
+    const [deletedItems, setDeletedItems] = useState([]);
     const handlePrint = () => {
       window.print();
     };
@@ -253,17 +256,20 @@ function ImportOrderDetailPage() {
     const [items, setItems] = useState([
         {
           id: 1,
+          inventory_id: "",
           goods_id: "",
           goods_code: "",
           goods_name: "",
           unit_id: "",
           unit: "",
           unit_options: [],
+          conversion_ratio: "",
           requested_quantity: "1,00",
           actual_quantity: "0,00",
           marked_old: false,
           unit_price: "0,00",
           amount: "0,00",
+          is_delete: false,
         },
     ]);
 
@@ -330,18 +336,52 @@ function ImportOrderDetailPage() {
             amount: "0,00",
             unit_id: "",
             unit_options: [],
+            is_delete: false,
+            inventory_id: "",
+            conversion_ratio: "",
         },
         ]);
     };
 
     const handleDeleteAllRows = () => {
-        setItems([]);
+      setDeletedItems((old) => [
+        ...old,
+        ...items
+          .filter((item) => item.inventory_id)
+          .map((item) => ({
+            ...item,
+            is_delete: true,
+          })),
+      ]);
+
+      setItems([]);
     };
 
     const handleDeleteRow = (rowId) => {
-        setItems((prev) => prev.filter((item) => item.id !== rowId));
-    };
+      setItems((prev) => {
+        const deletedItem = prev.find((item) => item.id === rowId);
 
+        if (deletedItem?.inventory_id) {
+          setDeletedItems((old) => {
+            const existed = old.some(
+              (item) => String(item.inventory_id) === String(deletedItem.inventory_id)
+            );
+
+            if (existed) return old;
+
+            return [
+              ...old,
+              {
+                ...deletedItem,
+                is_delete: true,
+              },
+            ];
+          });
+        }
+
+        return prev.filter((item) => item.id !== rowId);
+      });
+    };
     const fetchGoodsDropdown = async ({
         keyword = "",
         pageNumber = 1,
@@ -431,6 +471,7 @@ function ImportOrderDetailPage() {
           }
 
           const quantity = parseNumber(item.requested_quantity || 0);
+
           const unitPrice = parseNumber(
             goods.unit_price || goods.price || goods.purchase_price || 0
           );
@@ -468,7 +509,9 @@ function ImportOrderDetailPage() {
               goods.main_unit ||
               "",
             unit_options: unitOptions,
-
+            conversion_ratio: defaultUnit?.conversion_ratio
+                ? String(defaultUnit.conversion_ratio)
+                : "1",
             unit_price: formatViNumber(unitPrice, 2),
             amount: formatViNumber(quantity * unitPrice, 2),
           };
@@ -493,38 +536,49 @@ function ImportOrderDetailPage() {
             ...item,
             unit_id: unitId,
             unit: selectedUnit?.unit_name || item.unit,
+            conversion_ratio: selectedUnit?.conversion_ratio
+              ? String(selectedUnit.conversion_ratio)
+              : "",
           };
         })
       );
     };
 
     const handleChangeItemField = (rowId, field, value) => {
-    setItems((prev) =>
+      setItems((prev) =>
         prev.map((item) => {
-        if (item.id !== rowId) {
+          if (item.id !== rowId) {
             return item;
-        }
+          }
 
-        const nextItem = {
+          const nextItem = {
             ...item,
             [field]: value,
-        };
+          };
 
-        const quantity = parseNumber(
+          if (field === "marked_old") {
+            nextItem.actual_quantity = value ? item.requested_quantity : "0,00";
+          }
+
+          const quantity = parseNumber(
             field === "requested_quantity" ? value : nextItem.requested_quantity
-        );
+          );
 
-        const unitPrice = parseNumber(
+          const unitPrice = parseNumber(
             field === "unit_price" ? value : nextItem.unit_price
-        );
+          );
 
-        if (field === "requested_quantity" || field === "unit_price") {
+          if (field === "requested_quantity" || field === "unit_price") {
             nextItem.amount = formatViNumber(quantity * unitPrice, 2);
-        }
 
-        return nextItem;
+            if (nextItem.marked_old && field === "requested_quantity") {
+              nextItem.actual_quantity = value;
+            }
+          }
+
+          return nextItem;
         })
-    );
+      );
     };
   const totalAmount = items.reduce((sum, item) => {
     return sum + parseNumber(item.amount);
@@ -544,7 +598,17 @@ function ImportOrderDetailPage() {
   return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 };
 
-const buildReceiptPayload = (status) => {
+  const buildReceiptPayload = (status) => {
+  const inventoryPayloadItems = [
+    ...items.map((item) => ({
+      ...item,
+      is_delete: false,
+    })),
+    ...deletedItems.map((item) => ({
+      ...item,
+      is_delete: true,
+    })),
+  ];
   return {
     terms: headerData.terms || null,
     receipt_date: convertDateToISO(headerData.inward_date),
@@ -561,12 +625,17 @@ const buildReceiptPayload = (status) => {
     company_address: headerData.address || null,
     company_tax_code: headerData.tax_code,
     description: headerData.description || null,
-    inventory: items
+    inventory: inventoryPayloadItems
       .filter((item) => item.goods_id)
       .map((item) => ({
+        inventory_id: item.inventory_id || null,
         goods_id: item.goods_id,
-        quantity: parseNumber(item.actual_quantity || item.requested_quantity),
+        goods_unit_id: item.unit_id || null,
+        requested_quantity: parseNumber(item.requested_quantity),
+        original_quantity: parseNumber(item.actual_quantity || item.requested_quantity),
         unit_price: parseNumber(item.unit_price),
+        conversion_ratio: parseNumber(item.conversion_ratio || 1),
+        is_delete: Boolean(item.is_delete),
       })),
 
     bank_account_id: headerData.bank_account_id || null,
@@ -685,34 +754,52 @@ const handleComplete = async () => {
         setItems(
           lines.length > 0
             ? lines.map((line, index) => {
-                const quantity = Number(line.original_quantity || 0);
+                const requestedQuantity = Number(
+                  line.request_quantity || line.requested_quantity || line.original_quantity || 0
+                );
+
+                const originalQuantity = Number(line.original_quantity || 0);
                 const unitPrice = Number(line.unit_price || 0);
 
-                return {
-                  id: line.inventory_id || line.goods_id || index + 1,
-                  goods_id: line.goods_id || "",
-                  goods_code: line.goods_code || "",
-                  goods_name: line.goods_name || "",
-                  unit: line.unit_name || "",
-                  requested_quantity: formatViNumber(quantity, 2),
-                  actual_quantity: formatViNumber(quantity, 2),
-                  marked_old: true,
-                  unit_price: formatViNumber(unitPrice, 2),
-                  amount: formatViNumber(quantity * unitPrice, 2),
-                };
+                  return {
+                    id: line.inventory_id || line.id || line.goods_id || index + 1,
+                    inventory_id: line.inventory_id || line.id || "",
+                    goods_id: line.goods_id || "",
+                    goods_code: line.goods_code || "",
+                    goods_name: line.goods_name || "",
+
+                    // lấy good_unit_id backend trả về
+                    unit_id: line.goods_unit_id || line.unit_id || "",
+
+                    unit: line.unit_name || "",
+                    unit_options: [],
+                    conversion_ratio: line.conversion_ratio ? String(line.conversion_ratio) : "",
+
+                    requested_quantity: formatViNumber(requestedQuantity, 2),
+                    actual_quantity: formatViNumber(originalQuantity, 2),
+                    marked_old: requestedQuantity === originalQuantity,
+                    unit_price: formatViNumber(unitPrice, 2),
+                    amount: formatViNumber(requestedQuantity * unitPrice, 2),
+                    is_delete: false,
+                  };
               })
             : [
                 {
-                  id: 1,
-                  goods_id: "",
-                  goods_code: "",
-                  goods_name: "",
-                  unit: "",
-                  requested_quantity: "1,00",
-                  actual_quantity: "0,00",
-                  marked_old: false,
-                  unit_price: "0,00",
-                  amount: "0,00",
+                    id: 1,
+                    inventory_id: "",
+                    goods_id: "",
+                    goods_code: "",
+                    goods_name: "",
+                    unit_id: "",
+                    unit: "",
+                    unit_options: [],
+                    conversion_ratio: "",
+                    requested_quantity: "1,00",
+                    actual_quantity: "0,00",
+                    marked_old: false,
+                    unit_price: "0,00",
+                    amount: "0,00",
+                    is_delete: false,
                 },
               ]
         );
@@ -755,6 +842,8 @@ const handleComplete = async () => {
     }
 
     const payload = buildReceiptPayload("WAITING_DELIVERY");
+    console.log("SAVE PAYLOAD:", payload);
+
 
     if (id && id !== "new" && receiptId) {
       await updateWarehouseReceipt(receiptId, payload);
@@ -781,7 +870,7 @@ const handleComplete = async () => {
       return;
     }
 
-    setPrintReason(headerData.description || "");
+    setPrintReason("");
     setShowPrintReasonModal(true);
   };
 
@@ -832,6 +921,9 @@ const handleComplete = async () => {
     });
   };
 
+  const selectedConversionRatio =
+  items.find((item) => item.conversion_ratio)?.conversion_ratio || "";
+
   return (
     <div className="import-order-detail-page">
       <div className="import-order-detail-header">
@@ -846,33 +938,9 @@ const handleComplete = async () => {
             <option value="purchase">Nhập kho mua hàng</option>
             <option value="goods">Nhập kho hàng hóa</option>
           </select>
-
-          <div className="order-search-box">
-            <input placeholder="Nhập số đơn mua hàng" />
-            <button>
-              <RiSearchLine />
-            </button>
-          </div>
         </div>
 
         <div className="detail-header-actions">
-          <button className="delivery-btn">
-            <RiTruckLine />
-            <span>Đọc phiếu giao hàng</span>
-          </button>
-
-          <button className="header-icon-btn">
-            <RiKeyboardBoxLine />
-          </button>
-
-          <button className="header-icon-btn">
-            <RiSettings3Line />
-          </button>
-
-          <button className="header-icon-btn">
-            <RiQuestionLine />
-          </button>
-
           <button
             className="header-icon-btn"
             onClick={() => navigate("/dashboard/activity/import/order")}
@@ -920,6 +988,16 @@ const handleComplete = async () => {
                 </button>
             </div>
             </div>
+
+            <div className="form-group">
+                <label>Tỷ lệ chuyển đổi</label>
+                <input
+                  value={selectedConversionRatio}
+                  placeholder="Tự động theo mặt hàng"
+                  disabled
+                  className="readonly-light-input"
+                />
+              </div>
 
             <div className="form-group">
             <label>
@@ -1009,6 +1087,30 @@ const handleComplete = async () => {
             </div>
 
             <div className="form-group">
+                <label>MST</label>
+
+                <div className="tax-code-load-row">
+                    <input
+                    name="tax_code"
+                    value={headerData.tax_code}
+                    onChange={handleHeaderChange}
+                    placeholder="Nhập mã số thuế"
+                    disabled={isLockedOnlyPrint}            
+                    />
+
+                    <button
+                        type="button"
+                        className="load-company-btn"
+                        title="Load công ty theo MST"
+                        onClick={handleLoadCompanyByTaxCode}
+                        disabled={companyLoading || isLockedOnlyPrint}            
+                      >
+                      <RiLoader4Line className={companyLoading ? "loading-icon" : ""} />
+                    </button>
+                </div>
+              </div>
+
+            <div className="form-group">
             <label>Mã KH</label>
             <input
                 name="supplier_code"
@@ -1030,29 +1132,7 @@ const handleComplete = async () => {
             />
             </div>
 
-            <div className="form-group">
-                <label>MST</label>
 
-                <div className="tax-code-load-row">
-                    <input
-                    name="tax_code"
-                    value={headerData.tax_code}
-                    onChange={handleHeaderChange}
-                    placeholder="Nhập mã số thuế"
-                    disabled={isLockedOnlyPrint}            
-                    />
-
-                    <button
-                      type="button"
-                      className="load-company-btn"
-                      title="Load công ty theo MST"
-                      onClick={handleLoadCompanyByTaxCode}
-                      disabled={companyLoading || isLockedOnlyPrint}            
-                    >
-                    <RiLoader4Line className={companyLoading ? "loading-icon" : ""} />
-                </button>
-            </div>
-            </div>
 
             <div className="form-group">
             <label>Địa chỉ</label>
@@ -1197,10 +1277,13 @@ const handleComplete = async () => {
 
               <tbody>
                 {items.map((item, index) => (
-                  <tr
-                    key={item.id}
-                    className={activeGoodsRowId === item.id ? "goods-dropdown-active-row" : ""}
-                  >
+                    <tr
+                      key={item.id}
+                      className={[
+                        activeGoodsRowId === item.id ? "goods-dropdown-active-row" : "",
+                        item.is_delete ? "deleted-goods-row" : "",
+                      ].join(" ")}
+                    >
                     <td>{index + 1}</td>
                     <td className="goods-code-dropdown-cell">
                     <div className="goods-code-dropdown-box">
@@ -1260,6 +1343,20 @@ const handleComplete = async () => {
                             <div className="goods-code-dropdown-header">
                             <span>Mã hàng</span>
                             <span>Tên hàng</span>
+                            <button
+                              type="button"
+                              className="goods-code-add-btn"
+                              title="Thêm hàng hóa"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowGoodsDropdown(false);
+                                setShowAddGoodsModal(true);
+                              }}
+                              disabled={isPrintMode}
+                            >
+                              +
+                            </button>
                             </div>
 
                             {goodsList.map((goods) => (
@@ -1270,6 +1367,7 @@ const handleComplete = async () => {
                             >
                                 <span>{goods.code || goods.goods_code}</span>
                                 <span>{goods.name || goods.goods_name}</span>
+                                <span></span>
                             </div>
                             ))}
 
@@ -1442,16 +1540,6 @@ const handleComplete = async () => {
               <RiAddLine />
               <span>Thêm dòng</span>
             </button>
-
-            <button className="outline-btn" onClick={handleFillActualQuantity} disabled={isPrintMode}>
-              <RiCheckboxLine />
-              <span>Nhập đủ tất cả VTHH</span>
-            </button>
-
-            <button className="outline-btn" disabled={isPrintMode}>
-              <RiEdit2Line />
-              <span>Thêm ghi chú</span>
-            </button>
           </div>
 
         </div>
@@ -1573,6 +1661,20 @@ const handleComplete = async () => {
               </div>
             </div>
           </div>
+        )}
+        {showAddGoodsModal && (
+          <GoodsFormModal
+            onClose={() => setShowAddGoodsModal(false)}
+            onSuccess={() => {
+              setShowAddGoodsModal(false);
+
+              fetchGoodsDropdown({
+                keyword: goodsKeyword,
+                pageNumber: 1,
+                append: false,
+              });
+            }}
+          />
         )}
     </div>
   );

@@ -121,22 +121,31 @@ function CompanyListPage() {
           ? item.list_of_bank.map((bank) => ({
               id: bank.id,
               bank_name: bank.bank_name || "",
-              bank_account_number: bank.account_number || "",
-              is_default: bank.is_default || false,
+              bank_account_number:
+                bank.bank_account_number || bank.account_number || "",
+              is_default: bank.is_default === true || bank.isDefault === true,
             }))
           : Array.isArray(item.bank_accounts) && item.bank_accounts.length > 0
-          ? item.bank_accounts
+          ? item.bank_accounts.map((bank) => ({
+              ...bank,
+              bank_name: bank.bank_name || "",
+              bank_account_number:
+                bank.bank_account_number || bank.account_number || "",
+              is_default: bank.is_default === true || bank.isDefault === true,
+            }))
           : item.bank_name || item.bank_account_number
           ? [
               {
                 bank_name: item.bank_name || "",
                 bank_account_number: item.bank_account_number || "",
+                is_default: true,
               },
             ]
           : [
               {
                 bank_name: "",
                 bank_account_number: "",
+                is_default: false,
               },
             ],
     };
@@ -467,21 +476,26 @@ function CompanyListPage() {
     }
   };
 
-  const renderCompanyCell = (company, columnKey) => {
+    const renderCompanyCell = (company, columnKey) => {
+      const defaultBankAccounts =
+        company.bank_accounts?.filter((bank) => {
+          return bank.is_default === true || bank.isDefault === true;
+        }) || [];
+
       if (columnKey === "bank_name") {
-        return company.bank_accounts
-          ?.filter((bank) => bank.bank_name)
+        return defaultBankAccounts
+          .filter((bank) => bank.bank_name)
           .map((bank, index) => <div key={index}>{bank.bank_name}</div>);
       }
 
       if (columnKey === "bank_account_number") {
-        return company.bank_accounts
-          ?.filter((bank) => bank.bank_account_number)
+        return defaultBankAccounts
+          .filter((bank) => bank.bank_account_number)
           .map((bank, index) => <div key={index}>{bank.bank_account_number}</div>);
       }
 
       return company[columnKey] || "";
-  };
+    };
 
   return (
     <div className="company-list-page">
@@ -500,10 +514,13 @@ function CompanyListPage() {
         </div>
 
         <div className="company-list-actions">
-          <button className="delete-btn" onClick={handleDeleteSelected}>
+        <button
+            className="delete-btn icon-delete-btn"
+            title="Xóa"
+            onClick={handleDeleteSelected}
+          >
             <RiDeleteBin6Line />
-            <span>Xóa</span>
-          </button>
+        </button>
 
           <button className="add-btn" onClick={handleOpenAddForm}>
             <RiAddLine />

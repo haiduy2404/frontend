@@ -13,6 +13,15 @@ function ImportLayout() {
         >
           Nhập kho
         </NavLink>
+
+        <NavLink
+          to="/dashboard/activity/import/inspection"
+          className={({ isActive }) =>
+            isActive ? "import-tab active" : "import-tab"
+          }
+        >
+          Biên bản kiểm nghiệm
+        </NavLink>
       </div>
 
       <div className="import-layout-content">

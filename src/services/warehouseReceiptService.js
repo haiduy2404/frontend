@@ -39,6 +39,18 @@ export const updateWarehouseReceiptStatus = async (id, statusPayload) => {
   return response.data;
 };
 
+export const updateWarehouseReceiptInventoriesActual = async (
+  receiptCode,
+  payload
+) => {
+  const response = await axiosInstance.put(
+    `/inventory/warehouse-receipts/${receiptCode}/inventories-actual`,
+    payload
+  );
+
+  return response.data;
+};
+
 export const deleteWarehouseReceipt = async (id) => {
   const response = await axiosInstance.delete(
     `/inventory/warehouse-receipts/${id}`
@@ -46,12 +58,12 @@ export const deleteWarehouseReceipt = async (id) => {
   return response.data;
 };
 
-
 export default {
   getWarehouseReceiptsPageable,
   createWarehouseReceipt,
   getWarehouseReceiptByCode,
   updateWarehouseReceipt,
   updateWarehouseReceiptStatus,
+  updateWarehouseReceiptInventoriesActual,
   deleteWarehouseReceipt,
 };

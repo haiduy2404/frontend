@@ -1194,3 +1194,52 @@
 .print-reason-modal-body input:focus {
   border-color: #2563eb;
 }
+
+.goods-code-dropdown-header {
+  display: grid;
+  grid-template-columns: 220px 1fr 36px;
+  align-items: center;
+}
+
+.goods-code-dropdown-item {
+  display: grid;
+  grid-template-columns: 220px 1fr 36px;
+  align-items: center;
+}
+
+.goods-code-add-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #2563eb;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.goods-code-add-btn:hover {
+  background: #eff6ff;
+}
+
+.goods-code-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.readonly-light-input {
+  background: #f3f4f6 !important;
+  color: #374151;
+  cursor: not-allowed;
+}
+
+.readonly-light-input:disabled {
+  background: #f3f4f6 !important;
+  color: #374151;
+  opacity: 1;
+}

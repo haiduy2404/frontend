@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../styles/ImportOrderPage.css"; 
 import {
@@ -17,6 +17,7 @@ import {
 
 function ImportOrderPage() {
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [importOrders, setImportOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -32,7 +33,29 @@ function ImportOrderPage() {
 
  const unwrapData = (response) => response?.data || response;
  const navigate = useNavigate();
- const selectedRow = importOrders.find((item) => item.id === selectedId);
+
+ const filteredImportOrders = useMemo(() => {
+  const keyword = search.trim().toLowerCase();
+
+  if (!keyword) {
+    return importOrders;
+  }
+
+  return importOrders.filter((row) => {
+    const invoiceCode = String(
+      row.invoice_code || row.invoice_no || ""
+    ).toLowerCase();
+
+    const receiptCode = String(row.code || "").toLowerCase();
+
+    return (
+      invoiceCode.includes(keyword) ||
+      receiptCode.includes(keyword)
+    );
+  });
+}, [importOrders, search]);
+
+ const selectedRow = filteredImportOrders.find((item) => item.id === selectedId);
 
  const getReceiptStatusText = (status) => {
   switch (status) {
@@ -93,6 +116,7 @@ const fetchImportOrders = async () => {
     const results = Array.isArray(data?.results) ? data.results : [];
 
     setImportOrders(results);
+    setSelectedIds([]);
     setTotal(data?.total || results.length);
 
     if (results.length > 0) {
@@ -197,20 +221,77 @@ const fetchImportOrders = async () => {
     alert("Xóa phiếu nhập thất bại");
   }
 };
+
+  const isAllChecked =
+    filteredImportOrders.length > 0 &&
+    filteredImportOrders.every((row) => selectedIds.includes(row.id));
+
+  const handleToggleAll = (e) => {
+    const checked = e.target.checked;
+
+    if (checked) {
+      setSelectedIds(filteredImportOrders.map((row) => row.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleToggleOne = (e, rowId) => {
+    e.stopPropagation();
+
+    setSelectedIds((prev) => {
+      if (prev.includes(rowId)) {
+        return prev.filter((id) => id !== rowId);
+      }
+
+      return [...prev, rowId];
+    });
+  };
+
+    const handleDeleteSelectedReceipts = async () => {
+    if (selectedIds.length === 0) {
+      alert("Vui lòng chọn ít nhất một phiếu cần xóa");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn xóa ${selectedIds.length} phiếu nhập đã chọn không?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await Promise.all(selectedIds.map((id) => deleteWarehouseReceipt(id)));
+
+      setSelectedIds([]);
+      setSelectedId(null);
+      setDetailRows([]);
+      setSelectedReceiptDetail(null);
+
+      await fetchImportOrders();
+
+      alert("Xóa các phiếu nhập đã chọn thành công");
+    } catch (error) {
+      console.error("DELETE SELECTED RECEIPTS ERROR:", error.response?.data || error);
+      alert(
+        error.response?.data?.message ||
+          error.response?.data?.detail ||
+          "Xóa các phiếu nhập đã chọn thất bại"
+      );
+    }
+  };
+
   return (
     <div className="warehouse-import-page">
       <div className="warehouse-import-toolbar">
         <div className="warehouse-import-filters">
           <input
             className="warehouse-import-search"
-            placeholder="🔍  Tìm kiếm"
+            placeholder="🔍  Tìm kiếm số hóa đơn"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                setPage(1);
-                fetchImportOrders();
-              }
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setSelectedIds([]);
             }}
           />
 
@@ -271,8 +352,13 @@ const fetchImportOrders = async () => {
 
           <button
             className="delete-toolbar-btn"
-            disabled={!selectedRow}
+            disabled={!selectedRow && selectedIds.length === 0}
             onClick={() => {
+              if (selectedIds.length > 0) {
+                handleDeleteSelectedReceipts();
+                return;
+              }
+
               if (!selectedRow) {
                 alert("Vui lòng chọn phiếu cần xóa");
                 return;
@@ -282,7 +368,7 @@ const fetchImportOrders = async () => {
             }}
           >
             <RiDeleteBin6Line />
-            <span>Xóa</span>
+            <span>{selectedIds.length > 0 ? `Xóa (${selectedIds.length})` : "Xóa"}</span>
           </button>
 
           <button
@@ -301,7 +387,11 @@ const fetchImportOrders = async () => {
             <thead>
               <tr>
                 <th className="checkbox-col">
-                  <input type="checkbox" />
+                  <input
+                      type="checkbox"
+                      checked={isAllChecked}
+                      onChange={handleToggleAll}
+                  />
                 </th>
                 <th>Số hóa đơn</th>
                 <th>Tình trạng thực hiện</th>
@@ -315,7 +405,7 @@ const fetchImportOrders = async () => {
             </thead>
 
             <tbody>
-              {importOrders.map((row) => (
+              {filteredImportOrders.map((row) => (
                 <tr
                   key={row.id}
                   className={selectedId === row.id ? "selected" : ""}
@@ -325,7 +415,12 @@ const fetchImportOrders = async () => {
               }}
                 >
                   <td className="checkbox-col">
-                    <input type="checkbox" onClick={(e) => e.stopPropagation()} />
+                    <input
+                        type="checkbox"
+                        checked={selectedIds.includes(row.id)}
+                        onChange={(e) => handleToggleOne(e, row.id)}
+                        onClick={(e) => e.stopPropagation()}
+                    />
                   </td>
 
                   <td
@@ -372,8 +467,7 @@ const fetchImportOrders = async () => {
               <option value={100}>100</option>
             </select>
             <strong>
-              {importOrders.length > 0 ? (page - 1) * pageSize + 1 : 0} -{" "}
-              {Math.min(page * pageSize, total)}
+                {filteredImportOrders.length > 0 ? 1 : 0} - {filteredImportOrders.length}
             </strong>
 
             <button disabled={page <= 1} onClick={() => setPage((prev) => prev - 1)}>

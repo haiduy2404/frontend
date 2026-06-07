@@ -1,0 +1,385 @@
+.inspection-detail-page {
+  width: 100%;
+  height: 100%;
+  background: #eef2f7;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+/* Header */
+.inspection-detail-header {
+  min-height: 60px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.inspection-detail-header h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 22px;
+  color: #111827;
+}
+
+.inspection-detail-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: #6b7280;
+}
+
+.inspection-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.inspection-cancel-btn,
+.inspection-save-btn {
+  height: 32px;
+  min-width: 82px;
+  padding: 0 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.inspection-cancel-btn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #111827;
+}
+
+.inspection-save-btn {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.inspection-cancel-btn:hover {
+  background: #f3f4f6;
+}
+
+.inspection-save-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Card chung */
+.inspection-detail-card,
+.inspection-reference-card {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+/* Form */
+.inspection-detail-card {
+  padding: 14px;
+}
+
+.inspection-form-grid {
+  display: grid;
+  grid-template-columns: 220px minmax(260px, 1fr) minmax(260px, 1fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.inspection-form-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inspection-form-group label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.inspection-form-group input,
+.inspection-form-group select {
+  width: 100%;
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 0 9px;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+.inspection-form-group input:disabled,
+.inspection-form-group select:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.inspection-form-group input:focus,
+.inspection-form-group select:focus {
+  border-color: #2563eb;
+}
+
+/* Khung tham chiếu */
+.inspection-reference-card {
+  min-height: 58px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inspection-reference-title {
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.inspection-reference-text {
+  font-size: 13px;
+  line-height: 18px;
+  color: #374151;
+}
+
+.inspection-reference-text strong {
+  color: #111827;
+}
+
+.inspection-reference-link-btn {
+  height: 32px;
+  min-width: 128px;
+  padding: 0 12px;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.inspection-reference-link-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.inspection-reference-link-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Card bảng hàng hóa */
+.inspection-goods-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.inspection-goods-card h3 {
+  height: 40px;
+  margin: 0;
+  padding: 0 14px;
+  border-bottom: 1px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  box-sizing: border-box;
+}
+
+.inspection-goods-table-wrapper {
+  width: 100%;
+  overflow: auto;
+}
+
+.inspection-goods-table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
+}
+
+.inspection-goods-table th,
+.inspection-goods-table td {
+  height: 36px;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.inspection-goods-table th {
+  background: #f3f4f6;
+  text-align: center;
+  font-weight: 600;
+  color: #111827;
+  white-space: normal;
+  line-height: 17px;
+}
+
+.inspection-goods-table td {
+  background: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inspection-goods-table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.inspection-goods-table td input {
+  width: 100%;
+  height: 28px;
+  border: 1px solid #cbd5e1;
+  border-radius: 3px;
+  padding: 0 7px;
+  font-size: 13px;
+  box-sizing: border-box;
+  outline: none;
+  background: #ffffff;
+}
+
+.inspection-goods-table td input:focus {
+  border-color: #2563eb;
+}
+
+.inspection-goods-table .number-col {
+  text-align: right;
+}
+
+.inspection-goods-table .number-input {
+  text-align: right;
+}
+
+/* Cân cột bảng */
+.inspection-goods-table th:nth-child(1),
+.inspection-goods-table td:nth-child(1) {
+  width: 52px;
+  text-align: center;
+}
+
+.inspection-goods-table th:nth-child(2),
+.inspection-goods-table td:nth-child(2) {
+  width: 120px;
+}
+
+.inspection-goods-table th:nth-child(3),
+.inspection-goods-table td:nth-child(3) {
+  width: 260px;
+}
+
+.inspection-goods-table th:nth-child(4),
+.inspection-goods-table td:nth-child(4) {
+  width: 110px;
+  text-align: center;
+}
+
+.inspection-goods-table th:nth-child(5),
+.inspection-goods-table td:nth-child(5) {
+  width: 180px;
+}
+
+.inspection-goods-table th:nth-child(6),
+.inspection-goods-table td:nth-child(6) {
+  width: 220px;
+}
+
+.inspection-goods-table th:nth-child(7),
+.inspection-goods-table td:nth-child(7) {
+  width: 240px;
+}
+
+.inspection-empty-row {
+  height: 44px;
+  text-align: center;
+  color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .inspection-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .inspection-detail-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .inspection-detail-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .inspection-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inspection-reference-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .inspection-reference-link-btn {
+    width: 100%;
+  }
+}
+
+.inspection-edit-card {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.inspection-edit-title {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.inspection-edit-title h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #111827;
+}
+
+.inspection-edit-title p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.inspection-form-grid {
+  display: grid;
+  grid-template-columns: 220px minmax(320px, 1fr);
+  gap: 14px;
+  align-items: end;
+}

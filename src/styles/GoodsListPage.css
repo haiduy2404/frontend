@@ -428,3 +428,107 @@
   border: 1px solid #2563eb;
   color: #ffffff;
 }
+
+.goods-toolbar {
+  height: 56px;
+  padding: 8px 18px;
+  flex: 0 0 56px;
+  border-bottom: 1px solid #e5e7eb;
+
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  column-gap: 16px;
+  box-sizing: border-box;
+}
+
+.goods-toolbar-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.goods-toolbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.goods-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.goods-search {
+  width: 360px;
+  height: 36px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  padding: 0 14px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.goods-status-tabs {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.goods-status-tabs button {
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid #9ca3af;
+  background: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.goods-status-tabs button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.goods-status-tabs button:last-child {
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+
+.goods-status-tabs button.active {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+.icon-btn,
+.add-btn {
+  height: 36px;
+  border-radius: 5px;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.icon-btn {
+  width: 40px;
+  background: #f3f4f6;
+  color: #334155;
+  font-size: 20px;
+}
+
+.add-btn {
+  min-width: 92px;
+  padding: 0 16px;
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+}

@@ -12,6 +12,9 @@ import CompanyListPage from "./pages/company/CompanyListPage";
 import TransferRequestPrintPage from "./pages/activity/import/TransferRequestPrintPage";
 import ImportReceiptPrintNoVatForm from "./pages/activity/import/ImportReceiptPrintNoVatForm";
 import ImportReceiptPrintVatForm from "./pages/activity/import/ImportReceiptPrintVatForm";
+import InspectionPage from "./pages/activity/import/InspectionPage";
+import InspectionDetailPage from "./pages/activity/import/InspectionDetailPage";
+import InspectionPrintPage from "./pages/activity/import/InspectionPrintPage";
 
 function App() {
   return (
@@ -23,11 +26,14 @@ function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route path="stock-manager" element={<div>Trang quản lý kho</div>} />
           <Route path="stock-manager/stock-list" element={<StockListPage />} />
+
           <Route
             path="stock-manager/opening-stock"
             element={<OpeningStockPage />}
           />
+
           <Route path="stock-manager/goods-list" element={<GoodsListPage />} />
+
           <Route
             path="stock-manager/company-list"
             element={<CompanyListPage />}
@@ -36,6 +42,7 @@ function App() {
           <Route path="activity/import" element={<ImportLayout />}>
             <Route index element={<Navigate to="order" replace />} />
             <Route path="order" element={<ImportOrderPage />} />
+            <Route path="inspection" element={<InspectionPage />} />
           </Route>
         </Route>
 
@@ -47,6 +54,16 @@ function App() {
         <Route
           path="/dashboard/activity/import/order-detail/:id"
           element={<ImportOrderDetailPage />}
+        />
+
+        <Route
+          path="/dashboard/activity/import/inspection-detail/new"
+          element={<InspectionDetailPage />}
+        />
+
+        <Route
+          path="/dashboard/activity/import/inspection-detail/:id"
+          element={<InspectionDetailPage />}
         />
 
         <Route
@@ -65,6 +82,10 @@ function App() {
         />
 
         <Route path="/account" element={<AccountPage />} />
+        <Route
+          path="/dashboard/activity/import/inspection/:id/print"
+          element={<InspectionPrintPage />}
+        />
       </Routes>
     </BrowserRouter>
   );
