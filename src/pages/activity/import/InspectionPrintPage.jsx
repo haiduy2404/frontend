@@ -54,9 +54,9 @@ function InspectionPrintPage() {
   };
 
   const formatPrintQuantity = (value) => {
-    const number = parseNumber(value);
+    if (value === null || value === undefined || value === "") return "";
 
-    if (!number) return "";
+    const number = parseNumber(value);
 
     return number.toLocaleString("vi-VN", {
       minimumFractionDigits: 0,
@@ -138,17 +138,18 @@ function InspectionPrintPage() {
 
               return {
                 id: item.inventory_id || item.goods_id || index + 1,
-                goods_id: item.goods_id || "",
-                goods_code: item.goods_code || "",
-                goods_name: item.goods_name || "",
-                unit_name: item.unit_name || item.unit || "",
+                    id: item.inventory_id || item.goods_id || index + 1,
+                    goods_id: item.goods_id || "",
+                    goods_code: item.goods_code || "",
+                    goods_name: item.goods_name || "",
+                    unit_name: item.unit_name || item.unit || "",
 
-                document_quantity: formatViNumber(documentQuantity, 2),
-                qualified_quantity: formatViNumber(qualifiedQuantity, 2),
-                wrong_quantity: formatViNumber(wrongQuantity, 2),
+                    document_quantity: documentQuantity,
+                    qualified_quantity: qualifiedQuantity,
+                    wrong_quantity: wrongQuantity,
 
-                inspection_method: "",
-                note: item.note || "",
+                    inspection_method: "",
+                    note: item.note || "",
               };
             })
           : [];

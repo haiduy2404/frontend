@@ -239,7 +239,10 @@ function InspectionDetailPage() {
         await updateWarehouseReceiptInventoriesActual(
         form.warehouse_receipt_code,
         payload
-        );
+        )
+
+          const checkResponse = await getWarehouseReceiptByCode(form.warehouse_receipt_code);
+          console.log("AFTER SAVE CHECK:", checkResponse?.data || checkResponse);
 
         alert("Lưu số lượng kiểm nghiệm thành công");
         navigate("/dashboard/activity/import/inspection");
