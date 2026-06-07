@@ -131,6 +131,10 @@ function ImportReceiptPrintVatForm() {
   return result;
 };
 
+const inspectionCodeFromReceiptCode = String(id || "")
+    .replace(/\D/g, "")
+    .slice(-2);
+
 const numberToVietnameseText = (value) => {
   const number = Math.round(Number(value || 0));
 
@@ -278,8 +282,8 @@ const numberToVietnameseText = (value) => {
 
         <div className="receipt-info-row">
             <span>
-                Theo biên bản kiểm nghiệm số ........ và hóa đơn số{" "}
-                {invoiceCode || "........"} ngày {invoiceDate} của{" "}
+                Theo biên bản kiểm nghiệm số {inspectionCodeFromReceiptCode} và hóa đơn số{" "}
+                {invoiceCode} ngày {invoiceDate} của{" "}
                 <strong>{companyName}</strong>
             </span>
         </div>

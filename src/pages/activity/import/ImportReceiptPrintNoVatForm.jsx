@@ -210,6 +210,9 @@ const numberToVietnameseText = (value) => {
 
     const inspectionCode = getInspectionCodeFromReceiptCode(receipt?.code || id);
     const invoiceCode = receipt?.invoice_code || "";
+    const inspectionCodeFromReceiptCode = String(id || "")
+      .replace(/\D/g, "")
+      .slice(-2);
     const invoiceDate = formatViDate(receipt?.invoice_date);
     const receiptDateText = formatReceiptDateText(receipt?.receipt_date);
     const warehouseName = receipt?.warehouse?.name || receipt?.warehouse_name || "";
@@ -280,9 +283,9 @@ const signerGiamDoc = getMetadataValue("GIÁM ĐỐC");
 
         <div className="receipt-info-row">
           <span>
-            Theo biên bản kiểm nghiệm số {inspectionCode || "........"} và hóa đơn số{" "}
-            {invoiceCode || "........"} ngày {invoiceDate} của{" "}
-            <strong>{companyName}</strong>
+              Theo biên bản kiểm nghiệm số {inspectionCodeFromReceiptCode} và hóa đơn số{" "}
+              {invoiceCode} ngày {invoiceDate} của{" "}
+              <strong>{companyName}</strong>
           </span>
         </div>
 
