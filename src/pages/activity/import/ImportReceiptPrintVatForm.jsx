@@ -47,11 +47,11 @@ function ImportReceiptPrintVatForm() {
     fetchMetadata();
   }, []);
 
-  const signerThuKhoNhapKho = getMetadataValue("thủ kho_nhập kho");
+  const signerThuKhoNhapKho = getMetadataValue("THỦ KHO_NHẬP KHO");
   const signerNguoiLapPhieu = signerThuKhoNhapKho;
   const signerThuKho = signerThuKhoFromInput;
-  const signerPhongKhvt = getMetadataValue("phòng khvt");
-  const signerKeToanTruong = getMetadataValue("kế toán trưởng");
+  const signerPhongKhvt = getMetadataValue("PHÒNG KHVT");
+  const signerKeToanTruong = getMetadataValue("KẾ TOÁN TRƯỞNG");
   const signerGiamDoc = "";
 
   const formatReceiptDateText = (value) => {
