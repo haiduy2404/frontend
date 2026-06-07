@@ -11,6 +11,7 @@ import {
 function InspectionDetailPage() {
   const [showWarehouseKeeperModal, setShowWarehouseKeeperModal] = useState(false);
   const [warehouseKeeperName, setWarehouseKeeperName] = useState("");
+  const [inspectionOpinion, setInspectionOpinion] = useState("");
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -28,13 +29,14 @@ function InspectionDetailPage() {
     warehouse_receipt_code: "",
   });
 
-    const handleOpenWarehouseKeeperModal = () => {
+  const handleOpenWarehouseKeeperModal = () => {
     if (!form.warehouse_receipt_code) {
       alert("Vui lòng chọn phiếu nhập kho tham chiếu trước");
       return;
     }
 
     setWarehouseKeeperName("");
+    setInspectionOpinion("Số lượng đủ, đạt yêu cầu");
     setShowWarehouseKeeperModal(true);
   };
 
@@ -283,6 +285,7 @@ function InspectionDetailPage() {
       {
         state: {
           warehouseKeeperName: warehouseKeeperName.trim(),
+          inspectionOpinion: inspectionOpinion.trim(),
         },
       }
     );
@@ -452,7 +455,7 @@ function InspectionDetailPage() {
           <div className="inspection-print-modal-overlay">
             <div className="inspection-print-modal">
               <div className="inspection-print-modal-header">
-                <h3>Nhập người thủ kho</h3>
+                <h3>Nhập thêm thông tin</h3>
 
                 <button
                   type="button"
@@ -468,6 +471,16 @@ function InspectionDetailPage() {
                   value={warehouseKeeperName}
                   onChange={(e) => setWarehouseKeeperName(e.target.value)}
                   placeholder="Nhập người thủ kho"
+                />
+
+                <label className="inspection-opinion-label">
+                  Ý kiến của Ban kiểm nghiệm
+                </label>
+                <textarea
+                  value={inspectionOpinion}
+                  onChange={(e) => setInspectionOpinion(e.target.value)}
+                  placeholder="Nhập ý kiến của Ban kiểm nghiệm"
+                  rows={3}
                 />
               </div>
 

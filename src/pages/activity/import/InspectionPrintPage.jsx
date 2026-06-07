@@ -4,7 +4,6 @@ import "../../../styles/InspectionPrintPage.css";
 
 import { getWarehouseReceiptByCode } from "../../../services/warehouseReceiptService";
 import { getMetadata } from "../../../services/metadataService";
-import mauthongtu from "../../../assets/mauthongtu.png";
 
 function InspectionPrintPage() {
   const navigate = useNavigate();
@@ -12,6 +11,9 @@ function InspectionPrintPage() {
 
   const location = useLocation();
   const signerThuKho = location.state?.warehouseKeeperName || "";
+
+  const inspectionOpinion =
+    location.state?.inspectionOpinion || "Số lượng đủ, đạt yêu cầu";
 
   const [receipt, setReceipt] = useState(null);
   const [detailRows, setDetailRows] = useState([]);
@@ -183,6 +185,7 @@ function InspectionPrintPage() {
   }
 
   const inspectionCode = getInspectionCodeFromReceiptCode(id);
+  const receiptCodeText = getInspectionCodeFromReceiptCode(id);
 
   const companyName =
     receipt?.company?.name ||
@@ -240,11 +243,23 @@ function InspectionPrintPage() {
             </div>
 
             <div className="inspection-print-right-header">
-              <img
-                src={mauthongtu}
-                alt="Mẫu số 03-VT"
-                className="inspection-template-image"
-              />
+              <div className="inspection-template-text">
+                <div>
+                  <strong>Mẫu số: 03-VT</strong>
+                </div>
+
+                <div>
+                  (Ban hành theo TT số: 99/2025/TT-BTC
+                </div>
+
+                <div>
+                  Ngày 27/10/2025 của Bộ trưởng BTC)
+                </div>
+
+                <div className="inspection-template-number">
+                  Số: {receiptCodeText}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -446,7 +461,7 @@ function InspectionPrintPage() {
           </table>
 
           <div className="inspection-print-conclusion">
-            Ý kiến của Ban kiểm nghiệm : Số lượng đủ, đạt yêu cầu
+            Ý kiến của Ban kiểm nghiệm : {inspectionOpinion}
           </div>
 
           <div className="inspection-signature-title-row">

@@ -83,12 +83,29 @@
 .inspection-print-right-header {
   display: flex;
   justify-content: flex-end;
+  align-items: flex-start;
 }
 
-.inspection-template-image {
+.inspection-template-text {
   width: 41mm;
-  height: auto;
-  object-fit: contain;
+  min-height: 24mm;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.15;
+  color: #000000;
+  box-sizing: border-box;
+  padding-top: 1mm;
+}
+
+.inspection-template-text strong {
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.inspection-template-number {
+  margin-top: 1mm;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .inspection-print-info {

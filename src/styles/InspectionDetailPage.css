@@ -383,3 +383,24 @@
   gap: 14px;
   align-items: end;
 }
+
+.inspection-opinion-label {
+  margin-top: 12px;
+}
+
+.inspection-print-modal-body textarea {
+  width: 100%;
+  min-height: 78px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.inspection-print-modal-body textarea:focus {
+  border-color: #2563eb;
+}
