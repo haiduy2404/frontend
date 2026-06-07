@@ -278,7 +278,7 @@ const signerGiamDoc = getMetadataValue("GIÁM ĐỐC");
         <div className="receipt-info">
           <div className="receipt-info-row">
             <span>Họ và tên người giao: </span>
-            <strong>{signerThuKhoNhapKho}</strong>
+            <strong>{signerNguoiLapPhieu}</strong>
           </div>
 
         <div className="receipt-info-row">
