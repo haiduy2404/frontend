@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../../../styles/InspectionPrintPage.css";
 
 import { getWarehouseReceiptByCode } from "../../../services/warehouseReceiptService";
@@ -9,6 +9,9 @@ import mauthongtu from "../../../assets/mauthongtu.png";
 function InspectionPrintPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+
+  const location = useLocation();
+  const signerThuKho = location.state?.warehouseKeeperName || "";
 
   const [receipt, setReceipt] = useState(null);
   const [detailRows, setDetailRows] = useState([]);
@@ -199,14 +202,11 @@ function InspectionPrintPage() {
   const invoiceDateText = formatDateText(receipt?.invoice_date);
   const receiptDateText = formatDateText(receipt?.receipt_date);
 
-  const signerDaiDienKyThuat = getMetadataValue("đại diện kĩ thuật");
-  const signerKeToanTruong = getMetadataValue("kế toán trưởng");
-  const signerNguoiLapPhieu = getMetadataValue("người lập phiếu");
-  const signerPhoGiamDoc = getMetadataValue("phó giám đốc");
-  const signerPhongKhvt = getMetadataValue("phòng khvt");
-  const signerThuKho = getMetadataValue("thủ kho_nhập kho");
-  const signerTruongPhongVatTu = getMetadataValue("trưởng phòng kế hoạch - vật tư");
-  const signerTruongPhongKyThuat = getMetadataValue("trưởng phòng kĩ thuật");
+  const signerDaiDienKyThuat = getMetadataValue("TP KỸ THUẬT");
+  const signerKeToanTruong = getMetadataValue("KẾ TOÁN TRƯỞNG");
+  const signerNguoiLapPhieu = getMetadataValue("NGƯỜI LẬP PHIẾU");
+  const signerPhoGiamDoc = getMetadataValue("PHÓ GIÁM ĐỐC");
+  const signerTruongPhongVatTu = getMetadataValue("TP KẾ HOẠCH - VẬT TƯ");
 
   return (
     <div className="inspection-print-page">
@@ -307,7 +307,7 @@ function InspectionPrintPage() {
 
             <div className="inspection-member-row">
               <span>
-                + Ông/Bà: <strong>{signerTruongPhongKyThuat}</strong>
+                + Ông/Bà: <strong>{signerDaiDienKyThuat}</strong>
               </span>
 
               <span>
@@ -485,7 +485,7 @@ function InspectionPrintPage() {
           <div className="inspection-signer-name-row">
             <div>{signerDaiDienKyThuat}</div>
             <div>{signerThuKho}</div>
-            <div>{signerPhongKhvt}</div>
+            <div>{signerTruongPhongVatTu}</div>
             <div>{signerPhoGiamDoc}</div>
           </div>
         </div>

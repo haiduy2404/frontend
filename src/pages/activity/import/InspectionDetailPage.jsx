@@ -9,6 +9,8 @@ import {
 } from "../../../services/warehouseReceiptService";
 
 function InspectionDetailPage() {
+  const [showWarehouseKeeperModal, setShowWarehouseKeeperModal] = useState(false);
+  const [warehouseKeeperName, setWarehouseKeeperName] = useState("");
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -25,6 +27,16 @@ function InspectionDetailPage() {
     inspection_code: "",
     warehouse_receipt_code: "",
   });
+
+    const handleOpenWarehouseKeeperModal = () => {
+    if (!form.warehouse_receipt_code) {
+      alert("Vui lòng chọn phiếu nhập kho tham chiếu trước");
+      return;
+    }
+
+    setWarehouseKeeperName("");
+    setShowWarehouseKeeperModal(true);
+  };
 
   const unwrapData = (response) => response?.data || response;
 
@@ -252,18 +264,24 @@ function InspectionDetailPage() {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const handlePrintInspection = () => {
-    window.print();
-  };
-
   const handleOpenInspectionPrint = () => {
     if (!form.warehouse_receipt_code) {
       alert("Vui lòng chọn phiếu nhập kho tham chiếu trước");
       return;
     }
 
+    if (!warehouseKeeperName.trim()) {
+      alert("Vui lòng nhập người thủ kho");
+      return;
+    }
+
     navigate(
-      `/dashboard/activity/import/inspection/${form.warehouse_receipt_code}/print`
+      `/dashboard/activity/import/inspection/${form.warehouse_receipt_code}/print`,
+      {
+        state: {
+          warehouseKeeperName: warehouseKeeperName.trim(),
+        },
+      }
     );
   };
 
@@ -288,13 +306,13 @@ function InspectionDetailPage() {
             {isPrintMode ? "Quay lại" : "Hủy"}
           </button>
 
-          <button
+        <button
             type="button"
             className="inspection-save-btn"
-            onClick={isPrintMode ? handleOpenInspectionPrint : handleSave}
+            onClick={isPrintMode ? handleOpenWarehouseKeeperModal : handleSave}
           >
             {isPrintMode ? "In Biên bản kiểm nghiệm" : "Lưu"}
-          </button>
+        </button>
         </div>
       </div>
 
@@ -427,6 +445,49 @@ function InspectionDetailPage() {
           </table>
         </div>
       </div>
+          {showWarehouseKeeperModal && (
+          <div className="inspection-print-modal-overlay">
+            <div className="inspection-print-modal">
+              <div className="inspection-print-modal-header">
+                <h3>Nhập người thủ kho</h3>
+
+                <button
+                  type="button"
+                  onClick={() => setShowWarehouseKeeperModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="inspection-print-modal-body">
+                <label>Người thủ kho</label>
+                <input
+                  value={warehouseKeeperName}
+                  onChange={(e) => setWarehouseKeeperName(e.target.value)}
+                  placeholder="Nhập người thủ kho"
+                />
+              </div>
+
+              <div className="inspection-print-modal-footer">
+                <button
+                  type="button"
+                  className="inspection-print-cancel-btn"
+                  onClick={() => setShowWarehouseKeeperModal(false)}
+                >
+                  Hủy
+                </button>
+
+                <button
+                  type="button"
+                  className="inspection-print-confirm-btn"
+                  onClick={handleOpenInspectionPrint}
+                >
+                  Đồng ý in
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
