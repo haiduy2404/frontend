@@ -388,24 +388,24 @@ function InspectionPage() {
 
                     {!detailLoading &&
                         detailRows.map((item, index) => {
-                        const documentQuantity =
-                            item.original_quantity ||
-                            item.document_quantity ||
-                            item.quantity ||
-                            "-";
+                    const formatQuantity = (value) => {
+                      if (value === null || value === undefined || value === "") return "-";
 
-                        const acceptedQuantity =
-                            item.accepted_quantity ||
-                            item.qualified_quantity ||
-                            item.remaining_quantity ||
-                            item.original_quantity ||
-                            item.quantity ||
-                        "-";
+                      const number = Number(value);
 
-                        const rejectedQuantity =
-                            item.rejected_quantity ||
-                            item.wrong_quantity ||
-                            "0.000";
+                      if (Number.isNaN(number)) return value;
+
+                      return number.toLocaleString("vi-VN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      });
+                    };
+
+                    const documentQuantity = formatQuantity(item.original_quantity);
+
+                    const acceptedQuantity = formatQuantity(item.accepted_quantity);
+
+                    const rejectedQuantity = formatQuantity(item.rejected_quantity);
 
                         return (
                         <tr key={item.inventory_id || item.goods_id || index}>

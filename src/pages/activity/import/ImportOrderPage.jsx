@@ -162,12 +162,12 @@ const fetchImportOrders = async () => {
       return Number(text) || 0;
     };
 
-    const formatMoney = (value) => {
-      return Number(value || 0).toLocaleString("vi-VN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    };
+const formatMoney = (value) => {
+  return parseMoney(value).toLocaleString("vi-VN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
     const detailTotalAmount = detailRows.reduce((sum, item) => {
     const quantity = parseMoney(item.original_quantity || item.quantity || 0);
@@ -517,8 +517,8 @@ const fetchImportOrders = async () => {
 
                     {!detailLoading &&
                       detailRows.map((item, index) => {
-                        const quantity = parseMoney(item.original_quantity || 0);
-                        const unitPrice = parseMoney(item.unit_price || 0);
+                        const quantity = parseMoney(item.original_quantity);
+                        const unitPrice = parseMoney(item.unit_price);
                         const amount = quantity * unitPrice;
 
                         return (
@@ -527,9 +527,20 @@ const fetchImportOrders = async () => {
                             <td>{item.goods_code || "-"}</td>
                             <td>{item.goods_name || "-"}</td>
                             <td>{item.unit_name || "-"}</td>
-                            <td className="number-col">{item.original_quantity || "-"}</td>
                             <td className="number-col">
-                              {item.remaining_quantity || item.original_quantity || "-"}
+                              {item.request_quantity !== null &&
+                              item.request_quantity !== undefined &&
+                              item.request_quantity !== ""
+                                ? formatMoney(parseMoney(item.request_quantity))
+                                : "-"}
+                            </td>
+
+                            <td className="number-col">
+                              {item.original_quantity !== null &&
+                              item.original_quantity !== undefined &&
+                              item.original_quantity !== ""
+                                ? formatMoney(parseMoney(item.original_quantity))
+                                : "-"}
                             </td>
                             <td className="number-col">{formatMoney(unitPrice)}</td>
                             <td className="number-col">{formatMoney(amount)}</td>
@@ -544,26 +555,23 @@ const fetchImportOrders = async () => {
                           <td>Tổng</td>
                           <td></td>
                           <td></td>
-                          <td className="number-col">
-                            {formatMoney(
-                              detailRows.reduce(
-                                (sum, item) => sum + parseMoney(item.original_quantity || 0),
-                                0
-                              )
-                            )}
-                          </td>
-                          <td className="number-col">
-                            {formatMoney(
-                              detailRows.reduce(
-                                (sum, item) =>
-                                  sum +
-                                  parseMoney(
-                                    item.remaining_quantity || item.original_quantity || 0
-                                  ),
-                                0
-                              )
-                            )}
-                          </td>
+                            <td className="number-col">
+                              {formatMoney(
+                                detailRows.reduce(
+                                  (sum, item) => sum + parseMoney(item.request_quantity),
+                                  0
+                                )
+                              )}
+                            </td>
+
+                            <td className="number-col">
+                              {formatMoney(
+                                detailRows.reduce(
+                                  (sum, item) => sum + parseMoney(item.original_quantity),
+                                  0
+                                )
+                              )}
+                            </td>
                           <td></td>
                           <td className="number-col">{formatMoney(detailTotalAmount)}</td>
                         </tr>

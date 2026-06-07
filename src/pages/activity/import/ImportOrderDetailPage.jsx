@@ -455,7 +455,7 @@ function ImportOrderDetailPage() {
 };
 
   const formatViNumber = (value, fractionDigits = 2) => {
-  const number = Number(value || 0);
+  const number = parseNumber(value);
 
   return number.toLocaleString("vi-VN", {
     minimumFractionDigits: fractionDigits,
@@ -754,12 +754,12 @@ const handleComplete = async () => {
         setItems(
           lines.length > 0
             ? lines.map((line, index) => {
-                const requestedQuantity = Number(
-                  line.request_quantity || line.requested_quantity || line.original_quantity || 0
-                );
+                  const requestedQuantity = parseNumber(
+                    line.request_quantity || line.requested_quantity || line.original_quantity || 0
+                  );
 
-                const originalQuantity = Number(line.original_quantity || 0);
-                const unitPrice = Number(line.unit_price || 0);
+                  const originalQuantity = parseNumber(line.original_quantity || 0);
+                  const unitPrice = parseNumber(line.unit_price || 0);
 
                   return {
                     id: line.inventory_id || line.id || line.goods_id || index + 1,
@@ -779,7 +779,7 @@ const handleComplete = async () => {
                     actual_quantity: formatViNumber(originalQuantity, 2),
                     marked_old: requestedQuantity === originalQuantity,
                     unit_price: formatViNumber(unitPrice, 2),
-                    amount: formatViNumber(requestedQuantity * unitPrice, 2),
+                    amount: formatViNumber(originalQuantity * unitPrice, 2),
                     is_delete: false,
                   };
               })
