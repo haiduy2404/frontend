@@ -24,6 +24,15 @@ function ImportReceiptPrintNoVatForm() {
     return metadataMap[normalizeKey(key)] || "";
   };
 
+  const getInspectionCodeFromReceiptCode = (receiptCode) => {
+  const text = String(receiptCode || "");
+  const numbers = text.replace(/\D/g, "");
+
+  if (!numbers) return "";
+
+  return numbers.slice(-2).padStart(2, "0");
+};
+
   const formatReceiptDateText = (value) => {
     if (!value) return "Ngày      tháng      năm";
 
@@ -157,6 +166,14 @@ const numberToVietnameseText = (value) => {
   return `${result.charAt(0).toUpperCase()}${result.slice(1)} đồng chẵn.`;
 };
 
+    const getInspectionCodeFromReceiptCode = (receiptCode) => {
+    const text = String(receiptCode || "");
+    const numbers = text.replace(/\D/g, "");
+
+    if (!numbers) return "";
+
+    return numbers.slice(-2).padStart(2, "0");
+  };
     const formatViDate = (value) => {
         if (!value) return "........";
 
@@ -200,6 +217,7 @@ const numberToVietnameseText = (value) => {
         .join(" ");
     };
 
+    const inspectionCode = getInspectionCodeFromReceiptCode(receipt?.code || id);
     const invoiceCode = receipt?.invoice_code || "";
     const invoiceDate = formatViDate(receipt?.invoice_date);
     const receiptDateText = formatReceiptDateText(receipt?.receipt_date);
@@ -224,12 +242,11 @@ const numberToVietnameseText = (value) => {
     return sum + quantity * unitPrice;
 }, 0);
 
-const signerThuKhoNhapKho = getMetadataValue("thủ kho_nhập kho");
-const signerNguoiLapPhieu = signerThuKhoNhapKho;
+const signerNguoiLapPhieu = getMetadataValue("NGƯỜI LẬP PHIẾU");
 const signerThuKho = signerThuKhoFromInput;
-const signerPhongKhvt = getMetadataValue("phòng khvt");
-const signerKeToanTruong = getMetadataValue("kế toán trưởng");
-const signerGiamDoc = "";
+const signerPhongKhvt = getMetadataValue("PHÒNG KHVT");
+const signerKeToanTruong = getMetadataValue("KẾ TOÁN TRƯỞNG");
+const signerGiamDoc = getMetadataValue("GIÁM ĐỐC");
 
   return (
     <div className="import-receipt-print-page">
@@ -271,11 +288,11 @@ const signerGiamDoc = "";
           </div>
 
         <div className="receipt-info-row">
-            <span>
-                Theo biên bản kiểm nghiệm số ........ và hóa đơn số{" "}
-                {invoiceCode || "........"} ngày {invoiceDate} của{" "}
-                <strong>{companyName}</strong>
-            </span>
+          <span>
+            Theo biên bản kiểm nghiệm số {inspectionCode || "........"} và hóa đơn số{" "}
+            {invoiceCode || "........"} ngày {invoiceDate} của{" "}
+            <strong>{companyName}</strong>
+          </span>
         </div>
 
           <div className="receipt-info-row receipt-warehouse-row">
