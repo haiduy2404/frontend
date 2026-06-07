@@ -58,9 +58,9 @@ function ImportReceiptPrintVatForm() {
     if (!value) return "Ngày      tháng      năm";
 
     const dateOnly = String(value).split("T")[0];
-    const [year, month, day] = dateOnly.split("-");
+    const [day, month, year] = dateOnly.split("-");
 
-    if (!year || !month || !day) return "Ngày      tháng      năm";
+    if (!day || !month || !year) return "Ngày      tháng      năm";
 
     return `Ngày ${day} tháng ${month} năm ${year}`;
   };
@@ -172,9 +172,9 @@ const numberToVietnameseText = (value) => {
         if (!value) return "........";
 
         const dateOnly = String(value).split("T")[0];
-        const [year, month, day] = dateOnly.split("-");
+        const [day, month, year] = dateOnly.split("-");
 
-        if (!year || !month || !day) return "........";
+        if (!day || !month || !year) return "........";
 
         return `${day}/${month}/${year}`;
   };

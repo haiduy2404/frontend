@@ -132,21 +132,9 @@ function InspectionPrintPage() {
 
         const mappedRows = Array.isArray(rows)
           ? rows.map((item, index) => {
-              const documentQuantity =
-                item.document_quantity ||
-                item.original_quantity ||
-                item.quantity ||
-                0;
-
-              const qualifiedQuantity =
-                item.qualified_quantity ||
-                item.remaining_quantity ||
-                item.original_quantity ||
-                item.quantity ||
-                0;
-
-              const wrongQuantity =
-                parseNumber(documentQuantity) - parseNumber(qualifiedQuantity);
+              const documentQuantity = item.original_quantity;
+              const qualifiedQuantity = item.accepted_quantity;
+              const wrongQuantity = item.rejected_quantity;
 
               return {
                 id: item.inventory_id || item.goods_id || index + 1,
@@ -154,10 +142,12 @@ function InspectionPrintPage() {
                 goods_code: item.goods_code || "",
                 goods_name: item.goods_name || "",
                 unit_name: item.unit_name || item.unit || "",
+
                 document_quantity: formatViNumber(documentQuantity, 2),
                 qualified_quantity: formatViNumber(qualifiedQuantity, 2),
                 wrong_quantity: formatViNumber(wrongQuantity, 2),
-                inspection_method: item.inspection_method || "",
+
+                inspection_method: "",
                 note: item.note || "",
               };
             })
@@ -203,8 +193,6 @@ function InspectionPrintPage() {
   const receiptDateText = formatDateText(receipt?.receipt_date);
 
   const signerDaiDienKyThuat = getMetadataValue("TP KỸ THUẬT");
-  const signerKeToanTruong = getMetadataValue("KẾ TOÁN TRƯỞNG");
-  const signerNguoiLapPhieu = getMetadataValue("NGƯỜI LẬP PHIẾU");
   const signerPhoGiamDoc = getMetadataValue("PHÓ GIÁM ĐỐC");
   const signerTruongPhongVatTu = getMetadataValue("TP KẾ HOẠCH - VẬT TƯ");
 
