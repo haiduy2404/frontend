@@ -24,15 +24,6 @@ function ImportReceiptPrintNoVatForm() {
     return metadataMap[normalizeKey(key)] || "";
   };
 
-  const getInspectionCodeFromReceiptCode = (receiptCode) => {
-  const text = String(receiptCode || "");
-  const numbers = text.replace(/\D/g, "");
-
-  if (!numbers) return "";
-
-  return numbers.slice(-2).padStart(2, "0");
-};
-
   const formatReceiptDateText = (value) => {
     if (!value) return "Ngày      tháng      năm";
 
