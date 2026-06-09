@@ -15,6 +15,11 @@ import {
   RiCheckboxCircleLine,
 } from "react-icons/ri";
 
+import {
+  getDefaultImportOrderFilters,
+  buildImportOrderFilterParams,
+} from "./utils/importOrderFilterUtils";
+
 function ImportOrderPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -29,6 +34,7 @@ function ImportOrderPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [openActionId, setOpenActionId] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
+  const [filters, setFilters] = useState(getDefaultImportOrderFilters());
 
 
  const unwrapData = (response) => response?.data || response;
@@ -101,14 +107,18 @@ function ImportOrderPage() {
   }
 };
 
-const fetchImportOrders = async () => {
+const fetchImportOrders = async (customParams = {}) => {
   try {
     setLoading(true);
+
+    const filterParams = buildImportOrderFilterParams(filters);
 
     const response = await getWarehouseReceiptsPageable({
       search,
       page,
       page_size: pageSize,
+      ...filterParams,
+      ...customParams,
     });
 
     const data = unwrapData(response);
@@ -281,6 +291,62 @@ const formatMoney = (value) => {
     }
   };
 
+    const handleFilterChange = (e) => {
+      const { name, value } = e.target;
+
+      const nextFilters = {
+        ...filters,
+        [name]: value,
+      };
+
+      setFilters(nextFilters);
+
+      if (nextFilters.time_type === "custom") {
+        if (!nextFilters.start_date || !nextFilters.end_date) {
+          return;
+        }
+
+        if (new Date(nextFilters.start_date) > new Date(nextFilters.end_date)) {
+          alert("Ngày bắt đầu không được lớn hơn ngày kết thúc");
+          return;
+        }
+      }
+
+      const filterParams = buildImportOrderFilterParams(nextFilters);
+
+      setPage(1);
+
+      fetchImportOrders({
+        page: 1,
+        ...filterParams,
+      });
+    };
+  
+    const handleTimeTypeChange = (e) => {
+    const value = e.target.value;
+
+    const nextFilters = {
+      ...filters,
+      time_type: value,
+      start_date: value === "custom" ? filters.start_date : "",
+      end_date: value === "custom" ? filters.end_date : "",
+    };
+
+    setFilters(nextFilters);
+    setPage(1);
+
+    if (value === "custom") {
+      return;
+    }
+
+    const filterParams = buildImportOrderFilterParams(nextFilters);
+
+    fetchImportOrders({
+      page: 1,
+      ...filterParams,
+    });
+  };
+
   return (
     <div className="warehouse-import-page">
       <div className="warehouse-import-toolbar">
@@ -294,13 +360,39 @@ const formatMoney = (value) => {
               setSelectedIds([]);
             }}
           />
+            <select
+              className="warehouse-import-time-select"
+              name="time_type"
+              value={filters.time_type}
+              onChange={handleTimeTypeChange}
+            >
+              <option value="this_month">Tháng này</option>
+              <option value="quarter_1">Quý 1</option>
+              <option value="quarter_2">Quý 2</option>
+              <option value="quarter_3">Quý 3</option>
+              <option value="quarter_4">Quý 4</option>
+              <option value="custom">Tùy chọn</option>
+            </select>
 
-          <select>
-            <option>Thời gian: Đầu năm tới hiện tại</option>
-            <option>Hôm nay</option>
-            <option>Tháng này</option>
-            <option>Năm này</option>
-          </select>
+            {filters.time_type === "custom" && (
+              <>
+                <input
+                  type="date"
+                  name="start_date"
+                  className="warehouse-import-date-input"
+                  value={filters.start_date}
+                  onChange={handleFilterChange}
+                />
+
+                <input
+                  type="date"
+                  name="end_date"
+                  className="warehouse-import-date-input"
+                  value={filters.end_date}
+                  onChange={handleFilterChange}
+                />
+              </>
+            )}
         </div>
 
         <div className="warehouse-import-actions">

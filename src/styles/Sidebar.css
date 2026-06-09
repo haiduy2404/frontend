@@ -163,3 +163,144 @@
   font-size: 20px;
   padding: 0;
 }
+
+.sidebar {
+  position: relative;
+  z-index: 20;
+}
+
+.sidebar-category-wrap {
+  position: relative;
+}
+
+.category-mega-menu {
+  position: absolute;
+  left: calc(100% + 16px);
+  bottom: 0;
+  width: 640px;
+  min-height: 380px;
+  background: #111827;
+  border-radius: 12px;
+  padding: 34px 38px;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 58px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+  z-index: 999;
+}
+
+.category-mega-menu::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 0;
+  width: 18px;
+  height: 100%;
+}
+
+.category-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.category-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.4px;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+}
+
+.category-title-second {
+  margin-top: 30px;
+}
+
+.category-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 10px 0;
+  line-height: 1.4;
+  transition: all 0.15s ease;
+}
+
+.category-link:hover {
+  color: #93c5fd;
+  transform: translateX(4px);
+}
+
+.category-link.active {
+  color: #60a5fa;
+}
+
+.sidebar-item.active-parent {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.sidebar-arrow {
+  margin-left: auto;
+}
+
+.sidebar-report-wrap {
+  position: relative;
+}
+
+.report-mega-menu {
+  position: absolute;
+  left: calc(100% + 16px);
+  bottom: 0;
+  width: 320px;
+  min-height: 230px;
+  background: #111827;
+  border-radius: 12px;
+  padding: 30px 34px;
+  box-sizing: border-box;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+  z-index: 999;
+}
+
+.report-mega-menu::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 0;
+  width: 18px;
+  height: 100%;
+}
+
+.report-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.4px;
+  margin-bottom: 22px;
+  text-transform: uppercase;
+}
+
+.report-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 10px 0;
+  line-height: 1.4;
+  transition: all 0.15s ease;
+}
+
+.report-link:hover {
+  color: #93c5fd;
+  transform: translateX(4px);
+}
+
+.report-link.active {
+  color: #60a5fa;
+}

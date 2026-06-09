@@ -404,3 +404,69 @@
 .inspection-print-modal-body textarea:focus {
   border-color: #2563eb;
 }
+
+/* Tăng kích cỡ chữ toàn bộ trang */
+.inspection-detail-page {
+  font-size: 15px;
+}
+
+.inspection-detail-header h2 {
+  font-size: 21px;
+  line-height: 26px;
+}
+
+.inspection-detail-header p {
+  font-size: 15px;
+  line-height: 21px;
+}
+
+.inspection-form-group label,
+.inspection-reference-title,
+.inspection-reference-text,
+.inspection-edit-title p {
+  font-size: 15px;
+  line-height: 21px;
+}
+
+.inspection-form-group input,
+.inspection-form-group select {
+  height: 38px;
+  font-size: 15px;
+}
+
+.inspection-cancel-btn,
+.inspection-save-btn,
+.inspection-reference-link-btn {
+  height: 36px;
+  font-size: 15px;
+}
+
+.inspection-goods-card h3,
+.inspection-edit-title h3 {
+  font-size: 17px;
+}
+
+.inspection-goods-table {
+  font-size: 15px;
+}
+
+.inspection-goods-table th,
+.inspection-goods-table td {
+  height: 42px;
+  padding: 8px 10px;
+  font-size: 15px;
+}
+
+.inspection-goods-table th {
+  line-height: 20px;
+}
+
+.inspection-goods-table td input {
+  height: 32px;
+  font-size: 15px;
+}
+
+.inspection-print-modal-body textarea {
+  font-size: 16px;
+  line-height: 22px;
+}

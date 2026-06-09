@@ -7,6 +7,11 @@ import {
   getWarehouseReceiptByCode,
 } from "../../../services/warehouseReceiptService";
 
+import {
+  getDefaultImportOrderFilters,
+  buildImportOrderFilterParams,
+} from "./utils/importOrderFilterUtils";
+
 import { RiEdit2Line } from "react-icons/ri";
 
 function InspectionPage() {
@@ -25,8 +30,22 @@ function InspectionPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
   const [total, setTotal] = useState(0);
+  const [filters, setFilters] = useState(getDefaultImportOrderFilters());
 
   const unwrapData = (response) => response?.data || response;
+  const formatDate = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return value;
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+};
   const getInspectionCodeFromReceiptCode = (receiptCode) => {
     const text = String(receiptCode || "");
 
@@ -100,16 +119,18 @@ function InspectionPage() {
       setDetailLoading(false);
     }
   };
+const fetchInspections = async (customParams = {}) => {
+  try {
+    setLoading(true);
+    const filterParams = buildImportOrderFilterParams(filters);
 
-  const fetchInspections = async () => {
-    try {
-      setLoading(true);
-
-      const response = await getWarehouseReceiptsPageable({
-        search,
-        page,
-        page_size: pageSize,
-      });
+    const response = await getWarehouseReceiptsPageable({
+      search,
+      page,
+      page_size: pageSize,
+      ...filterParams,
+      ...customParams,
+    });
 
       const data = unwrapData(response);
       const results = Array.isArray(data?.results) ? data.results : [];
@@ -195,6 +216,62 @@ function InspectionPage() {
     navigate(`/dashboard/activity/import/inspection-detail/${receiptCode}`);
     };
 
+  const handleFilterChange = (e) => {
+  const { name, value } = e.target;
+
+  const nextFilters = {
+    ...filters,
+    [name]: value,
+  };
+
+  setFilters(nextFilters);
+
+  if (nextFilters.time_type === "custom") {
+    if (!nextFilters.start_date || !nextFilters.end_date) {
+      return;
+    }
+
+    if (new Date(nextFilters.start_date) > new Date(nextFilters.end_date)) {
+      alert("Ngày bắt đầu không được lớn hơn ngày kết thúc");
+      return;
+    }
+  }
+
+  const filterParams = buildImportOrderFilterParams(nextFilters);
+
+  setPage(1);
+
+  fetchInspections({
+    page: 1,
+    ...filterParams,
+  });
+};
+
+  const handleTimeTypeChange = (e) => {
+    const value = e.target.value;
+
+    const nextFilters = {
+      ...filters,
+      time_type: value,
+      start_date: value === "custom" ? filters.start_date : "",
+      end_date: value === "custom" ? filters.end_date : "",
+    };
+
+    setFilters(nextFilters);
+    setPage(1);
+
+    if (value === "custom") {
+      return;
+    }
+
+    const filterParams = buildImportOrderFilterParams(nextFilters);
+
+    fetchInspections({
+      page: 1,
+      ...filterParams,
+    });
+  };
+
   return (
     <div className="inspection-page">
       <div className="inspection-toolbar">
@@ -210,12 +287,39 @@ function InspectionPage() {
             onKeyDown={handleSearchKeyDown}
           />
 
-          <select>
-            <option>Thời gian: Đầu năm tới hiện tại</option>
-            <option>Hôm nay</option>
-            <option>Tháng này</option>
-            <option>Năm này</option>
+          <select
+            className="inspection-time-select"
+            name="time_type"
+            value={filters.time_type}
+            onChange={handleTimeTypeChange}
+          >
+            <option value="this_month">Tháng này</option>
+            <option value="quarter_1">Quý 1</option>
+            <option value="quarter_2">Quý 2</option>
+            <option value="quarter_3">Quý 3</option>
+            <option value="quarter_4">Quý 4</option>
+            <option value="custom">Tùy chọn</option>
           </select>
+
+          {filters.time_type === "custom" && (
+            <>
+              <input
+                type="date"
+                name="start_date"
+                className="inspection-date-input"
+                value={filters.start_date}
+                onChange={handleFilterChange}
+              />
+
+              <input
+                type="date"
+                name="end_date"
+                className="inspection-date-input"
+                value={filters.end_date}
+                onChange={handleFilterChange}
+              />
+            </>
+          )}
             </div>
                 <div className="inspection-actions">
                 <button
@@ -244,6 +348,7 @@ function InspectionPage() {
                 </th>
                 <th>Số biên bản kiểm nghiệm</th>
                 <th>Tham chiếu phiếu nhập kho</th>
+                <th>Ngày nhập kho</th>
               </tr>
             </thead>
 
@@ -251,11 +356,18 @@ function InspectionPage() {
             {!loading &&
             filteredInspections.map((row) => {
                 const receiptCode =
-                row.receipt_code ||
-                row.warehouse_receipt_code ||
-                row.code ||
-                row.invoice_code ||
+                  row.receipt_code ||
+                  row.warehouse_receipt_code ||
+                  row.code ||
+                  row.invoice_code ||
                 "-";
+                const receiptDate =
+                  row.receipt_date ||
+                  row.warehouse_receipt_date ||
+                  row.import_date ||
+                  row.created_at ||
+                  row.date ||
+                null;
 
                 const inspectionCode = getInspectionCodeFromReceiptCode(receiptCode);
 
@@ -291,13 +403,14 @@ function InspectionPage() {
                     </td>
 
                     <td>{receiptCode}</td>
+                    <td>{formatDate(receiptDate)}</td>
                 </tr>
                 );
             })}
 
               {!loading && filteredInspections.length === 0 && (
                 <tr>
-                  <td className="inspection-empty-row" colSpan={3}>
+                  <td className="inspection-empty-row" colSpan={4}>
                     Không có biên bản kiểm nghiệm
                   </td>
                 </tr>

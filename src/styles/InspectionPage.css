@@ -412,3 +412,89 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* Tăng kích cỡ chữ InspectionPage */
+.inspection-page {
+  font-size: 15px;
+}
+
+.inspection-toolbar {
+  height: 54px;
+  flex-basis: 54px;
+}
+
+.inspection-search {
+  height: 36px;
+  font-size: 15px;
+}
+
+.inspection-filters select,
+.inspection-pagination select,
+.inspection-detail-pagination select {
+  height: 36px;
+  font-size: 15px;
+}
+
+.inspection-add-btn,
+.inspection-edit-btn {
+  height: 36px;
+  font-size: 15px;
+}
+
+.inspection-table {
+  font-size: 15px;
+}
+
+.inspection-table th,
+.inspection-table td {
+  height: 40px;
+  padding: 8px 10px;
+  font-size: 15px;
+}
+
+.inspection-pagination,
+.inspection-detail-pagination {
+  height: 44px;
+  flex-basis: 44px;
+  font-size: 15px;
+}
+
+.inspection-pagination button,
+.inspection-detail-pagination button {
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
+}
+
+.inspection-detail-splitter {
+  height: 22px;
+  flex-basis: 22px;
+  font-size: 14px;
+}
+
+.inspection-detail {
+  height: 310px;
+  flex-basis: 310px;
+}
+
+.inspection-detail h3 {
+  height: 44px;
+  flex-basis: 44px;
+  font-size: 17px;
+}
+
+.inspection-detail-table {
+  font-size: 15px;
+}
+
+.inspection-detail-table th,
+.inspection-detail-table td {
+  height: 40px;
+  padding: 8px 10px;
+  font-size: 15px;
+}
+
+.inspection-empty-row {
+  height: 48px;
+  font-size: 15px;
+}

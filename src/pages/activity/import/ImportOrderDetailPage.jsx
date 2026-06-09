@@ -54,6 +54,9 @@ function ImportOrderDetailPage() {
     const isLockedOnlyPrint = isPrintMode;
     const [showPrintReasonModal, setShowPrintReasonModal] = useState(false);
     const [printReason, setPrintReason] = useState("");
+    const [transferBankId, setTransferBankId] = useState("");
+    const [transferBankName, setTransferBankName] = useState("");
+    const [transferBankAccountNumber, setTransferBankAccountNumber] = useState("");
     const [showReceiptPrintModal, setShowReceiptPrintModal] = useState(false);
     const [receiptWarehouseKeeper, setReceiptWarehouseKeeper] = useState("");
     const [showAddGoodsModal, setShowAddGoodsModal] = useState(false);
@@ -79,25 +82,25 @@ function ImportOrderDetailPage() {
     return `${month}/${year}`;
   };
 
-const getTodayViDate = () => {
-  const today = new Date();
+  const getTodayViDate = () => {
+    const today = new Date();
 
-  const day = String(today.getDate()).padStart(2, "0");
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const year = today.getFullYear();
+    const day = String(today.getDate()).padStart(2, "0");
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const year = today.getFullYear();
 
-  return `${day}/${month}/${year}`;
-};
+    return `${day}/${month}/${year}`;
+  };
 
-const formatPickerDateToViDate = (value) => {
-  if (!value) return "";
+  const formatPickerDateToViDate = (value) => {
+    if (!value) return "";
 
-  const [year, month, day] = value.split("-");
+    const [year, month, day] = value.split("-");
 
-  if (!year || !month || !day) return value;
+    if (!year || !month || !day) return value;
 
-  return `${day}/${month}/${year}`;
-};
+    return `${day}/${month}/${year}`;
+  };
 
       const handleLoadCompanyByTaxCode = async () => {
       const taxCode = headerData.tax_code.trim();
@@ -630,6 +633,24 @@ const formatPickerDateToViDate = (value) => {
       is_delete: true,
     })),
   ];
+  const parseConversionRatio = (value) => {
+  if (value === null || value === undefined || value === "") return 1;
+
+  if (typeof value === "number") return value;
+
+  const text = String(value).trim();
+
+  if (text.includes(",")) {
+    return Number(text.replace(/\./g, "").replace(",", "."));
+  }
+
+  // Nếu dạng 1.000, 10.000, 100.000 thì hiểu là hàng nghìn kiểu VN
+  if (/^\d{1,3}(\.\d{3})+$/.test(text)) {
+    return Number(text.replace(/\./g, ""));
+  }
+
+  return Number(text);
+};
   return {
     terms: headerData.terms || null,
     receipt_date: convertDateToISO(headerData.inward_date),
@@ -655,7 +676,7 @@ const formatPickerDateToViDate = (value) => {
         requested_quantity: parseNumber(item.requested_quantity),
         original_quantity: parseNumber(item.actual_quantity || item.requested_quantity),
         unit_price: parseNumber(item.unit_price),
-        conversion_ratio: parseNumber(item.conversion_ratio || 1),
+        conversion_ratio: parseConversionRatio(item.conversion_ratio || 1),
         is_delete: Boolean(item.is_delete),
       })),
 
@@ -670,16 +691,6 @@ const formatPickerDateToViDate = (value) => {
 
 const handleComplete = async () => {
   try {
-    if (!headerData.bank_account_name.trim()) {
-      alert("Vui lòng nhập tên ngân hàng");
-      return;
-    }
-
-    if (!headerData.bank_account_number.trim()) {
-      alert("Vui lòng nhập số tài khoản ngân hàng");
-      return;
-    }
-
     if (!headerData.inward_date) {
       alert("Vui lòng nhập ngày nhập kho");
       return;
@@ -745,6 +756,17 @@ const handleComplete = async () => {
         const data = response?.data || response;
         setReceiptId(data.id);
 
+        const companyBankOptions = Array.isArray(data.company?.list_of_bank)
+        ? data.company.list_of_bank.map((bank) => ({
+            id: bank.id || "",
+            bank_account_name: bank.bank_name || "",
+            bank_account_number: bank.account_number || "",
+            is_default: Boolean(bank.is_default),
+          }))
+        : [];
+
+      setBankAccountOptions(companyBankOptions);
+
         setHeaderData((prev) => ({
           ...prev,
           terms: data.terms || "",
@@ -782,19 +804,37 @@ const handleComplete = async () => {
                   const originalQuantity = parseNumber(line.original_quantity || 0);
                   const unitPrice = parseNumber(line.unit_price || 0);
 
+                  const selectedUnit = Array.isArray(line.units)
+                    ? line.units.find(
+                        (unitItem) => String(unitItem.unit_id) === String(line.goods_unit_id)
+                      )
+                    : null;
+
                   return {
-                    id: line.inventory_id || line.id || line.goods_id || index + 1,
+                    id: line.inventory_id || line.id || index + 1,
                     inventory_id: line.inventory_id || line.id || "",
+
                     goods_id: line.goods_id || "",
                     goods_code: line.goods_code || "",
                     goods_name: line.goods_name || "",
 
-                    // lấy good_unit_id backend trả về
-                    unit_id: line.goods_unit_id || line.unit_id || "",
+                    unit_id: line.goods_unit_id || "",
+                    unit: selectedUnit?.unit_name || line.unit_name || "",
 
-                    unit: line.unit_name || "",
-                    unit_options: [],
-                    conversion_ratio: line.conversion_ratio ? String(line.conversion_ratio) : "",
+                    unit_options: Array.isArray(line.units)
+                      ? line.units.map((unitItem) => ({
+                          unit_id: unitItem.unit_id || "",
+                          unit_name: unitItem.unit_name || "",
+                          conversion_ratio: unitItem.conversion_ratio || "",
+                          is_default: Boolean(unitItem.is_default),
+                        }))
+                      : [],
+
+                    conversion_ratio:
+                      selectedUnit?.conversion_ratio !== null &&
+                      selectedUnit?.conversion_ratio !== undefined
+                        ? String(selectedUnit.conversion_ratio)
+                        : "",
 
                     requested_quantity: formatViNumber(requestedQuantity, 2),
                     actual_quantity: formatViNumber(originalQuantity, 2),
@@ -885,15 +925,18 @@ const handleComplete = async () => {
   }
 };
 
-  const handleOpenTransferPrint = () => {
-    if (!id || id === "new") {
-      alert("Cần lưu phiếu trước khi in giấy đề nghị chuyển tiền");
-      return;
-    }
+const handleOpenTransferPrint = () => {
+  if (!id || id === "new") {
+    alert("Cần lưu phiếu trước khi in giấy đề nghị chuyển tiền");
+    return;
+  }
 
-    setPrintReason("");
-    setShowPrintReasonModal(true);
-  };
+  setPrintReason("");
+  setTransferBankId(headerData.bank_account_id || "");
+  setTransferBankName(headerData.bank_account_name || "");
+  setTransferBankAccountNumber(headerData.bank_account_number || "");
+  setShowPrintReasonModal(true);
+};
 
   const handleOpenReceiptPrint = () => {
     if (!id || id === "new") {
@@ -929,15 +972,43 @@ const handleComplete = async () => {
   });
 };
 
+  const handleSelectTransferBank = (bankId) => {
+    setTransferBankId(bankId);
+
+    const selectedBank = bankAccountOptions.find(
+      (bank) => String(bank.id) === String(bankId)
+    );
+
+    setTransferBankName(selectedBank?.bank_account_name || "");
+    setTransferBankAccountNumber(selectedBank?.bank_account_number || "");
+  };
+
   const handleConfirmTransferPrint = () => {
+    if (!transferBankId) {
+      alert("Vui lòng chọn ngân hàng / số tài khoản");
+      return;
+    }
+
     if (!printReason.trim()) {
       alert("Vui lòng nhập lý do in phiếu");
       return;
     }
 
+    const selectedBank = bankAccountOptions.find(
+      (bank) => String(bank.id) === String(transferBankId)
+    );
+
     navigate(`/dashboard/activity/import/order/${id}/transfer-request-print`, {
       state: {
         printReason: printReason.trim(),
+
+        transferTaxCode: headerData.tax_code,
+        transferCompanyName: headerData.supplier_name,
+        transferCompanyAddress: headerData.address,
+
+        transferBankId: selectedBank?.id || "",
+        transferBankName: selectedBank?.bank_account_name || "",
+        transferBankAccountNumber: selectedBank?.bank_account_number || "",
       },
     });
   };
@@ -1021,17 +1092,6 @@ const handleComplete = async () => {
                 </button>
               </div>
             </div>
-
-            <div className="form-group">
-                <label>Tỷ lệ chuyển đổi</label>
-                <input
-                  value={selectedConversionRatio}
-                  placeholder="Tự động theo mặt hàng"
-                  disabled
-                  className="readonly-light-input"
-                />
-              </div>
-
             <div className="form-group">
             <label>
                 Nhập kho <span>*</span>
@@ -1176,95 +1236,6 @@ const handleComplete = async () => {
                 disabled={isLockedOnlyPrint}            
             />
             </div>
-
-
-
-            <div className="form-group">
-            <label>Địa chỉ</label>
-            <input
-                name="address"
-                value={headerData.address}
-                onChange={handleHeaderChange}
-                placeholder="Nhập địa chỉ"
-                disabled={isPrintMode}
-            />
-            </div>
-          <div className="form-group bank-dropdown-group">
-            <label>
-              Tên ngân hàng <span>*</span>
-            </label>
-
-            <div className="bank-dropdown-box">
-              <input
-                name="bank_account_name"
-                value={headerData.bank_account_name}
-                onChange={handleHeaderChange}
-                onFocus={() => {
-                  if (bankAccountOptions.length > 0) {
-                    setShowBankDropdown(true);
-                  }
-                }}
-                placeholder={
-                  bankAccountOptions.length > 0
-                    ? "Chọn ngân hàng đã lưu hoặc nhập mới"
-                    : "Nhập tên ngân hàng"
-                }
-                disabled={isPrintMode}
-              />
-
-              {bankAccountOptions.length > 0 && !isPrintMode && (
-                <button
-                  type="button"
-                  className="bank-dropdown-toggle"
-                  onClick={() => setShowBankDropdown((prev) => !prev)}
-                >
-                  ▾
-                </button>
-              )}
-
-              {showBankDropdown && bankAccountOptions.length > 0 && !isPrintMode && (
-                <div className="bank-dropdown-list">
-                  <div className="bank-dropdown-header">
-                    <span>Tên ngân hàng</span>
-                    <span>Số tài khoản</span>
-                  </div>
-
-                  {bankAccountOptions.map((bank, index) => (
-                    <div
-                      key={index}
-                      className="bank-dropdown-item"
-                      onClick={() => handleSelectBankAccount(bank)}
-                    >
-                      <span>
-                        {bank.bank_account_name || bank.bank_name || bank.name || ""}
-                      </span>
-                      <span>
-                        {bank.bank_account_number || bank.account_number || ""}
-                      </span>
-                    </div>
-                  ))}
-
-                  <div className="bank-dropdown-note">
-                    Không chọn nếu muốn nhập tài khoản mới
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>
-              Số tài khoản ngân hàng <span>*</span>
-            </label>
-            <input
-              name="bank_account_number"
-              value={headerData.bank_account_number}
-              onChange={handleHeaderChange}
-              placeholder="Nhập số tài khoản ngân hàng"
-              disabled={isPrintMode}
-            />
-          </div>
-
             <div className="form-group description-group">
             <label>Diễn giải</label>
             <input
@@ -1288,16 +1259,17 @@ const handleComplete = async () => {
           <div className="order-detail-table-wrapper">
             <table className="order-detail-table">
                 <colgroup>
-                    <col className="col-stt" />
-                    <col className="col-code" />
-                    <col className="col-name" />
-                    <col className="col-unit" />
-                    <col className="col-qty" />
-                    <col className="col-qty" />
-                    <col className="col-check" />
-                    <col className="col-price" />
-                    <col className="col-amount" />
-                    <col className="col-action" />
+                  <col className="col-stt" />
+                  <col className="col-code" />
+                  <col className="col-name" />
+                  <col className="col-unit" />
+                  <col className="col-qty" />
+                  <col className="col-qty" />
+                  <col className="col-qty" />
+                  <col className="col-check" />
+                  <col className="col-price" />
+                  <col className="col-amount" />
+                  <col className="col-action" />
                 </colgroup>
               <thead>
                 <tr>
@@ -1305,6 +1277,7 @@ const handleComplete = async () => {
                   <th>Mã hàng</th>
                   <th>Tên hàng</th>
                   <th>ĐVT</th>
+                  <th>Tỷ lệ chuyển đổi</th>
                   <th>SL yêu cầu</th>
                   <th>SL thực nhập</th>
                   <th>Đánh dấu đủ</th>
@@ -1439,16 +1412,26 @@ const handleComplete = async () => {
                           <option value="">{item.unit || "Chọn ĐVT"}</option>
                         )}
                       </select>
-                  </td>
+                    </td>
+
                     <td className="number-col">
-                    <input
+                      <input
+                        className="table-number-input"
+                        value={item.conversion_ratio || ""}
+                        readOnly
+                        disabled
+                      />
+                    </td>
+
+                    <td className="number-col">
+                      <input
                         className="table-number-input"
                         value={item.requested_quantity}
                         onChange={(e) =>
-                        handleChangeItemField(item.id, "requested_quantity", e.target.value)
+                          handleChangeItemField(item.id, "requested_quantity", e.target.value)
                         }
                         disabled={isPrintMode}
-                    />
+                      />
                     </td>
                     <td className="number-col">
                     <input
@@ -1494,61 +1477,66 @@ const handleComplete = async () => {
                 ))}
 
                 <tr className="table-total-row">
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td className="number-col">
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+
+                  <td className="number-col">
                     {formatViNumber(
-                    items.reduce((sum, item) => sum + parseNumber(item.requested_quantity), 0),
-                    2
+                      items.reduce((sum, item) => sum + parseNumber(item.requested_quantity), 0),
+                      2
                     )}
-                </td>
-                <td className="number-col">
+                  </td>
+
+                  <td className="number-col">
                     {formatViNumber(
-                    items.reduce((sum, item) => sum + parseNumber(item.actual_quantity), 0),
-                    2
+                      items.reduce((sum, item) => sum + parseNumber(item.actual_quantity), 0),
+                      2
                     )}
-                </td>
-                <td></td>
-                <td></td>
-                <td className="number-col">{formatViNumber(totalAmount, 2)}</td>
-                <td></td>
+                  </td>
+
+                  <td></td>
+                  <td></td>
+                  <td className="number-col">{formatViNumber(totalAmount, 2)}</td>
+                  <td></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
         <table className="order-money-table">
-        <colgroup>
+          <colgroup>
             <col className="col-stt" />
             <col className="col-code" />
             <col className="col-name" />
             <col className="col-unit" />
             <col className="col-qty" />
             <col className="col-qty" />
+            <col className="col-qty" />
             <col className="col-check" />
             <col className="col-price" />
             <col className="col-amount" />
             <col className="col-action" />
-        </colgroup>
+          </colgroup>
         <tbody>
             <tr>
-                <td className="money-empty" colSpan={7}></td>
+                <td className="money-empty" colSpan={8}></td>
                 <td className="money-label">Cộng</td>
                 <td className="money-value">{formatViNumber(totalAmount, 2)}</td>
                 <td className="money-empty"></td>
             </tr>
 
             <tr>
-                <td className="money-empty" colSpan={7}></td>
+                <td className="money-empty" colSpan={8}></td>
                 <td className="money-label">Tiền thuế VAT</td>
                 <td className="money-value">{formatViNumber(vatAmount, 2)}</td>
                 <td className="money-empty"></td>
             </tr>
 
             <tr>
-                <td className="money-empty" colSpan={7}></td>
+                <td className="money-empty" colSpan={8}></td>
                 <td className="money-label">Tổng cộng</td>
                 <td className="money-value">{formatViNumber(grandTotal, 2)}</td>
                 <td className="money-empty"></td>
@@ -1670,16 +1658,71 @@ const handleComplete = async () => {
                   ×
                 </button>
               </div>
+                <div className="print-reason-modal-body">
+                  <div className="transfer-info-grid">
+                    <div className="form-group">
+                      <label>MST</label>
+                      <input value={headerData.tax_code} readOnly disabled />
+                    </div>
 
-              <div className="print-reason-modal-body">
-                <label>Lý do</label>
-                <textarea
-                  value={printReason}
-                  onChange={(e) => setPrintReason(e.target.value)}
-                  placeholder="Nhập lý do in phiếu"
-                  rows={4}
-                />
-              </div>
+                    <div className="form-group">
+                      <label>Tên công ty</label>
+                      <input value={headerData.supplier_name} readOnly disabled />
+                    </div>
+
+                    <div className="form-group transfer-full-row">
+                      <label>Địa chỉ</label>
+                      <input value={headerData.address} readOnly disabled />
+                    </div>
+                      <div className="form-group transfer-full-row">
+                        <label>Chọn tài khoản ngân hàng đã lưu</label>
+                        <select
+                          value={transferBankId}
+                          onChange={(e) => handleSelectTransferBank(e.target.value)}
+                        >
+                          <option value="">Không chọn / Nhập tay</option>
+
+                          {bankAccountOptions.map((bank) => (
+                            <option key={bank.id} value={bank.id}>
+                              {bank.bank_account_name} - {bank.bank_account_number}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="form-group transfer-full-row">
+                        <label>Tên ngân hàng</label>
+                        <input
+                          value={transferBankName}
+                          onChange={(e) => {
+                            setTransferBankName(e.target.value);
+                            setTransferBankId("");
+                          }}
+                          placeholder="Nhập tên ngân hàng"
+                        />
+                      </div>
+
+                      <div className="form-group transfer-full-row">
+                        <label>Số tài khoản ngân hàng</label>
+                        <input
+                          value={transferBankAccountNumber}
+                          onChange={(e) => {
+                            setTransferBankAccountNumber(e.target.value);
+                            setTransferBankId("");
+                          }}
+                          placeholder="Nhập số tài khoản ngân hàng"
+                        />
+                      </div>
+                  </div>
+
+                  <label>Lý do</label>
+                  <textarea
+                    value={printReason}
+                    onChange={(e) => setPrintReason(e.target.value)}
+                    placeholder="Nhập lý do in phiếu"
+                    rows={4}
+                  />
+                </div>
 
               <div className="print-reason-modal-footer">
                 <button

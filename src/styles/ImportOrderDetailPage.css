@@ -1261,3 +1261,29 @@
 .calendar-native-input::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
+
+.transfer-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.transfer-full-row {
+  grid-column: 1 / -1;
+}
+
+.transfer-info-grid input,
+.transfer-info-grid select {
+  width: 100%;
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.transfer-info-grid input:disabled {
+  background: #f3f4f6;
+  color: #374151;
+}

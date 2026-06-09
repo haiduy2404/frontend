@@ -15,6 +15,7 @@ import ImportReceiptPrintVatForm from "./pages/activity/import/ImportReceiptPrin
 import InspectionPage from "./pages/activity/import/InspectionPage";
 import InspectionDetailPage from "./pages/activity/import/InspectionDetailPage";
 import InspectionPrintPage from "./pages/activity/import/InspectionPrintPage";
+import WarehouseImportCompanyReportPage from "./pages/report/WarehouseImportCompanyReportPage";
 
 function App() {
   return (
@@ -37,6 +38,11 @@ function App() {
           <Route
             path="stock-manager/company-list"
             element={<CompanyListPage />}
+          />
+
+          <Route
+            path="report/import-company"
+            element={<WarehouseImportCompanyReportPage />}
           />
 
           <Route path="activity/import" element={<ImportLayout />}>
@@ -82,6 +88,7 @@ function App() {
         />
 
         <Route path="/account" element={<AccountPage />} />
+
         <Route
           path="/dashboard/activity/import/inspection/:id/print"
           element={<InspectionPrintPage />}
