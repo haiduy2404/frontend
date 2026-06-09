@@ -1,10 +1,8 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/WarehouseImportCompanyReportPage.css";
 
-import {
-  getWarehouseReceiptsPageable,
-  getWarehouseReceiptByCode,
-} from "../../services/warehouseReceiptService";
+import { getWarehouseReceiptByCode } from "../../services/warehouseReceiptService";
+import { getWarehouseReceiptCompanySummary } from "../../services/warehouseReceiptReportService";
 import { getCompanies } from "../../services/companyService";
 
 function WarehouseImportCompanyReportPage() {
@@ -25,6 +23,13 @@ function WarehouseImportCompanyReportPage() {
   const [companyLoading, setCompanyLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+  const [isChartModalOpen, setIsChartModalOpen] = useState(false);
+  const [chartCompanyIds, setChartCompanyIds] = useState([]);
+  const [chartMetrics, setChartMetrics] = useState({
+    goodsAmount: true,
+    vatAmount: true,
+    totalAmount: true,
+  });
   
 
   const unwrapData = (response) => response?.data || response;
@@ -98,22 +103,38 @@ function WarehouseImportCompanyReportPage() {
             params.company_id = customFilters.companyIds[0];
         }
 
-        const response = await getWarehouseReceiptsPageable(params);
+        if (customFilters.companyIds.length > 1) {
+            params.company_ids = customFilters.companyIds.join(",");
+        }
+
+        const response = await getWarehouseReceiptCompanySummary(params);
         const data = unwrapData(response);
 
-        const results = Array.isArray(data?.results)
-        ? data.results
-        : Array.isArray(data)
-        ? data
-        : [];
+        const results = Array.isArray(data?.data?.results)
+          ? data.data.results
+          : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.results)
+          ? data.results
+          : Array.isArray(data)
+          ? data
+          : [];
 
         setReportRows(results);
+        setChartCompanyIds(results.map((item) => item.company_id));
+            setChartMetrics({
+              goodsAmount: true,
+              vatAmount: true,
+              totalAmount: true,
+            });
         setSelectedReceipt(null);
         setDetailRows([]);
     } catch (error) {
         console.error("LOAD IMPORT COMPANY REPORT ERROR:", error.response?.data || error);
         alert("Không tải được báo cáo nhập kho theo công ty");
         setReportRows([]);
+        setSelectedReceipt(null);
+        setDetailRows([]);
     } finally {
         setReportLoading(false);
     }
@@ -167,86 +188,18 @@ function WarehouseImportCompanyReportPage() {
     return text;
   };
 
-    const getCompanyId = (row) => {
-        return row.company_id;
-    };
+    const getReceiptCode = (row) => {
+      return row?.pnk_code || row?.code || row?.receipt_code || row?.receiptCode || "-";
+  };
 
-    const getCompanyName = (row) => {
-    const company = companies.find(
-        (item) => String(item.id) === String(filters.companyIds[0])
+    const handleOpenImportDetailPrint = (receiptCode) => {
+    if (!receiptCode || receiptCode === "-") return;
+
+    window.open(
+      `/dashboard/activity/import/order-detail/${receiptCode}?mode=print`,
+      "_blank",
+      "noopener,noreferrer"
     );
-
-    return company?.supplier_name || "Đã chọn 1 công ty";
-    };
-
-    const getCompanyTaxCode = (row) => {
-    const company = companies.find(
-        (item) => String(item.id) === String(row.company_id)
-    );
-
-    return company?.tax_code || "";
-    };
-
-  const getReceiptCode = (row) => {
-    return row.code || row.receipt_code || row.receiptCode || "-";
-  };
-
-  const getReceiptDate = (row) => {
-    return row.receipt_date || row.receiptDate || row.import_date || "-";
-  };
-
-  const getInventoryLines = (row) => {
-    const lines =
-      row.inventory_lines ||
-      row.inventoryLines ||
-      row.inventory ||
-      row.items ||
-      row.details ||
-      [];
-
-    return Array.isArray(lines) ? lines : [];
-  };
-
-  const getGoodsAmount = (row) => {
-    if (row.goods_amount !== undefined) return parseMoney(row.goods_amount);
-    if (row.goodsAmount !== undefined) return parseMoney(row.goodsAmount);
-    if (row.total_goods_amount !== undefined) return parseMoney(row.total_goods_amount);
-    if (row.sub_total !== undefined) return parseMoney(row.sub_total);
-    if (row.amount !== undefined) return parseMoney(row.amount);
-
-    const lines = getInventoryLines(row);
-
-    return lines.reduce((sum, item) => {
-      const quantity = parseMoney(
-        item.original_quantity ||
-          item.real_quantity ||
-          item.actual_quantity ||
-          item.quantity ||
-          0
-      );
-
-      const unitPrice = parseMoney(item.unit_price || item.unitPrice || 0);
-
-      return sum + quantity * unitPrice;
-    }, 0);
-  };
-
-  const getVatAmount = (row) => {
-    if (row.vat_amount !== undefined) return parseMoney(row.vat_amount);
-    if (row.vatAmount !== undefined) return parseMoney(row.vatAmount);
-
-    const goodsAmount = getGoodsAmount(row);
-    const vatRate = parseMoney(row.vat || row.vat_rate || row.vatRate || 0);
-
-    return goodsAmount * (vatRate / 100);
-  };
-
-  const getTotalAmount = (row) => {
-    if (row.total_amount !== undefined) return parseMoney(row.total_amount);
-    if (row.totalAmount !== undefined) return parseMoney(row.totalAmount);
-    if (row.grand_total !== undefined) return parseMoney(row.grand_total);
-
-    return getGoodsAmount(row) + getVatAmount(row);
   };
 
     const selectedCompanyText = useMemo(() => {
@@ -260,11 +213,11 @@ function WarehouseImportCompanyReportPage() {
     }
 
     if (filters.companyIds.length === 1) {
-        const company = companies.find(
-        (item) => item.id === filters.companyIds[0]
-        );
+      const company = companies.find(
+        (item) => String(item.id) === String(filters.companyIds[0])
+      );
 
-        return company.supplier_name;
+      return company?.supplier_name || "Đã chọn 1 công ty";
     }
 
     return `Đã chọn ${filters.companyIds.length} công ty`;
@@ -274,44 +227,27 @@ function WarehouseImportCompanyReportPage() {
         return reportRows;
     }, [reportRows]);
 
-  const groupedRows = useMemo(() => {
-    const map = new Map();
-
-    filteredReportRows.forEach((row) => {
-      const companyId = getCompanyId(row);
-
-      if (!map.has(companyId)) {
-        map.set(companyId, {
-          companyId,
-          companyName: getCompanyName(row),
-          companyTaxCode: getCompanyTaxCode(row),
-          items: [],
-          totalQuantity: 0,
-          goodsAmount: 0,
-          vatAmount: 0,
-          totalAmount: 0,
-        });
-      }
-
-      const group = map.get(companyId);
-
-    const item = {
-        raw: row,
-        receiptCode: getReceiptCode(row),
-        receiptDate: getReceiptDate(row),
-        goodsAmount: getGoodsAmount(row),
-        vatAmount: getVatAmount(row),
-        totalAmount: getTotalAmount(row),
-    };
-
-      group.items.push(item);
-      group.goodsAmount += item.goodsAmount;
-      group.vatAmount += item.vatAmount;
-      group.totalAmount += item.totalAmount;
-    });
-
-    return Array.from(map.values());
-  }, [filteredReportRows, companies]);
+    const groupedRows = useMemo(() => {
+      return reportRows.map((company) => ({
+        companyId: company.company_id,
+        companyName: company.company_name || "-",
+        companyTaxCode: company.tax_code || "",
+        items: Array.isArray(company.receipts)
+          ? company.receipts.map((receipt) => ({
+              raw: receipt,
+              receiptId: receipt.pnk_id,
+              receiptCode: receipt.pnk_code,
+              receiptDate: receipt.receipt_date,
+              goodsAmount: parseMoney(receipt.goods_amount),
+              vatAmount: parseMoney(receipt.vat_amount),
+              totalAmount: parseMoney(receipt.total_amount),
+            }))
+          : [],
+        goodsAmount: parseMoney(company.company_goods_amount),
+        vatAmount: parseMoney(company.company_vat_amount),
+        totalAmount: parseMoney(company.company_total_amount),
+      }));
+    }, [reportRows]);
 
   const grandTotal = useMemo(() => {
     return groupedRows.reduce(
@@ -374,6 +310,13 @@ function WarehouseImportCompanyReportPage() {
             setReportRows([]);
             setSelectedReceipt(null);
             setDetailRows([]);
+            setIsChartModalOpen(false);
+            setChartCompanyIds([]);
+            setChartMetrics({
+              goodsAmount: true,
+              vatAmount: true,
+              totalAmount: true,
+            });
         };
     const fetchReceiptDetail = async (receiptCode) => {
     if (!receiptCode || receiptCode === "-") {
@@ -406,10 +349,83 @@ function WarehouseImportCompanyReportPage() {
         setDetailLoading(false);
     }
     };
+    
+const handleOpenChartModal = () => {
+  if (reportRows.length === 0) return;
 
-  const handlePrint = () => {
-    window.print();
-  };
+  setChartCompanyIds((prev) =>
+    prev.length > 0 ? prev : reportRows.map((item) => item.company_id)
+  );
+
+  setIsChartModalOpen(true);
+};
+
+const handleToggleChartCompany = (companyId) => {
+  setChartCompanyIds((prev) =>
+    prev.includes(companyId)
+      ? prev.filter((id) => id !== companyId)
+      : [...prev, companyId]
+  );
+};
+
+const handleToggleAllChartCompanies = () => {
+  const allIds = reportRows.map((item) => item.company_id);
+  const isAllChecked =
+    allIds.length > 0 && chartCompanyIds.length === allIds.length;
+
+  setChartCompanyIds(isAllChecked ? [] : allIds);
+};
+
+const handleToggleChartMetric = (metricKey) => {
+  setChartMetrics((prev) => ({
+    ...prev,
+    [metricKey]: !prev[metricKey],
+  }));
+};
+
+    const handleOpenReportChart = () => {
+      const selectedMetrics = Object.entries(chartMetrics)
+        .filter(([, checked]) => checked)
+        .map(([key]) => key);
+
+      if (chartCompanyIds.length === 0) {
+        alert("Vui lòng chọn ít nhất 1 công ty");
+        return;
+      }
+
+      if (selectedMetrics.length === 0) {
+        alert("Vui lòng chọn ít nhất 1 chỉ tiêu");
+        return;
+      }
+
+      const params = new URLSearchParams();
+
+      if (filters.start_date) {
+        params.set("start_date", filters.start_date);
+      }
+
+      if (filters.end_date) {
+        params.set("end_date", filters.end_date);
+      }
+
+      if (chartCompanyIds.length === 1) {
+        params.set("company_id", chartCompanyIds[0]);
+      }
+
+      if (chartCompanyIds.length > 1) {
+        params.set("company_ids", chartCompanyIds.join(","));
+      }
+
+      params.set("metrics", selectedMetrics.join(","));
+
+      window.open(
+        `/dashboard/report/warehouse-import-company-chart?${params.toString()}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+
+      setIsChartModalOpen(false);
+    };
 
   return (
     <div className="warehouse-company-report-page">
@@ -547,27 +563,25 @@ function WarehouseImportCompanyReportPage() {
       </div>
 
       <div className="warehouse-company-report-card">
-        <div className="report-card-actions">
-          <button
-            type="button"
-            className="report-print-btn"
-            onClick={handlePrint}
-          >
-            In báo cáo
-          </button>
-        </div>
-
         <div className="warehouse-company-report-paper">
-          <h1>BÁO CÁO NHẬP KHO THEO CÔNG TY</h1>
+          <div className="report-title-row">
+            <h1>BÁO CÁO NHẬP KHO</h1>
+
+            {!reportLoading && reportRows.length > 0 && (
+              <button
+                type="button"
+                className="report-chart-btn"
+                onClick={handleOpenChartModal}
+              >
+                Biểu đồ báo cáo
+              </button>
+            )}
+          </div>
 
           <div className="report-date-range">
             Từ ngày: <strong>{formatDate(filters.start_date)}</strong>
             <span>-</span>
             Đến ngày: <strong>{formatDate(filters.end_date)}</strong>
-          </div>
-
-          <div className="report-selected-company">
-            Công ty: <strong>{selectedCompanyText}</strong>
           </div>
 
           <table className="warehouse-company-report-table">
@@ -605,7 +619,6 @@ function WarehouseImportCompanyReportPage() {
                     <tr className="company-title-row">
                         <td colSpan={6}>
                         <strong>{group.companyName}</strong>
-                        {group.companyTaxCode && <span>MST: {group.companyTaxCode}</span>}
                         </td>
                     </tr>
 
@@ -620,7 +633,15 @@ function WarehouseImportCompanyReportPage() {
                             onClick={() => fetchReceiptDetail(item.receiptCode)}
                             >
                             <td>{itemIndex + 1}</td>
-                            <td className="link-text">{item.receiptCode}</td>
+                            <td
+                                className="link-text"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenImportDetailPrint(item.receiptCode);
+                                }}
+                              >
+                                {item.receiptCode}
+                            </td>
                             <td>{formatDate(item.receiptDate)}</td>
                             <td className="text-right">{formatMoney(item.goodsAmount)}</td>
                             <td className="text-right">{formatMoney(item.vatAmount)}</td>
@@ -630,7 +651,7 @@ function WarehouseImportCompanyReportPage() {
 
                     <tr className="company-total-row">
                         <td></td>
-                        <td colSpan={2}>Tổng cộng {group.companyName}</td>
+                        <td colSpan={2}>Tổng cộng </td>
                         <td className="text-right">{formatMoney(group.goodsAmount)}</td>
                         <td className="text-right">{formatMoney(group.vatAmount)}</td>
                         <td className="text-right">{formatMoney(group.totalAmount)}</td>
@@ -735,6 +756,99 @@ function WarehouseImportCompanyReportPage() {
           </div>
         </div>
       </div>
+            {isChartModalOpen && (
+        <div className="report-chart-modal-overlay">
+          <div className="report-chart-modal">
+            <div className="report-chart-modal-header">
+              <h3>Chọn dữ liệu biểu đồ báo cáo</h3>
+
+              <button
+                type="button"
+                onClick={() => setIsChartModalOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="report-chart-modal-body horizontal">
+              <div className="report-chart-section company-section">
+                <div className="report-chart-section-title">
+                  <span>Công ty đang xem báo cáo</span>
+                </div>
+
+                <div className="report-chart-company-list">
+                  {reportRows.map((company) => (
+                    <label
+                      key={company.company_id}
+                      className="report-chart-check-row"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={chartCompanyIds.includes(company.company_id)}
+                        onChange={() => handleToggleChartCompany(company.company_id)}
+                      />
+                      <span>{company.company_name || "-"}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="report-chart-section metric-section">
+                <div className="report-chart-section-title">
+                  <span>Chỉ tiêu hiển thị</span>
+                </div>
+
+                <div className="report-chart-metric-list">
+                  <label className="report-chart-check-row">
+                    <input
+                      type="checkbox"
+                      checked={chartMetrics.goodsAmount}
+                      onChange={() => handleToggleChartMetric("goodsAmount")}
+                    />
+                    <span>Tổng tiền hàng</span>
+                  </label>
+
+                  <label className="report-chart-check-row">
+                    <input
+                      type="checkbox"
+                      checked={chartMetrics.vatAmount}
+                      onChange={() => handleToggleChartMetric("vatAmount")}
+                    />
+                    <span>Thuế VAT</span>
+                  </label>
+
+                  <label className="report-chart-check-row">
+                    <input
+                      type="checkbox"
+                      checked={chartMetrics.totalAmount}
+                      onChange={() => handleToggleChartMetric("totalAmount")}
+                    />
+                    <span>Tổng tiền</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="report-chart-modal-footer">
+              <button
+                type="button"
+                className="report-cancel-btn"
+                onClick={() => setIsChartModalOpen(false)}
+              >
+                Hủy
+              </button>
+
+              <button
+                type="button"
+                className="report-open-chart-btn"
+                onClick={handleOpenReportChart}
+              >
+                Mở biểu đồ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

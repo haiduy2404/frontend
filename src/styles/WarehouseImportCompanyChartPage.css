@@ -1,0 +1,63 @@
+.warehouse-import-chart-page {
+  min-height: 100vh;
+  background: #eef2f7;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.warehouse-import-chart-card {
+  min-height: calc(100vh - 32px);
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.warehouse-import-chart-header {
+  min-height: 64px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.warehouse-import-chart-header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.warehouse-import-chart-header p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.warehouse-import-chart-header button {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid #6b7280;
+  background: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.warehouse-import-chart-content {
+  padding: 16px;
+  height: calc(100vh - 112px);
+  overflow: auto;
+  box-sizing: border-box;
+}
+
+.chart-empty {
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-weight: 700;
+}
