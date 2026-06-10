@@ -1,9 +1,9 @@
 import axiosInstance from "./authService";
 
-export const getWarehouseReceiptCompanySummary = async (params = {}) => {
-  const response = await axiosInstance.get(
+export const getWarehouseReceiptCompanySummary = async (payload = {}) => {
+  const response = await axiosInstance.post(
     "/inventory/warehouse-receipts/company-summary",
-    { params }
+    payload
   );
 
   return response.data;

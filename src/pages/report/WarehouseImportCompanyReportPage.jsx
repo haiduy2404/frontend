@@ -86,28 +86,21 @@ function WarehouseImportCompanyReportPage() {
     try {
         setReportLoading(true);
 
-        const params = {
-        page: 1,
-        page_size: 1000,
-        };
+        const payload = {};
 
         if (customFilters.start_date) {
-            params.start_date = customFilters.start_date;
+            payload.start_date = customFilters.start_date;
         }
 
         if (customFilters.end_date) {
-            params.end_date = customFilters.end_date;
+            payload.end_date = customFilters.end_date;
         }
 
-        if (customFilters.companyIds.length === 1) {
-            params.company_id = customFilters.companyIds[0];
+        if (customFilters.companyIds.length > 0) {
+            payload.list_company = customFilters.companyIds;
         }
 
-        if (customFilters.companyIds.length > 1) {
-            params.company_ids = customFilters.companyIds.join(",");
-        }
-
-        const response = await getWarehouseReceiptCompanySummary(params);
+        const response = await getWarehouseReceiptCompanySummary(payload);
         const data = unwrapData(response);
 
         const results = Array.isArray(data?.data?.results)

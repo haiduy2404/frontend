@@ -107,25 +107,30 @@ const roundUpChartMax = (value) => {
     try {
       setLoading(true);
 
-      const params = {};
+      const payload = {};
 
       if (searchParams.get("start_date")) {
-        params.start_date = searchParams.get("start_date");
+        payload.start_date = searchParams.get("start_date");
       }
 
       if (searchParams.get("end_date")) {
-        params.end_date = searchParams.get("end_date");
+        payload.end_date = searchParams.get("end_date");
       }
 
+      const companyIds = [];
       if (searchParams.get("company_id")) {
-        params.company_id = searchParams.get("company_id");
+        companyIds.push(searchParams.get("company_id"));
       }
-
       if (searchParams.get("company_ids")) {
-        params.company_ids = searchParams.get("company_ids");
+        companyIds.push(
+          ...searchParams.get("company_ids").split(",").filter(Boolean)
+        );
+      }
+      if (companyIds.length > 0) {
+        payload.list_company = companyIds;
       }
 
-      const response = await getWarehouseReceiptCompanySummary(params);
+      const response = await getWarehouseReceiptCompanySummary(payload);
       const data = unwrapData(response);
 
       const results = Array.isArray(data?.data?.results)
