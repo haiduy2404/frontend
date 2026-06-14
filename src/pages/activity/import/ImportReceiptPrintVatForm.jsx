@@ -235,9 +235,46 @@ const numberToVietnameseText = (value) => {
     return sum + quantity * unitPrice;
 }, 0);
 
-    const vatRate = Number(receipt?.vat || 0);
-    const vatAmount = totalAmount * (vatRate / 100);
-    const grandTotal = totalAmount + vatAmount;
+    const roundMoney = (value) =>
+      Math.round((Number(value) || 0) + Number.EPSILON);
+
+    const vatSummary = inventoryLines.reduce(
+      (acc, line) => {
+        const quantity = Number(
+          line?.original_quantity || line?.quantity || 0
+        );
+
+        const unitPrice = Number(line?.unit_price || 0);
+
+        const amount = quantity * unitPrice;
+
+        const rate = String(
+          Number(line?.vat || line?.vat_rate || 0)
+        );
+
+        const vat = roundMoney(
+          amount * (Number(rate) / 100)
+        );
+
+        acc[rate] = (acc[rate] || 0) + vat;
+
+        return acc;
+      },
+      {
+        0: 0,
+        5: 0,
+        8: 0,
+        10: 0,
+      }
+    );
+
+    const totalVat =
+      vatSummary["0"] +
+      vatSummary["5"] +
+      vatSummary["8"] +
+      vatSummary["10"];
+
+    const grandTotal = totalAmount + totalVat;
 
 
 
@@ -391,14 +428,18 @@ const numberToVietnameseText = (value) => {
                     </td>
                     </tr>
 
-                    <tr className="receipt-total-row">
-                    <td colSpan={7} className="receipt-total-label">
-                        VAT({formatViNumber(vatRate, 0)}%)
-                    </td>
-                    <td className="receipt-total-value">
-                        {formatViNumber(vatAmount, 0)}
-                    </td>
-                    </tr>
+                    {Object.entries(vatSummary)
+                      .filter(([, value]) => value > 0)
+                      .map(([rate, value]) => (
+                        <tr key={rate} className="receipt-total-row">
+                          <td colSpan={7} className="receipt-total-label">
+                            VAT ({rate}%)
+                          </td>
+                          <td className="receipt-total-value">
+                            {formatViNumber(value, 0)}
+                          </td>
+                        </tr>
+                    ))}
 
                     <tr className="receipt-total-row">
                     <td colSpan={7} className="receipt-total-label">

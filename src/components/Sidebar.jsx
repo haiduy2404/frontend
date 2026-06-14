@@ -75,7 +75,7 @@ const Sidebar = () => {
         </div>
 
         {!collapsed && openMenu === "activity" && (
-          <div className="sidebar-submenu">
+          <div className="sidebar-submenu activity-submenu">
             <NavLink
               to="/dashboard/activity/import"
               className={({ isActive }) =>

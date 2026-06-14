@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "../../../styles/ImportOrderDetailPage.css";
 import { getGoods } from "../../../services/goodsService";
-import { getCompanies } from "../../../services/companyService";
+import { getCompanies, createCompanyBankAccount } from "../../../services/companyService";
 import { getWarehouses } from "../../../services/warehouseService";
 import {
   createWarehouseReceipt,
@@ -61,6 +61,7 @@ function ImportOrderDetailPage() {
     const [receiptWarehouseKeeper, setReceiptWarehouseKeeper] = useState("");
     const [showAddGoodsModal, setShowAddGoodsModal] = useState(false);
     const [deletedItems, setDeletedItems] = useState([]);
+    const [companyId, setCompanyId] = useState(null);
     const handlePrint = () => {
       window.print();
     };
@@ -297,6 +298,7 @@ function ImportOrderDetailPage() {
           marked_old: false,
           unit_price: "0,00",
           amount: "0,00",
+          vat: "0",
           is_delete: false,
         },
     ]);
@@ -306,7 +308,6 @@ function ImportOrderDetailPage() {
       inward_date: getTodayViDate(),
       warehouse_id: "",
       delivery_person: "",
-      vat_rate: "",
       invoice_symbol: "",
       invoice_no: "",
       invoice_date: "",
@@ -364,6 +365,7 @@ function ImportOrderDetailPage() {
             amount: "0,00",
             unit_id: "",
             unit_options: [],
+            vat: "0",
             is_delete: false,
             inventory_id: "",
             conversion_ratio: "",
@@ -573,48 +575,121 @@ function ImportOrderDetailPage() {
     };
 
     const handleChangeItemField = (rowId, field, value) => {
-      setItems((prev) =>
-        prev.map((item) => {
-          if (item.id !== rowId) {
-            return item;
-          }
+        if (field === "vat") {
+          setItems((prev) => {
+            const firstRowId = prev[0]?.id;
+            const oldVat = prev.find(
+              (x) => x.id === rowId
+            )?.vat;
 
-          const nextItem = {
-            ...item,
-            [field]: value,
-          };
+            return prev.map((item) => {
+              if (item.id === rowId) {
+                return {
+                  ...item,
+                  vat: value,
+                };
+              }
 
-          if (field === "marked_old") {
-            nextItem.actual_quantity = value ? item.requested_quantity : "0,00";
-          }
+              if (
+                rowId === firstRowId &&
+                item.vat === oldVat
+              ) {
+                return {
+                  ...item,
+                  vat: value,
+                };
+              }
 
-          const quantity = parseNumber(
-            field === "requested_quantity" ? value : nextItem.requested_quantity
-          );
+              return item;
+            });
+          });
 
-          const unitPrice = parseNumber(
-            field === "unit_price" ? value : nextItem.unit_price
-          );
+          return;
+        }
 
-          if (field === "requested_quantity" || field === "unit_price") {
-            nextItem.amount = formatViNumber(quantity * unitPrice, 2);
-
-            if (nextItem.marked_old && field === "requested_quantity") {
-              nextItem.actual_quantity = value;
+        setItems((prev) =>
+          prev.map((item) => {
+            if (item.id !== rowId) {
+              return item;
             }
-          }
 
-          return nextItem;
-        })
-      );
-    };
-  const totalAmount = items.reduce((sum, item) => {
-    return sum + parseNumber(item.amount);
-}  , 0);
+            const nextItem = {
+              ...item,
+              [field]: value,
+            };
 
-    const vatRate = parseNumber(headerData.vat_rate || 0);
-    const vatAmount = totalAmount * (vatRate / 100);
-    const grandTotal = totalAmount + vatAmount;
+            if (field === "marked_old") {
+              nextItem.actual_quantity = value
+                ? item.requested_quantity
+                : "0,00";
+            }
+
+            const quantity = parseNumber(
+              field === "requested_quantity"
+                ? value
+                : nextItem.requested_quantity
+            );
+
+            const unitPrice = parseNumber(
+              field === "unit_price"
+                ? value
+                : nextItem.unit_price
+            );
+
+            if (
+              field === "requested_quantity" ||
+              field === "unit_price"
+            ) {
+              nextItem.amount = formatViNumber(
+                quantity * unitPrice,
+                2
+              );
+
+              if (
+                nextItem.marked_old &&
+                field === "requested_quantity"
+              ) {
+                nextItem.actual_quantity = value;
+              }
+            }
+
+            return nextItem;
+          })
+        );
+      };
+      const totalAmount = items.reduce((sum, item) => {
+        return sum + parseNumber(item.amount);
+    }  , 0);
+
+    const roundMoney = (value) =>
+      Math.round((Number(value) || 0) + Number.EPSILON);
+
+    const vatSummary = items.reduce(
+      (acc, item) => {
+        const amount = parseNumber(item.amount);
+        const rate = String(item.vat || "0");
+
+        const vat = roundMoney(amount * (Number(rate) / 100));
+
+        acc[rate] = (acc[rate] || 0) + vat;
+
+        return acc;
+      },
+      {
+        0: 0,
+        5: 0,
+        8: 0,
+        10: 0,
+      }
+    );
+
+    const vatAmount =
+      vatSummary["0"] +
+      vatSummary["5"] +
+      vatSummary["8"] +
+      vatSummary["10"];
+
+    const grandTotal = roundMoney(totalAmount + vatAmount);
 
     const convertDateToISO = (value) => {
       if (!value) return null;
@@ -656,7 +731,6 @@ function ImportOrderDetailPage() {
     receipt_date: convertDateToISO(headerData.inward_date),
     warehouse_id: headerData.warehouse_id,
     delivery_persion: headerData.delivery_person || null,
-    vat: headerData.vat_rate || "0",
     contract_code: headerData.invoice_symbol || null,
     invoice_code: headerData.invoice_no || null,
     invoice_date: headerData.invoice_date
@@ -677,6 +751,7 @@ function ImportOrderDetailPage() {
         original_quantity: parseNumber(item.actual_quantity || item.requested_quantity),
         unit_price: parseNumber(item.unit_price),
         conversion_ratio: parseConversionRatio(item.conversion_ratio || 1),
+        vat: Number(item.vat || 0),
         is_delete: Boolean(item.is_delete),
       })),
 
@@ -755,6 +830,7 @@ const handleComplete = async () => {
         const response = await getWarehouseReceiptByCode(receiptCode);
         const data = response?.data || response;
         setReceiptId(data.id);
+        setCompanyId(data.company?.id || null);
 
         const companyBankOptions = Array.isArray(data.company?.list_of_bank)
         ? data.company.list_of_bank.map((bank) => ({
@@ -773,7 +849,6 @@ const handleComplete = async () => {
           inward_date: formatISOToViDate(data.receipt_date),
           warehouse_id: data.warehouse_id || data.warehouse?.id || "",
           delivery_person: data.delivery_persion || "",
-          vat_rate: data.vat ? String(Number(data.vat)) : "",
           invoice_symbol: data.contract_code || "",
           invoice_no: data.invoice_code || "",
           invoice_date: formatISOToViDate(data.invoice_date),
@@ -841,6 +916,7 @@ const handleComplete = async () => {
                     marked_old: requestedQuantity === originalQuantity,
                     unit_price: formatViNumber(unitPrice, 2),
                     amount: formatViNumber(originalQuantity * unitPrice, 2),
+                    vat: String(Number(line.vat || 0)),
                     is_delete: false,
                   };
               })
@@ -860,6 +936,7 @@ const handleComplete = async () => {
                     marked_old: false,
                     unit_price: "0,00",
                     amount: "0,00",
+                    vat: "0",
                     is_delete: false,
                 },
               ]
@@ -954,9 +1031,11 @@ const handleOpenTransferPrint = () => {
     return;
   }
 
-  const vatRate = parseNumber(headerData.vat_rate || 0);
+    const hasVat = items.some(
+    (item) => Number(item.vat || 0) > 0
+  );
 
-  if (vatRate > 0) {
+  if (hasVat) {
     navigate(`/dashboard/activity/import/order/${id}/receipt-print-vat`, {
       state: {
         signerThuKho: receiptWarehouseKeeper.trim(),
@@ -983,20 +1062,59 @@ const handleOpenTransferPrint = () => {
     setTransferBankAccountNumber(selectedBank?.bank_account_number || "");
   };
 
-  const handleConfirmTransferPrint = () => {
-    if (!transferBankId) {
-      alert("Vui lòng chọn ngân hàng / số tài khoản");
+  const handleConfirmTransferPrint = async () => {
+    if (!printReason.trim()) {
+      alert("Vui lòng nhập lý do in phiếu");
       return;
     }
 
-    if (!printReason.trim()) {
-      alert("Vui lòng nhập lý do in phiếu");
+    let finalBankId = transferBankId;
+    let finalBankName = transferBankName.trim();
+    let finalBankAccountNumber = transferBankAccountNumber.trim();
+
+    if (!finalBankName || !finalBankAccountNumber) {
+      alert("Vui lòng chọn tài khoản ngân hàng hoặc nhập đầy đủ tài khoản mới");
       return;
     }
 
     const selectedBank = bankAccountOptions.find(
       (bank) => String(bank.id) === String(transferBankId)
     );
+
+    if (selectedBank) {
+      finalBankId = selectedBank.id || "";
+      finalBankName = selectedBank.bank_account_name || "";
+      finalBankAccountNumber = selectedBank.bank_account_number || "";
+    } else {
+      if (!companyId) {
+        alert("Không tìm thấy công ty để lưu tài khoản ngân hàng mới");
+        return;
+      }
+
+      try {
+        const newBank = await createCompanyBankAccount(companyId, {
+          bank_name: finalBankName,
+          bank_account_number: finalBankAccountNumber,
+        });
+
+        setBankAccountOptions((prev) => [
+          ...prev,
+          {
+            id: newBank.id,
+            bank_account_name: newBank.bank_name,
+            bank_account_number: newBank.bank_account_number,
+          },
+        ]);
+
+        finalBankId = newBank.id;
+        finalBankName = newBank.bank_name;
+        finalBankAccountNumber = newBank.bank_account_number;
+      } catch (error) {
+        console.error("CREATE BANK ACCOUNT ERROR:", error.response?.data || error);
+        alert("Không lưu được tài khoản ngân hàng mới");
+        return;
+      }
+    }
 
     navigate(`/dashboard/activity/import/order/${id}/transfer-request-print`, {
       state: {
@@ -1006,9 +1124,9 @@ const handleOpenTransferPrint = () => {
         transferCompanyName: headerData.supplier_name,
         transferCompanyAddress: headerData.address,
 
-        transferBankId: selectedBank?.id || "",
-        transferBankName: selectedBank?.bank_account_name || "",
-        transferBankAccountNumber: selectedBank?.bank_account_number || "",
+        transferBankId: finalBankId,
+        transferBankName: finalBankName,
+        transferBankAccountNumber: finalBankAccountNumber,
       },
     });
   };
@@ -1123,22 +1241,6 @@ const handleOpenTransferPrint = () => {
                 placeholder="Nhập người giao hàng"
                 disabled={isLockedOnlyPrint}            
               />
-            </div>
-
-            <div className="form-group">
-            <label>Thuế VAT</label>
-            <select
-                name="vat_rate"
-                value={headerData.vat_rate}
-                onChange={handleHeaderChange}
-                disabled={isLockedOnlyPrint}            
-            >
-                <option value="">Chọn thuế VAT</option>
-                <option value="0">0%</option>
-                <option value="5">5%</option>
-                <option value="8">8%</option>
-                <option value="10">10%</option>
-            </select>
             </div>
 
             <div className="form-group">
@@ -1268,6 +1370,7 @@ const handleOpenTransferPrint = () => {
                   <col className="col-qty" />
                   <col className="col-check" />
                   <col className="col-price" />
+                  <col className="col-vat" />
                   <col className="col-amount" />
                   <col className="col-action" />
                 </colgroup>
@@ -1282,6 +1385,7 @@ const handleOpenTransferPrint = () => {
                   <th>SL thực nhập</th>
                   <th>Đánh dấu đủ</th>
                   <th>Đơn giá</th>
+                  <th>Thuế VAT</th>
                   <th>Thành tiền</th>
                   <th></th>
                 </tr>
@@ -1463,6 +1567,21 @@ const handleOpenTransferPrint = () => {
                         disabled={isPrintMode}
                     />
                     </td>
+
+                    <td>
+                      <select
+                        value={item.vat || "0"}
+                        onChange={(e) =>
+                          handleChangeItemField(item.id, "vat", e.target.value)
+                        }
+                        disabled={isPrintMode}
+                      >
+                        <option value="0">0%</option>
+                        <option value="5">5%</option>
+                        <option value="8">8%</option>
+                        <option value="10">10%</option>
+                      </select>
+                    </td>
                     <td className="number-col">{item.amount}</td>
                     <td className="delete-row-col">
                     <button
@@ -1499,7 +1618,10 @@ const handleOpenTransferPrint = () => {
 
                   <td></td>
                   <td></td>
-                  <td className="number-col">{formatViNumber(totalAmount, 2)}</td>
+                  <td></td>
+                  <td className="number-col">
+                     {formatViNumber(totalAmount, 2)}
+                  </td>
                   <td></td>
                 </tr>
               </tbody>
@@ -1517,27 +1639,49 @@ const handleOpenTransferPrint = () => {
             <col className="col-qty" />
             <col className="col-check" />
             <col className="col-price" />
+            <col className="col-vat" />
             <col className="col-amount" />
             <col className="col-action" />
           </colgroup>
         <tbody>
             <tr>
                 <td className="money-empty" colSpan={8}></td>
-                <td className="money-label">Cộng</td>
+                <td className="money-label" colSpan={2}>Cộng</td>
                 <td className="money-value">{formatViNumber(totalAmount, 2)}</td>
                 <td className="money-empty"></td>
             </tr>
 
             <tr>
-                <td className="money-empty" colSpan={8}></td>
-                <td className="money-label">Tiền thuế VAT</td>
-                <td className="money-value">{formatViNumber(vatAmount, 2)}</td>
-                <td className="money-empty"></td>
+              <td className="money-empty" colSpan={8}></td>
+              <td className="money-label" colSpan={2}>Thuế VAT 0%</td>
+              <td className="money-value">{formatViNumber(vatSummary["0"], 0)}</td>
+              <td className="money-empty"></td>
+            </tr>
+
+            <tr>
+              <td className="money-empty" colSpan={8}></td>
+              <td className="money-label" colSpan={2}>Thuế VAT 5%</td>
+              <td className="money-value">{formatViNumber(vatSummary["5"], 0)}</td>
+              <td className="money-empty"></td>
+            </tr>
+
+            <tr>
+              <td className="money-empty" colSpan={8}></td>
+              <td className="money-label" colSpan={2}>Thuế VAT 8%</td>
+              <td className="money-value">{formatViNumber(vatSummary["8"], 0)}</td>
+              <td className="money-empty"></td>
+            </tr>
+
+            <tr>
+              <td className="money-empty" colSpan={8}></td>
+              <td className="money-label" colSpan={2}>Thuế VAT 10%</td>
+              <td className="money-value">{formatViNumber(vatSummary["10"], 0)}</td>
+              <td className="money-empty"></td>
             </tr>
 
             <tr>
                 <td className="money-empty" colSpan={8}></td>
-                <td className="money-label">Tổng cộng</td>
+                <td className="money-label" colSpan={2}>Tổng cộng</td>
                 <td className="money-value">{formatViNumber(grandTotal, 2)}</td>
                 <td className="money-empty"></td>
             </tr>

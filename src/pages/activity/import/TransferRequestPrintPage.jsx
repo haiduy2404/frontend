@@ -10,6 +10,8 @@ function TransferRequestPrintPage() {
   const { id } = useParams();
   const location = useLocation();
   const printReason = location.state?.printReason || "";
+  const transferBankName = location.state?.transferBankName || "";
+  const transferBankAccountNumber = location.state?.transferBankAccountNumber || "";
 
   const [receipt, setReceipt] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -43,6 +45,7 @@ function TransferRequestPrintPage() {
         })
         .join(" ");
     };
+    
 
   const formatReceiptDateText = (value) => {
         if (!value) {
@@ -272,13 +275,17 @@ function TransferRequestPrintPage() {
         </div>
 
         <div className="transfer-row">
-            <label>Tài khoản:</label>
-            <span className="transfer-value-bold">{receipt?.bank_account_number || ""}</span>
+          <label>Tài khoản:</label>
+          <span className="transfer-value-bold">
+            {transferBankAccountNumber}
+          </span>
         </div>
 
         <div className="transfer-row">
-            <label>Ngân hàng:</label>
-            <span className="transfer-value-bold">{receipt?.bank_account_name || ""}</span>
+          <label>Ngân hàng:</label>
+          <span className="transfer-value-bold">
+            {transferBankName}
+          </span>
         </div>
         </div>
 

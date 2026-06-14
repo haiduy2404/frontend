@@ -35,9 +35,19 @@ export const updateWarehouseReceipt = async (receiptId, payload) => {
   return response.data;
 };
 
+export const createCompanyBankAccount = async (companyId, payload) => {
+  const response = await axiosInstance.post(
+    `/inventory/company/${companyId}/bank-accounts`,
+    payload
+  );
+
+  return response.data;
+};
+
 export default {
   getCompanies,
   createCompany,
   updateCompany,
   deleteCompany,
+  createCompanyBankAccount,
 };

@@ -278,7 +278,6 @@
   background: #dbeafe;
 }
 
-/* 10 cột đúng theo JSX hiện tại */
 .order-detail-table th:nth-child(1),
 .order-detail-table td:nth-child(1) {
   width: 44px;
@@ -292,7 +291,7 @@
 
 .order-detail-table th:nth-child(3),
 .order-detail-table td:nth-child(3) {
-  width: 420px;
+  width: 220px;
 }
 
 .order-detail-table th:nth-child(4),
@@ -301,7 +300,10 @@
 }
 
 .order-detail-table th:nth-child(5),
-.order-detail-table td:nth-child(5),
+.order-detail-table td:nth-child(5) {
+  width: 140px;
+}
+
 .order-detail-table th:nth-child(6),
 .order-detail-table td:nth-child(6) {
   width: 140px;
@@ -309,22 +311,32 @@
 
 .order-detail-table th:nth-child(7),
 .order-detail-table td:nth-child(7) {
-  width: 130px;
-  text-align: center;
+  width: 140px;
 }
 
 .order-detail-table th:nth-child(8),
 .order-detail-table td:nth-child(8) {
-  width: 150px;
+  width: 130px;
+  text-align: center;
 }
 
 .order-detail-table th:nth-child(9),
 .order-detail-table td:nth-child(9) {
-  width: 160px;
+  width: 150px;
 }
 
 .order-detail-table th:nth-child(10),
 .order-detail-table td:nth-child(10) {
+  width: 100px;
+}
+
+.order-detail-table th:nth-child(11),
+.order-detail-table td:nth-child(11) {
+  width: 160px;
+}
+
+.order-detail-table th:nth-child(12),
+.order-detail-table td:nth-child(12) {
   width: 56px;
   text-align: center;
 }
@@ -909,7 +921,7 @@
 
 .order-detail-table col.col-name,
 .order-money-table col.col-name {
-  width: 420px;
+  width: 220px;
 }
 
 .order-detail-table col.col-unit,
@@ -930,6 +942,11 @@
 .order-detail-table col.col-price,
 .order-money-table col.col-price {
   width: 150px;
+}
+
+.order-detail-table col.col-vat,
+.order-money-table col.col-vat {
+  width: 100px;
 }
 
 .order-detail-table col.col-amount,

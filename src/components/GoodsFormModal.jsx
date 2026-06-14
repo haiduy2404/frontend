@@ -399,10 +399,10 @@ function GoodsFormModal({
                     </div>
 
                     <div className="conversion-note">
-                      1 <strong>{primaryUnitName || "ĐVT chính"}</strong>
+                      1 <strong>{conversionUnitName || "đơn vị"}</strong>
                       {" = "}
                       <strong>{item.ratio || "..."}</strong>{" "}
-                      <strong>{conversionUnitName || "đơn vị"}</strong>
+                      <strong>{primaryUnitName || "ĐVT chính"}</strong>
                     </div>
                   </div>
                 );
