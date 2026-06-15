@@ -62,9 +62,28 @@ function ImportOrderDetailPage() {
     const [showAddGoodsModal, setShowAddGoodsModal] = useState(false);
     const [deletedItems, setDeletedItems] = useState([]);
     const [companyId, setCompanyId] = useState(null);
+    const [debouncedGoodsKeyword, setDebouncedGoodsKeyword] = useState("");
     const handlePrint = () => {
       window.print();
     };
+
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedGoodsKeyword(goodsKeyword);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }, [goodsKeyword]);
+
+    useEffect(() => {
+      if (!showGoodsDropdown) return;
+
+      fetchGoodsDropdown({
+        keyword: debouncedGoodsKeyword,
+        pageNumber: 1,
+        append: false,
+      });
+    }, [debouncedGoodsKeyword, showGoodsDropdown]);
     
 
     const formatISOToViDate = (value) => {
@@ -487,27 +506,37 @@ function ImportOrderDetailPage() {
     }
     };
 
-  const parseNumber = (value) => {
-    if (value === null || value === undefined || value === "") return 0;
+    const parseNumber = (value) => {
+      if (value === null || value === undefined || value === "") return 0;
 
-    if (typeof value === "number") {
-      return Number.isNaN(value) ? 0 : value;
-    }
+      if (typeof value === "number") {
+        return Number.isNaN(value) ? 0 : value;
+      }
 
-    const text = String(value).trim();
+      const text = String(value).trim();
 
-    if (!text) return 0;
+      if (!text) return 0;
 
-    let number;
+      let normalized = text;
 
-    if (text.includes(",")) {
-      number = Number(text.replace(/\./g, "").replace(",", "."));
-    } else {
-      number = Number(text.replace(/\./g, ""));
-    }
+      if (text.includes(",")) {
+        // Dạng VN: 60.000,000 -> 60000.000
+        normalized = text.replace(/\./g, "").replace(",", ".");
+      } else if (
+          text.includes(".") &&
+          text.split(".").every((part) => part.length === 3)
+        ) {
+          // 11.000.000
+          normalized = text.replace(/\./g, "");
+        } else {
+        // Dạng backend decimal: 51000.000 -> 51000.000
+        normalized = text;
+      }
 
-    return Number.isNaN(number) ? 0 : number;
-  };
+      const number = Number(normalized);
+
+      return Number.isNaN(number) ? 0 : number;
+    };
 
   const formatViNumber = (value, fractionDigits = 2) => {
   const number = parseNumber(value);
@@ -1117,49 +1146,59 @@ const handleOpenTransferPrint = () => {
       finalBankName = selectedBank.bank_account_name || "";
       finalBankAccountNumber = selectedBank.bank_account_number || "";
     } else {
-      if (!companyId) {
-        alert("Không tìm thấy công ty để lưu tài khoản ngân hàng mới");
-        return;
+        if (companyId) {
+          try {
+            const newBank = await createCompanyBankAccount(companyId, {
+              bank_name: finalBankName,
+              bank_account_number: finalBankAccountNumber,
+            });
+
+            const bankData = newBank?.data || newBank;
+
+            finalBankId = bankData.id || "";
+            finalBankName = bankData.bank_name || finalBankName;
+            finalBankAccountNumber =
+              bankData.bank_account_number ||
+              bankData.account_number ||
+              finalBankAccountNumber;
+
+            setBankAccountOptions((prev) => [
+              ...prev,
+              {
+                id: finalBankId,
+                bank_account_name: finalBankName,
+                bank_account_number: finalBankAccountNumber,
+              },
+            ]);
+          } catch (error) {
+            console.error("CREATE BANK ACCOUNT ERROR:", error.response?.data || error);
+
+            // fallback: lưu DB lỗi thì vẫn dùng dữ liệu nhập tay để in
+            finalBankId = "";
+            finalBankName = transferBankName.trim();
+            finalBankAccountNumber = transferBankAccountNumber.trim();
+          }
+        } else {
+          // fallback: công ty chưa có id thì vẫn dùng dữ liệu nhập tay để in
+          finalBankId = "";
+          finalBankName = transferBankName.trim();
+          finalBankAccountNumber = transferBankAccountNumber.trim();
+        }
       }
 
-      try {
-        const newBank = await createCompanyBankAccount(companyId, {
-          bank_name: finalBankName,
-          bank_account_number: finalBankAccountNumber,
-        });
+      navigate(`/dashboard/activity/import/order/${id}/transfer-request-print`, {
+        state: {
+          printReason: printReason.trim(),
 
-        setBankAccountOptions((prev) => [
-          ...prev,
-          {
-            id: newBank.id,
-            bank_account_name: newBank.bank_name,
-            bank_account_number: newBank.bank_account_number,
-          },
-        ]);
+          transferTaxCode: headerData.tax_code,
+          transferCompanyName: headerData.supplier_name,
+          transferCompanyAddress: headerData.address,
 
-        finalBankId = newBank.id;
-        finalBankName = newBank.bank_name;
-        finalBankAccountNumber = newBank.bank_account_number;
-      } catch (error) {
-        console.error("CREATE BANK ACCOUNT ERROR:", error.response?.data || error);
-        alert("Không lưu được tài khoản ngân hàng mới");
-        return;
-      }
-    }
-
-    navigate(`/dashboard/activity/import/order/${id}/transfer-request-print`, {
-      state: {
-        printReason: printReason.trim(),
-
-        transferTaxCode: headerData.tax_code,
-        transferCompanyName: headerData.supplier_name,
-        transferCompanyAddress: headerData.address,
-
-        transferBankId: finalBankId,
-        transferBankName: finalBankName,
-        transferBankAccountNumber: finalBankAccountNumber,
-      },
-    });
+          transferBankId: finalBankId,
+          transferBankName: finalBankName,
+          transferBankAccountNumber: finalBankAccountNumber,
+        },
+      });
   };
 
   const selectedConversionRatio =
@@ -1486,12 +1525,6 @@ const handleOpenTransferPrint = () => {
                             setActiveGoodsRowId(item.id);
                             setShowGoodsDropdown(true);
                             setGoodsKeyword(value);
-
-                            fetchGoodsDropdown({
-                            keyword: value,
-                            pageNumber: 1,
-                            append: false,
-                            });
                         }}
                         />
 

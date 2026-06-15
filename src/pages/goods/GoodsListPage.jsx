@@ -9,6 +9,7 @@ function GoodsListPage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [stockStatus, setStockStatus] = useState("all");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
   const [total, setTotal] = useState(0);
@@ -18,7 +19,7 @@ function GoodsListPage() {
   const [editingGoods, setEditingGoods] = useState(null);
 
   const fetchGoods = async (
-    keyword = search,
+    keyword = debouncedSearch,
     pageNumber = page,
     size = pageSize,
     status = stockStatus
@@ -58,8 +59,16 @@ function GoodsListPage() {
   };
 
   useEffect(() => {
-    fetchGoods(search, page, pageSize, stockStatus);
-  }, [page, pageSize, stockStatus]);
+  const timer = setTimeout(() => {
+    setDebouncedSearch(search);
+  }, 1500);
+
+  return () => clearTimeout(timer);
+}, [search]);
+
+  useEffect(() => {
+    fetchGoods(debouncedSearch, page, pageSize, stockStatus);
+  }, [debouncedSearch, page, pageSize, stockStatus]);
 
   const handleSelect = (id) => {
     setSelectedIds((prev) =>
@@ -93,7 +102,7 @@ function GoodsListPage() {
   const handleSaveSuccess = async () => {
     setShowModal(false);
     setEditingGoods(null);
-    await fetchGoods(search, page, pageSize, stockStatus);
+    await fetchGoods(debouncedSearch, page, pageSize, stockStatus);
   };
 
   const handleDeleteGoods = async (goods) => {
@@ -108,7 +117,7 @@ function GoodsListPage() {
 
       setSelectedIds((prev) => prev.filter((id) => id !== goods.id));
 
-      await fetchGoods(search, page, pageSize, stockStatus);
+      await fetchGoods(debouncedSearch, page, pageSize, stockStatus);
 
       alert("Xóa hàng hóa thành công");
     } catch (error) {
@@ -133,7 +142,7 @@ function GoodsListPage() {
       await Promise.all(selectedIds.map((id) => deleteGoods(id)));
 
       setSelectedIds([]);
-      await fetchGoods(search, page, pageSize, stockStatus);
+      await fetchGoods(debouncedSearch, page, pageSize, stockStatus);
 
       alert("Xóa thành công");
     } catch (error) {
@@ -151,10 +160,8 @@ function GoodsListPage() {
             placeholder="🔍  Tìm kiếm"
             value={search}
             onChange={(e) => {
-              const value = e.target.value;
-              setSearch(value);
+              setSearch(e.target.value);
               setPage(1);
-              fetchGoods(value, 1, pageSize, stockStatus);
             }}
           />
 
@@ -176,7 +183,6 @@ function GoodsListPage() {
               onClick={() => {
                 setStockStatus("all");
                 setPage(1);
-                fetchGoods(search, 1, pageSize, "all");
               }}
             >
               Tất cả
@@ -187,7 +193,6 @@ function GoodsListPage() {
               onClick={() => {
                 setStockStatus("out_of_stock");
                 setPage(1);
-                fetchGoods(search, 1, pageSize, "out_of_stock");
               }}
             >
               Hết hàng
@@ -199,7 +204,7 @@ function GoodsListPage() {
           <button
             className="icon-btn"
             title="Làm mới"
-            onClick={() => fetchGoods(search, page, pageSize, stockStatus)}
+            onClick={() => fetchGoods(debouncedSearch, page, pageSize, stockStatus)}
           >
             <RiRefreshLine />
           </button>
@@ -291,7 +296,6 @@ function GoodsListPage() {
               const value = Number(e.target.value);
               setPageSize(value);
               setPage(1);
-              fetchGoods(search, 1, value, stockStatus);
             }}
           >
             <option value={10}>10</option>
