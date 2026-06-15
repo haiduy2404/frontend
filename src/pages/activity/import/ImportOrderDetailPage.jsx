@@ -520,16 +520,13 @@ function ImportOrderDetailPage() {
       let normalized = text;
 
       if (text.includes(",")) {
-        // Dạng VN: 60.000,000 -> 60000.000
+        // Dạng VN hiển thị: 60.000,00 / 100.500,000
         normalized = text.replace(/\./g, "").replace(",", ".");
-      } else if (
-          text.includes(".") &&
-          text.split(".").every((part) => part.length === 3)
-        ) {
-          // 11.000.000
-          normalized = text.replace(/\./g, "");
-        } else {
-        // Dạng backend decimal: 51000.000 -> 51000.000
+      } else if ((text.match(/\./g) || []).length > 1) {
+        // Dạng VN không phần thập phân: 3.015.000, 11.000.000
+        normalized = text.replace(/\./g, "");
+      } else {
+        // Dạng backend / số thập phân chuẩn: 30.000, 51000.000, 100500.00
         normalized = text;
       }
 
