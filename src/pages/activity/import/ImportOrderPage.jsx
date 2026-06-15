@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ImportOrderPage.css"; 
 import {
   getWarehouseReceiptsPageable,
@@ -21,6 +22,7 @@ import {
 } from "./utils/importOrderFilterUtils";
 
 function ImportOrderPage() {
+  const { canDo } = useAuth();
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [importOrders, setImportOrders] = useState([]);
@@ -396,80 +398,88 @@ const formatMoney = (value) => {
         </div>
 
         <div className="warehouse-import-actions">
-        <button
-          className="edit-btn"
-          disabled={!selectedRow || selectedRow.status === "COMPLETED"}
-          onClick={() => {
-            if (!selectedRow) {
-              alert("Vui lòng chọn phiếu cần chỉnh sửa");
-              return;
-            }
+          {canDo("update_warehouse_receipt") && (
+            <button
+              className="edit-btn"
+              disabled={!selectedRow || selectedRow.status === "COMPLETED"}
+              onClick={() => {
+                if (!selectedRow) {
+                  alert("Vui lòng chọn phiếu cần chỉnh sửa");
+                  return;
+                }
 
-            if (selectedRow.status === "COMPLETED") {
-              alert("Phiếu đã hoàn thành, không được chỉnh sửa.");
-              return;
-            }
+                if (selectedRow.status === "COMPLETED") {
+                  alert("Phiếu đã hoàn thành, không được chỉnh sửa.");
+                  return;
+                }
 
-            if (selectedRow.status === "RECEIVED") {
-              navigate(
-                `/dashboard/activity/import/order-detail/${selectedRow.code || selectedRow.id}?mode=edit-items`
-              );
-              return;
-            }
+                if (selectedRow.status === "RECEIVED") {
+                  navigate(
+                    `/dashboard/activity/import/order-detail/${selectedRow.code || selectedRow.id}?mode=edit-items`
+                  );
+                  return;
+                }
 
-            navigate(
-              `/dashboard/activity/import/order-detail/${selectedRow.code || selectedRow.id}`
-            );
-          }}
-        >
-          <RiEdit2Line />
-          <span>Chỉnh sửa</span>
-        </button>
+                navigate(
+                  `/dashboard/activity/import/order-detail/${selectedRow.code || selectedRow.id}`
+                );
+              }}
+            >
+              <RiEdit2Line />
+              <span>Chỉnh sửa</span>
+            </button>
+          )}
 
-          <button
-            className="complete-toolbar-btn"
-            disabled={!selectedRow}
-            onClick={() => {
-              if (!selectedRow) {
-                alert("Vui lòng chọn phiếu cần hoàn thành");
-                return;
-              }
+          {canDo("complete_warehouse_receipt") && (
+            <button
+              className="complete-toolbar-btn"
+              disabled={!selectedRow}
+              onClick={() => {
+                if (!selectedRow) {
+                  alert("Vui lòng chọn phiếu cần hoàn thành");
+                  return;
+                }
 
-              handleCompleteReceipt(selectedRow);
-            }}
-          >
-            <RiCheckboxCircleLine />
-            <span>Hoàn thành</span>
-          </button>
+                handleCompleteReceipt(selectedRow);
+              }}
+            >
+              <RiCheckboxCircleLine />
+              <span>Hoàn thành</span>
+            </button>
+          )}
 
-          <button
-            className="delete-toolbar-btn"
-            disabled={!selectedRow && selectedIds.length === 0}
-            onClick={() => {
-              if (selectedIds.length > 0) {
-                handleDeleteSelectedReceipts();
-                return;
-              }
+          {canDo("delete_warehouse_receipt") && (
+            <button
+              className="delete-toolbar-btn"
+              disabled={!selectedRow && selectedIds.length === 0}
+              onClick={() => {
+                if (selectedIds.length > 0) {
+                  handleDeleteSelectedReceipts();
+                  return;
+                }
 
-              if (!selectedRow) {
-                alert("Vui lòng chọn phiếu cần xóa");
-                return;
-              }
+                if (!selectedRow) {
+                  alert("Vui lòng chọn phiếu cần xóa");
+                  return;
+                }
 
-              handleDeleteReceipt(selectedRow);
-            }}
-          >
-            <RiDeleteBin6Line />
-            <span>{selectedIds.length > 0 ? `Xóa (${selectedIds.length})` : "Xóa"}</span>
-          </button>
+                handleDeleteReceipt(selectedRow);
+              }}
+            >
+              <RiDeleteBin6Line />
+              <span>{selectedIds.length > 0 ? `Xóa (${selectedIds.length})` : "Xóa"}</span>
+            </button>
+          )}
 
-          <button
-            className="add-btn"
-            onClick={() => navigate("/dashboard/activity/import/order-detail/new")}
-          >
-            <RiAddLine />
-            <span>Thêm</span>
-          </button>
+          {canDo("create_warehouse_receipt") && (
+            <button
+              className="add-btn"
+              onClick={() => navigate("/dashboard/activity/import/order-detail/new")}
+            >
+              <RiAddLine />
+              <span>Thêm</span>
+            </button>
+          )}
         </div>
       </div>
 

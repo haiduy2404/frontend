@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ImportOrderDetailPage.css";
 import { getGoods } from "../../../services/goodsService";
 import { getCompanies, createCompanyBankAccount } from "../../../services/companyService";
@@ -31,6 +32,9 @@ import {
 function ImportOrderDetailPage() {
     const navigate = useNavigate();
     const { id } = useParams();
+    const { canDo } = useAuth();
+    const canSave = canDo("create_warehouse_receipt", "update_warehouse_receipt");
+    const canComplete = canDo("update_warehouse_receipt");
 
     const isCreateMode = !id;
     const [companyLoading, setCompanyLoading] = useState(false);
@@ -1890,7 +1894,7 @@ const handleOpenTransferPrint = () => {
           {isPrintMode ? "Quay lại" : "Hủy"}
         </button>
 
-        {!isPrintMode && (
+        {!isPrintMode && canSave && (
           <button
             className="save-draft-btn"
             onClick={handleSaveDraftAndAddNew}
@@ -1913,13 +1917,17 @@ const handleOpenTransferPrint = () => {
           </>
         ) : (
           <>
-            <button className="save-draft-btn" onClick={handleSaveDraft}>
+            {canSave && (
+              <button className="save-draft-btn" onClick={handleSaveDraft}>
                 Lưu tạm
-            </button>
+              </button>
+            )}
 
-            <button className="complete-btn" onClick={handleComplete}>
-              Hoàn thành
-            </button>
+            {canComplete && (
+              <button className="complete-btn" onClick={handleComplete}>
+                Hoàn thành
+              </button>
+            )}
           </>
         )}
       </div>

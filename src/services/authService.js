@@ -24,7 +24,7 @@ const saveAuthData = (data) => {
   }
 
   if (data.user) {
-    localStorage.setItem("user", JSON.stringify(data.user.data));
+    localStorage.setItem("user", JSON.stringify(data.user));
   }
 };
 
