@@ -245,17 +245,21 @@ function GoodsFormModal({
       ],
     };
 
-    try {
-      if (editingGoodsId) {
-        await updateGoods(editingGoodsId, payload);
-        alert("Cập nhật hàng hóa thành công");
-      } else {
-        await createGoods(payload);
-        alert("Thêm hàng hóa thành công");
-      }
+      try {
+        const response = await (
+          editingGoodsId
+            ? updateGoods(editingGoodsId, payload)
+            : createGoods(payload)
+        );
 
-      onSuccess?.();
-    } catch (error) {
+        alert(
+          editingGoodsId
+            ? "Cập nhật hàng hóa thành công"
+            : "Thêm hàng hóa thành công"
+        );
+
+        onSuccess?.(response?.data || response);
+      } catch (error) {
       console.error("SAVE GOODS ERROR:", error.response?.data || error);
 
       alert(

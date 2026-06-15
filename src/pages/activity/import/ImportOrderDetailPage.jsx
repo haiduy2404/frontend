@@ -349,28 +349,45 @@ function ImportOrderDetailPage() {
       setShowBankDropdown(false);
     };
 
-    const handleAddRow = () => {
-        setItems((prev) => [
-        ...prev,
-        {
-            id: Date.now(),
-            goods_id: "",
-            goods_code: "",
-            goods_name: "",
-            unit: "",
-            requested_quantity: "1,00",
-            actual_quantity: "0,00",
-            marked_old: false,
-            unit_price: "0,00",
-            amount: "0,00",
-            unit_id: "",
-            unit_options: [],
-            vat: "0",
-            is_delete: false,
-            inventory_id: "",
-            conversion_ratio: "",
-        },
-        ]);
+    const createEmptyRow = () => ({
+      id: Date.now(),
+      goods_id: "",
+      goods_code: "",
+      goods_name: "",
+      unit: "",
+      requested_quantity: "1,00",
+      actual_quantity: "0,00",
+      marked_old: false,
+      unit_price: "0,00",
+      amount: "0",
+      unit_id: "",
+      unit_options: [],
+      vat: "0",
+      is_delete: false,
+      inventory_id: "",
+      conversion_ratio: "",
+    });
+
+    const handleAddRow = (rowId) => {
+      setItems((prev) => {
+        const newRow = createEmptyRow();
+
+        if (!rowId) {
+          return [...prev, newRow];
+        }
+
+        const index = prev.findIndex((item) => item.id === rowId);
+
+        if (index === -1) {
+          return [...prev, newRow];
+        }
+
+        return [
+          ...prev.slice(0, index + 1),
+          newRow,
+          ...prev.slice(index + 1),
+        ];
+      });
     };
 
     const handleDeleteAllRows = () => {
@@ -470,19 +487,27 @@ function ImportOrderDetailPage() {
     }
     };
 
-    const parseNumber = (value) => {
-  if (value === null || value === undefined || value === "") return 0;
+  const parseNumber = (value) => {
+    if (value === null || value === undefined || value === "") return 0;
 
-  if (typeof value === "number") return value;
+    if (typeof value === "number") {
+      return Number.isNaN(value) ? 0 : value;
+    }
 
-  const text = String(value).trim();
+    const text = String(value).trim();
 
-  if (text.includes(",")) {
-    return Number(text.replace(/\./g, "").replace(",", "."));
-  }
+    if (!text) return 0;
 
-  return Number(text);
-};
+    let number;
+
+    if (text.includes(",")) {
+      number = Number(text.replace(/\./g, "").replace(",", "."));
+    } else {
+      number = Number(text.replace(/\./g, ""));
+    }
+
+    return Number.isNaN(number) ? 0 : number;
+  };
 
   const formatViNumber = (value, fractionDigits = 2) => {
   const number = parseNumber(value);
@@ -543,7 +568,10 @@ function ImportOrderDetailPage() {
                 ? String(defaultUnit.conversion_ratio)
                 : "1",
             unit_price: formatViNumber(unitPrice, 2),
-            amount: formatViNumber(quantity * unitPrice, 2),
+            amount: formatViNumber(
+            Math.round(quantity * unitPrice),
+            0
+          ),
           };
         })
       );
@@ -641,8 +669,8 @@ function ImportOrderDetailPage() {
               field === "unit_price"
             ) {
               nextItem.amount = formatViNumber(
-                quantity * unitPrice,
-                2
+                Math.round(quantity * unitPrice),
+                0
               );
 
               if (
@@ -914,8 +942,11 @@ const handleComplete = async () => {
                     requested_quantity: formatViNumber(requestedQuantity, 2),
                     actual_quantity: formatViNumber(originalQuantity, 2),
                     marked_old: requestedQuantity === originalQuantity,
-                    unit_price: formatViNumber(unitPrice, 2),
-                    amount: formatViNumber(originalQuantity * unitPrice, 2),
+                    unit_price: formatViNumber(unitPrice, 3),
+                    amount: formatViNumber(
+                      Math.round(originalQuantity * unitPrice),
+                      0
+                    ),
                     vat: String(Number(line.vat || 0)),
                     is_delete: false,
                   };
@@ -1134,6 +1165,23 @@ const handleOpenTransferPrint = () => {
   const selectedConversionRatio =
   items.find((item) => item.conversion_ratio)?.conversion_ratio || "";
 
+    const autoFillYear = (value) => {
+    const text = String(value || "").trim();
+
+    const match = text.match(/^(\d{1,2})\/(\d{1,2})$/);
+
+    if (!match) {
+      return value;
+    }
+
+    const currentYear = new Date().getFullYear();
+
+    const day = match[1].padStart(2, "0");
+    const month = match[2].padStart(2, "0");
+
+    return `${day}/${month}/${currentYear}`;
+  };
+
   return (
     <div className="import-order-detail-page">
       <div className="import-order-detail-header">
@@ -1190,6 +1238,12 @@ const handleOpenTransferPrint = () => {
                   name="inward_date"
                   value={headerData.inward_date}
                   onChange={handleHeaderChange}
+                  onBlur={(e) =>
+                    setHeaderData((prev) => ({
+                      ...prev,
+                      inward_date: autoFillYear(e.target.value),
+                    }))
+                  }
                   placeholder="dd/mm/yyyy"
                   disabled={isLockedWhenReceived}
                 />
@@ -1272,6 +1326,12 @@ const handleOpenTransferPrint = () => {
                   name="invoice_date"
                   value={headerData.invoice_date}
                   onChange={handleHeaderChange}
+                  onBlur={(e) =>
+                    setHeaderData((prev) => ({
+                      ...prev,
+                      invoice_date: autoFillYear(e.target.value),
+                    }))
+                  }
                   placeholder="dd/mm/yyyy"
                   disabled={isLockedOnlyPrint}
                 />
@@ -1370,8 +1430,8 @@ const handleOpenTransferPrint = () => {
                   <col className="col-qty" />
                   <col className="col-check" />
                   <col className="col-price" />
-                  <col className="col-vat" />
                   <col className="col-amount" />
+                  <col className="col-vat" />
                   <col className="col-action" />
                 </colgroup>
               <thead>
@@ -1385,8 +1445,8 @@ const handleOpenTransferPrint = () => {
                   <th>SL thực nhập</th>
                   <th>Đánh dấu đủ</th>
                   <th>Đơn giá</th>
-                  <th>Thuế VAT</th>
                   <th>Thành tiền</th>
+                  <th>Thuế VAT</th>
                   <th></th>
                 </tr>
               </thead>
@@ -1396,6 +1456,7 @@ const handleOpenTransferPrint = () => {
                     <tr
                       key={item.id}
                       className={[
+                        "goods-row",
                         activeGoodsRowId === item.id ? "goods-dropdown-active-row" : "",
                         item.is_delete ? "deleted-goods-row" : "",
                       ].join(" ")}
@@ -1559,17 +1620,25 @@ const handleOpenTransferPrint = () => {
                     </td>
                     <td className="number-col">
                     <input
-                        className="table-number-input"
-                        value={item.unit_price}
-                        onChange={(e) =>
+                      className="table-number-input"
+                      value={item.unit_price}
+                      onChange={(e) =>
                         handleChangeItemField(item.id, "unit_price", e.target.value)
-                        }
-                        disabled={isPrintMode}
+                      }
+                      onBlur={(e) =>
+                        handleChangeItemField(
+                          item.id,
+                          "unit_price",
+                          formatViNumber(e.target.value, 3)
+                        )
+                      }
+                      disabled={isPrintMode}
                     />
                     </td>
-
+                    <td className="number-col">{item.amount}</td>
                     <td>
                       <select
+                        className="table-vat-select"
                         value={item.vat || "0"}
                         onChange={(e) =>
                           handleChangeItemField(item.id, "vat", e.target.value)
@@ -1582,16 +1651,25 @@ const handleOpenTransferPrint = () => {
                         <option value="10">10%</option>
                       </select>
                     </td>
-                    <td className="number-col">{item.amount}</td>
-                    <td className="delete-row-col">
-                    <button
-                        className="delete-row-btn"
-                        onClick={() => handleDeleteRow(item.id)}
-                        disabled={isPrintMode}
-                    >
-                        <RiDeleteBin6Line />
-                    </button>
-                    </td>
+                      <td className="delete-row-col">
+                        <div className="detail-action-row add-row-action">
+                          <button
+                            type="button"
+                            className="goods-code-add-btn"
+                            onClick={() => handleAddRow(item.id)}
+                            disabled={isPrintMode}
+                          >
+                            <RiAddLine />
+                          </button>
+                          <button
+                            className="delete-row-btn"
+                            onClick={() => handleDeleteRow(item.id)}
+                            disabled={isPrintMode}
+                          >
+                            <RiDeleteBin6Line />
+                          </button>
+                        </div>
+                      </td>
                   </tr>
                 ))}
 
@@ -1618,75 +1696,47 @@ const handleOpenTransferPrint = () => {
 
                   <td></td>
                   <td></td>
-                  <td></td>
                   <td className="number-col">
-                     {formatViNumber(totalAmount, 2)}
+                     {formatViNumber(totalAmount, 0)}
                   </td>
+                  <td></td>
                   <td></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-        <table className="order-money-table">
-          <colgroup>
-            <col className="col-stt" />
-            <col className="col-code" />
-            <col className="col-name" />
-            <col className="col-unit" />
-            <col className="col-qty" />
-            <col className="col-qty" />
-            <col className="col-qty" />
-            <col className="col-check" />
-            <col className="col-price" />
-            <col className="col-vat" />
-            <col className="col-amount" />
-            <col className="col-action" />
-          </colgroup>
-        <tbody>
-            <tr>
-                <td className="money-empty" colSpan={8}></td>
-                <td className="money-label" colSpan={2}>Cộng</td>
-                <td className="money-value">{formatViNumber(totalAmount, 2)}</td>
-                <td className="money-empty"></td>
-            </tr>
+                <div className="money-summary">
+                  <div className="money-row">
+                    <span>Cộng</span>
+                    <strong>{formatViNumber(totalAmount, 0)}</strong>
+                  </div>
 
-            <tr>
-              <td className="money-empty" colSpan={8}></td>
-              <td className="money-label" colSpan={2}>Thuế VAT 0%</td>
-              <td className="money-value">{formatViNumber(vatSummary["0"], 0)}</td>
-              <td className="money-empty"></td>
-            </tr>
+                  <div className="money-row">
+                    <span>Thuế VAT 0%</span>
+                    <strong>{formatViNumber(vatSummary["0"], 0)}</strong>
+                  </div>
 
-            <tr>
-              <td className="money-empty" colSpan={8}></td>
-              <td className="money-label" colSpan={2}>Thuế VAT 5%</td>
-              <td className="money-value">{formatViNumber(vatSummary["5"], 0)}</td>
-              <td className="money-empty"></td>
-            </tr>
+                  <div className="money-row">
+                    <span>Thuế VAT 5%</span>
+                    <strong>{formatViNumber(vatSummary["5"], 0)}</strong>
+                  </div>
 
-            <tr>
-              <td className="money-empty" colSpan={8}></td>
-              <td className="money-label" colSpan={2}>Thuế VAT 8%</td>
-              <td className="money-value">{formatViNumber(vatSummary["8"], 0)}</td>
-              <td className="money-empty"></td>
-            </tr>
+                  <div className="money-row">
+                    <span>Thuế VAT 8%</span>
+                    <strong>{formatViNumber(vatSummary["8"], 0)}</strong>
+                  </div>
 
-            <tr>
-              <td className="money-empty" colSpan={8}></td>
-              <td className="money-label" colSpan={2}>Thuế VAT 10%</td>
-              <td className="money-value">{formatViNumber(vatSummary["10"], 0)}</td>
-              <td className="money-empty"></td>
-            </tr>
+                  <div className="money-row">
+                    <span>Thuế VAT 10%</span>
+                    <strong>{formatViNumber(vatSummary["10"], 0)}</strong>
+                  </div>
 
-            <tr>
-                <td className="money-empty" colSpan={8}></td>
-                <td className="money-label" colSpan={2}>Tổng cộng</td>
-                <td className="money-value">{formatViNumber(grandTotal, 2)}</td>
-                <td className="money-empty"></td>
-            </tr>
-        </tbody>
-        </table>
+                  <div className="money-row total">
+                    <span>Tổng cộng</span>
+                    <strong>{formatViNumber(grandTotal, 0)}</strong>
+                  </div>
+                </div>
 
           <div className="table-bottom-bar">
             <div>
@@ -1705,14 +1755,6 @@ const handleOpenTransferPrint = () => {
               <button disabled>›</button>
             </div>
           </div>
-
-          <div className="detail-action-row">
-            <button className="outline-primary-btn" onClick={handleAddRow} disabled={isPrintMode}>
-              <RiAddLine />
-              <span>Thêm dòng</span>
-            </button>
-          </div>
-
         </div>
       </div>
 
@@ -1889,18 +1931,22 @@ const handleOpenTransferPrint = () => {
           </div>
         )}
         {showAddGoodsModal && (
-          <GoodsFormModal
-            onClose={() => setShowAddGoodsModal(false)}
-            onSuccess={() => {
-              setShowAddGoodsModal(false);
+        <GoodsFormModal
+          onClose={() => setShowAddGoodsModal(false)}
+          onSuccess={(goods) => {
+            setShowAddGoodsModal(false);
 
-              fetchGoodsDropdown({
-                keyword: goodsKeyword,
-                pageNumber: 1,
-                append: false,
-              });
-            }}
-          />
+            if (goods) {
+              handleSelectGoods(goods);
+            }
+
+            fetchGoodsDropdown({
+              keyword: goodsKeyword,
+              pageNumber: 1,
+              append: false,
+            });
+          }}
+        />
         )}
     </div>
   );

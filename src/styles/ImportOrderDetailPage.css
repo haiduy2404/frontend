@@ -553,8 +553,9 @@
 .detail-action-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 28px;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 0;
 }
 
 .outline-primary-btn,
@@ -900,6 +901,11 @@
   font-weight: 800;
   color: #111827;
   background: #ffffff;
+
+  width: 240px;
+  min-width: 240px;
+
+  padding-left: 16px;
 }
 
 .order-money-table .money-value {
@@ -951,7 +957,7 @@
 
 .order-detail-table col.col-amount,
 .order-money-table col.col-amount {
-  width: 160px;
+  width: 220px;
 }
 
 .order-detail-table col.col-action,
@@ -1225,19 +1231,22 @@
 }
 
 .goods-code-add-btn {
-  width: 24px;
-  height: 24px;
-  border: 1px solid #2563eb;
+  width: 28px;
+  height: 28px;
+  border: none;
   border-radius: 4px;
-  background: #ffffff;
+
+  background: transparent;
   color: #2563eb;
-  font-size: 18px;
+
+  font-size: 16px;
   font-weight: 700;
-  line-height: 20px;
-  cursor: pointer;
-  display: flex;
+
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  cursor: pointer;
 }
 
 .goods-code-add-btn:hover {
@@ -1303,4 +1312,70 @@
 .transfer-info-grid input:disabled {
   background: #f3f4f6;
   color: #374151;
+}
+
+.add-row-action {
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s ease;
+}
+
+.goods-row:hover .add-row-action {
+  opacity: 1;
+  visibility: visible;
+}
+
+.money-summary {
+  width: 460px;
+  margin-left: 1060px;
+  margin-top: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.money-row {
+  height: 36px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+  box-sizing: border-box;
+}
+
+.money-row:last-child {
+  border-bottom: none;
+}
+
+.money-row span {
+  font-weight: 800;
+}
+
+.money-row strong {
+  font-weight: 900;
+}
+
+.money-row.total {
+  background: #f8fafc;
+}
+
+.table-vat-select {
+  width: 100%;
+  height: 30px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+
+  padding: 0 8px;
+
+  background: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+
+  cursor: pointer;
+}
+
+.table-vat-select:focus {
+  border-color: #2563eb;
 }
