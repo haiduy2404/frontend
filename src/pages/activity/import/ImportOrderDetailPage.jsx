@@ -1009,6 +1009,53 @@ const handleComplete = async () => {
       }
     };
 
+    const resetNewReceiptForm = () => {
+      setReceiptId(null);
+      setCompanyId(null);
+      setDeletedItems([]);
+      setBankAccountOptions([]);
+      setShowBankDropdown(false);
+
+      setHeaderData({
+        terms: getCurrentTerms(),
+        inward_date: getTodayViDate(),
+        warehouse_id: "",
+        delivery_person: "",
+        invoice_symbol: "",
+        invoice_no: "",
+        invoice_date: "",
+        supplier_code: "",
+        supplier_name: "",
+        tax_code: "",
+        address: "",
+        description: "",
+        bank_account_id: "",
+        bank_account_name: "",
+        bank_account_number: "",
+      });
+
+      setItems([
+        {
+          id: Date.now(),
+          inventory_id: "",
+          goods_id: "",
+          goods_code: "",
+          goods_name: "",
+          unit_id: "",
+          unit: "",
+          unit_options: [],
+          conversion_ratio: "",
+          requested_quantity: "1,00",
+          actual_quantity: "0,00",
+          marked_old: false,
+          unit_price: "0,00",
+          amount: "0,00",
+          vat: "0",
+          is_delete: false,
+        },
+      ]);
+    };
+
     useEffect(() => {
       if (id && id !== "new") {
         fetchReceiptDetail(id);
@@ -1061,6 +1108,53 @@ const handleComplete = async () => {
     );
   }
 };
+
+    const handleSaveDraftAndAddNew = async () => {
+      try {
+        if (!headerData.inward_date) {
+          alert("Vui lòng nhập ngày nhập kho");
+          return;
+        }
+
+        if (!headerData.warehouse_id) {
+          alert("Vui lòng chọn kho nhập");
+          return;
+        }
+
+        if (!headerData.supplier_code || !headerData.supplier_name || !headerData.tax_code) {
+          alert("Vui lòng nhập đầy đủ thông tin nhà cung cấp");
+          return;
+        }
+
+        const validItems = items.filter((item) => item.goods_id);
+
+        if (validItems.length === 0) {
+          alert("Vui lòng chọn ít nhất một hàng hóa");
+          return;
+        }
+
+        const payload = buildReceiptPayload("WAITING_DELIVERY");
+
+        if (id && id !== "new" && receiptId) {
+          await updateWarehouseReceipt(receiptId, payload);
+        } else {
+          await createWarehouseReceipt(payload);
+        }
+
+        alert("Lưu tạm thành công");
+
+        resetNewReceiptForm();
+
+        navigate("/dashboard/activity/import/order-detail/new", { replace: true });
+      } catch (error) {
+        console.error("SAVE DRAFT AND ADD NEW ERROR:", error.response?.data || error);
+        alert(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            "Lưu tạm thất bại"
+        );
+      }
+    };
 
 const handleOpenTransferPrint = () => {
   if (!id || id === "new") {
@@ -1798,6 +1892,15 @@ const handleOpenTransferPrint = () => {
         >
           {isPrintMode ? "Quay lại" : "Hủy"}
         </button>
+
+        {!isPrintMode && (
+          <button
+            className="save-draft-btn"
+            onClick={handleSaveDraftAndAddNew}
+          >
+            Lưu và thêm
+          </button>
+        )}
 
         {isPrintMode ? (
           <>
