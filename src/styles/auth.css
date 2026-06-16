@@ -1,0 +1,46 @@
+.auth-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.no-permission-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 100vh;
+  padding: 24px;
+  text-align: center;
+  color: #b91c1c;
+}
+
+.no-permission-page h1 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.no-permission-page p {
+  color: #475569;
+  font-weight: 500;
+}
+
+.no-permission-page button {
+  margin-top: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.no-permission-page button:hover {
+  background: #1d4ed8;
+}

@@ -1,6 +1,7 @@
-import { useState , useEffect } from "react";
-import { Link , useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { login } from "../services/authService";
+import { useAuth } from "../contexts/AuthContext";
 import "../styles/login.css";
 
 function LoginPage() {
@@ -8,11 +9,8 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-
-  useEffect(() => {
-    console.log("Đang truy cập trang đăng nhập");
-  }, []);
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
 const handleLogin = async (e) => {
   e.preventDefault();
@@ -24,16 +22,10 @@ const handleLogin = async (e) => {
   };
 
     try {
-      console.log("Dữ liệu đăng nhập:", loginData);
-
-      const data = await login(loginData);
-
-      console.log("Kết quả login:", data);
-
+      await login(loginData);
+      await refreshUser();
       navigate("/dashboard");
     } catch (error) {
-      console.error("Login lỗi:", error);
-
       setError(
         error.response?.data?.message ||
           "Đăng nhập thất bại. Vui lòng kiểm tra lại user và mật khẩu."

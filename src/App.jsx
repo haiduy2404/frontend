@@ -1,4 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./layouts/DashboardLayout";
 import ImportLayout from "./layouts/ImportLayout";
@@ -17,91 +24,157 @@ import InspectionDetailPage from "./pages/activity/import/InspectionDetailPage";
 import InspectionPrintPage from "./pages/activity/import/InspectionPrintPage";
 import WarehouseImportCompanyReportPage from "./pages/report/WarehouseImportCompanyReportPage";
 import WarehouseImportCompanyChartPage from "./pages/report/WarehouseImportCompanyChartPage";
+import NoPermissionPage from "./pages/NoPermissionPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import RequireRole from "./components/RequireRole";
+import { AuthProvider } from "./contexts/AuthContext";
+import "./styles/auth.css";
+
+// Bridges global auth events from the axios interceptor to router navigation.
+function AuthEventBridge() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const onForbidden = () => navigate("/no-permission");
+    const onLogout = () => navigate("/", { replace: true });
+
+    window.addEventListener("auth:forbidden", onForbidden);
+    window.addEventListener("auth:logout", onLogout);
+    return () => {
+      window.removeEventListener("auth:forbidden", onForbidden);
+      window.removeEventListener("auth:logout", onLogout);
+    };
+  }, [navigate]);
+
+  return null;
+}
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/admin" element={<DashboardLayout />} />
+      <AuthProvider>
+        <AuthEventBridge />
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/no-permission" element={<NoPermissionPage />} />
 
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route path="stock-manager" element={<div>Trang quản lý kho</div>} />
-          <Route path="stock-manager/stock-list" element={<StockListPage />} />
+          {/* All authenticated areas live behind ProtectedRoute */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route path="stock-manager" element={<div>Trang quản lý kho</div>} />
+              <Route path="stock-manager/stock-list" element={<StockListPage />} />
+              <Route
+                path="stock-manager/opening-stock"
+                element={<OpeningStockPage />}
+              />
+              <Route path="stock-manager/goods-list" element={<GoodsListPage />} />
+              <Route
+                path="stock-manager/company-list"
+                element={<CompanyListPage />}
+              />
+              <Route
+                path="report/import-company"
+                element={<WarehouseImportCompanyReportPage />}
+              />
+              <Route
+                path="report/warehouse-import-company-chart"
+                element={
+                  <RequireRole roles={["view_report"]}>
+                    <WarehouseImportCompanyChartPage />
+                  </RequireRole>
+                }
+              />
 
-          <Route
-            path="stock-manager/opening-stock"
-            element={<OpeningStockPage />}
-          />
+              <Route path="activity/import" element={<ImportLayout />}>
+                <Route index element={<Navigate to="order" replace />} />
+                <Route
+                  path="order"
+                  element={
+                    <RequireRole roles={["view_warehouse_receipt"]}>
+                      <ImportOrderPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="inspection"
+                  element={
+                    <RequireRole roles={["view_warehouse_receipt"]}>
+                      <InspectionPage />
+                    </RequireRole>
+                  }
+                />
+              </Route>
+            </Route>
 
-          <Route path="stock-manager/goods-list" element={<GoodsListPage />} />
+            <Route
+              path="/dashboard/activity/import/order-detail/new"
+              element={
+                <RequireRole roles={["create_warehouse_receipt"]}>
+                  <ImportOrderDetailPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/dashboard/activity/import/order-detail/:id"
+              element={
+                <RequireRole roles={["view_warehouse_receipt"]}>
+                  <ImportOrderDetailPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/dashboard/activity/import/inspection-detail/new"
+              element={
+                <RequireRole roles={["view_warehouse_receipt"]}>
+                  <InspectionDetailPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/dashboard/activity/import/inspection-detail/:id"
+              element={
+                <RequireRole roles={["view_warehouse_receipt"]}>
+                  <InspectionDetailPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/dashboard/activity/import/order/:id/transfer-request-print"
+              element={
+                <RequireRole roles={["view_warehouse_receipt"]}>
+                  <TransferRequestPrintPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/dashboard/activity/import/order/:id/receipt-print-no-vat"
+              element={
+                <RequireRole roles={["view_warehouse_receipt"]}>
+                  <ImportReceiptPrintNoVatForm />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/dashboard/activity/import/order/:id/receipt-print-vat"
+              element={
+                <RequireRole roles={["view_warehouse_receipt"]}>
+                  <ImportReceiptPrintVatForm />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/dashboard/activity/import/inspection/:id/print"
+              element={
+                <RequireRole roles={["view_warehouse_receipt"]}>
+                  <InspectionPrintPage />
+                </RequireRole>
+              }
+            />
 
-          <Route
-            path="stock-manager/company-list"
-            element={<CompanyListPage />}
-          />
-
-          <Route
-            path="report/import-company"
-            element={<WarehouseImportCompanyReportPage />}
-          />
-          <Route
-            path="report/warehouse-import-company-chart"
-            element={<WarehouseImportCompanyChartPage />}
-          />
-
-          <Route path="activity/import" element={<ImportLayout />}>
-            <Route index element={<Navigate to="order" replace />} />
-            <Route path="order" element={<ImportOrderPage />} />
-            <Route path="inspection" element={<InspectionPage />} />
+            <Route path="/account" element={<AccountPage />} />
           </Route>
-        </Route>
-
-        <Route
-          path="/dashboard/activity/import/order-detail/new"
-          element={<ImportOrderDetailPage />}
-        />
-
-        <Route
-          path="/dashboard/activity/import/order-detail/:id"
-          element={<ImportOrderDetailPage />}
-        />
-
-        <Route
-          path="/dashboard/activity/import/inspection-detail/new"
-          element={<InspectionDetailPage />}
-        />
-
-        <Route
-          path="/dashboard/activity/import/inspection-detail/:id"
-          element={<InspectionDetailPage />}
-        />
-
-        <Route
-          path="/dashboard/activity/import/order/:id/transfer-request-print"
-          element={<TransferRequestPrintPage />}
-        />
-
-        <Route
-          path="/dashboard/activity/import/order/:id/receipt-print-no-vat"
-          element={<ImportReceiptPrintNoVatForm />}
-        />
-
-        <Route
-          path="/dashboard/activity/import/order/:id/receipt-print-vat"
-          element={<ImportReceiptPrintVatForm />}
-        />
-
-        <Route path="/account" element={<AccountPage />} />
-
-
-
-        <Route
-          path="/dashboard/activity/import/inspection/:id/print"
-          element={<InspectionPrintPage />}
-        />
-
-      </Routes>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

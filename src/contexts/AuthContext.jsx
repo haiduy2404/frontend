@@ -1,51 +1,77 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { getCurrentUser, getMe } from "../services/authService";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { getMe, logout as logoutRequest } from "../services/authService";
 
 const AuthContext = createContext(null);
 
 /**
- * canDo(...roleCodes): returns true when user has at least one of the given roles.
- * Special case: if the user has NO roles assigned (empty position), we allow all
- * so the UI is not accidentally locked out while roles are loading or unassigned.
+ * canDo(...roleCodes): returns true only when the user explicitly has at least
+ * one of the given roles. Fail-closed: empty/missing roles deny everything.
+ * Authorization is still enforced by the backend; this only gates the UI.
  */
 function buildCanDo(roles) {
-  return (...codes) => {
-    if (!roles || roles.length === 0) return true;
-    return codes.some((c) => roles.includes(c));
-  };
+  const set = new Set(roles || []);
+  return (...codes) => codes.some((c) => set.has(c));
 }
 
-export function AuthProvider({ children, fetchOnMount = false }) {
-  const [user, setUser] = useState(() => getCurrentUser());
+// status: "loading" | "authenticated" | "unauthenticated"
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [status, setStatus] = useState("loading");
+
+  const loadUser = useCallback(async () => {
+    setStatus("loading");
+    try {
+      const u = await getMe();
+      setUser(u);
+      setStatus("authenticated");
+      return u;
+    } catch (err) {
+      setUser(null);
+      setStatus("unauthenticated");
+      return null;
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await logoutRequest();
+    setUser(null);
+    setStatus("unauthenticated");
+  }, []);
 
   useEffect(() => {
-    if (fetchOnMount) {
-      getMe()
-        .then((u) => setUser(u))
-        .catch(() => {});
-    }
-  }, [fetchOnMount]);
+    loadUser();
+  }, [loadUser]);
+
+  // React to global auth events fired by the axios interceptor.
+  useEffect(() => {
+    const onLogout = () => {
+      setUser(null);
+      setStatus("unauthenticated");
+    };
+    window.addEventListener("auth:logout", onLogout);
+    return () => window.removeEventListener("auth:logout", onLogout);
+  }, []);
 
   const roles = user?.roles ?? [];
 
-  return (
-    <AuthContext.Provider value={{ user, roles, canDo: buildCanDo(roles) }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    roles,
+    status,
+    isLoading: status === "loading",
+    isAuthenticated: status === "authenticated",
+    canDo: buildCanDo(roles),
+    refreshUser: loadUser,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/**
- * useAuth — consume AuthContext.
- * Falls back to a direct localStorage read so it also works in standalone pages
- * that are not wrapped by AuthProvider (e.g. ImportOrderDetailPage).
- */
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (ctx) return ctx;
-
-  // Fallback for pages outside AuthProvider
-  const user = getCurrentUser();
-  const roles = user?.roles ?? [];
-  return { user, roles, canDo: buildCanDo(roles) };
+  if (!ctx) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return ctx;
 }

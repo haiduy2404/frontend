@@ -1,81 +1,68 @@
 import axios from "axios";
 
+// Keep the API on the SAME host as the SPA so SameSite=Lax auth cookies are
+// sent on XHR. With the dev server on http://localhost:5173, use localhost here
+// (localhost and 127.0.0.1 are different "sites" for cookies).
 const API_URL =
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+  import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+  // Echo Django's CSRF cookie back as a header on unsafe requests.
+  xsrfCookieName: "csrftoken",
+  xsrfHeaderName: "X-CSRFToken",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-const getAccessToken = () => localStorage.getItem("accessToken");
-
+// We no longer store the access token in JS-readable storage. Auth is carried
+// by httpOnly cookies. We keep a lightweight cached user for UX (display only);
+// it is never the source of truth for authorization.
 const clearAuthData = () => {
-  localStorage.removeItem("accessToken");
   localStorage.removeItem("user");
 };
 
-const saveAuthData = (data) => {
-  if (data.access) {
-    localStorage.setItem("accessToken", data.access);
-  }
-
-  if (data.user) {
-    localStorage.setItem("user", JSON.stringify(data.user));
+const cacheUser = (user) => {
+  try {
+    localStorage.setItem("user", JSON.stringify(user));
+  } catch (err) {
+    // ignore storage errors
   }
 };
 
 export const refreshAccessToken = async () => {
-  const response = await axios.post(
-    `${API_URL}/auth/refresh`,
-    {},
-    { withCredentials: true }
-  );
-
-  const newAccessToken = response.data.access;
-  localStorage.setItem("accessToken", newAccessToken);
-
-  return newAccessToken;
+  // Refresh is driven entirely by the httpOnly refresh cookie.
+  await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
 };
-
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const accessToken = getAccessToken();
-
-    if (accessToken) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 axiosInstance.interceptors.response.use(
   (response) => response,
 
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Try a one-time silent refresh on 401, then replay the request.
+    if (status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        const newAccessToken = await refreshAccessToken();
-
-        originalRequest.headers = originalRequest.headers || {};
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
+        await refreshAccessToken();
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         clearAuthData();
-        window.location.href = "/";
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("auth:logout"));
+        }
         return Promise.reject(refreshError);
       }
+    }
+
+    // Authorization failure: surface globally so the app can redirect.
+    if (status === 403 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("auth:forbidden"));
     }
 
     return Promise.reject(error);
@@ -84,11 +71,20 @@ axiosInstance.interceptors.response.use(
 
 export const login = async (loginData) => {
   const response = await axiosInstance.post("/auth/login", loginData);
-  const data = response.data;
+  const user = response.data?.user;
+  if (user) {
+    cacheUser(user);
+  }
+  return user;
+};
 
-  saveAuthData(data);
-
-  return data;
+export const logout = async () => {
+  try {
+    await axiosInstance.post("/auth/logout", {});
+  } catch (err) {
+    // best-effort; clear local state regardless
+  }
+  clearAuthData();
 };
 
 export const changePassword = async (passwordData) => {
@@ -96,17 +92,13 @@ export const changePassword = async (passwordData) => {
     "/auth/change-password",
     passwordData
   );
-
+  // Backend invalidates the session on password change.
+  clearAuthData();
   return response.data;
 };
 
-export const logout = () => {
-  clearAuthData();
-};
-
-export const getCurrentUser = () => {
+export const getCachedUser = () => {
   const raw = localStorage.getItem("user");
-
   try {
     return raw ? JSON.parse(raw) : null;
   } catch (err) {
@@ -114,18 +106,13 @@ export const getCurrentUser = () => {
   }
 };
 
-export const getAuthToken = () => getAccessToken();
+// Backwards-compatible alias used by older callers.
+export const getCurrentUser = getCachedUser;
 
 export const getMe = async () => {
   const response = await axiosInstance.get("/auth/me");
   const user = response.data.data;
-
-  try {
-    localStorage.setItem("user", JSON.stringify(user));
-  } catch (err) {
-    // ignore storage errors
-  }
-
+  cacheUser(user);
   return user;
 };
 
@@ -134,7 +121,7 @@ export const getUserNames = async () => {
   return response.data;
 };
 
-export const getUserById = async (userId) => {
+export const getUserById = async () => {
   const response = await axiosInstance.get(`/auth/me`);
   return response.data;
 };

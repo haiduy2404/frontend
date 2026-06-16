@@ -2,9 +2,9 @@ import { Outlet } from "react-router-dom";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import "../styles/dashboard.css";
-import { AuthProvider, useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 
-function DashboardContent() {
+function DashboardLayout() {
   const { user } = useAuth();
 
   const currentUser = {
@@ -15,7 +15,7 @@ function DashboardContent() {
     phone: user?.phone || "",
     email: user?.email || "",
     address: user?.address || "",
-    role: user?.position?.name || "ADMIN",
+    role: user?.position?.name || "Chưa cập nhật",
     company:
       user?.company ||
       "CÔNG TY CỔ PHẦN VẬN TẢI ĐƯỜNG SẮT - CHI NHÁNH TOA XE ĐÀ NẴNG",
@@ -31,14 +31,6 @@ function DashboardContent() {
         </main>
       </div>
     </div>
-  );
-}
-
-function DashboardLayout() {
-  return (
-    <AuthProvider fetchOnMount={true}>
-      <DashboardContent />
-    </AuthProvider>
   );
 }
 

@@ -125,7 +125,6 @@ const handleSave = async (e) => {
       new_password: passwordData.new_password,
     };
 
-    console.log("Dữ liệu đổi mật khẩu:", payload);
     await changePassword(payload);
 
     setPasswordSuccess("Đổi mật khẩu thành công !");
@@ -136,7 +135,6 @@ const handleSave = async (e) => {
       confirm_password: "",
     });
   }  catch (error) {
-  console.log("Lỗi backend trả về:", error.response?.data);
   setPasswordError("Bấm sai mật khẩu hiện tại. Vui lòng thử lại !");
 }
 };

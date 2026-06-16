@@ -1,18 +1,27 @@
 import { useState } from "react";
 import { Bell, LogOut, KeyRound, UserCog, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/dashboard.css";
 import "../styles/account.css";
+import { useAuth } from "../contexts/AuthContext";
 
 function Header({ user }) {
   const [openUserMenu, setOpenUserMenu] = useState(false);
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  const avatarText = user.full_name
+  const avatarText = (user.full_name || "")
     .split(" ")
     .map((word) => word[0])
     .join("")
     .slice(-2)
     .toUpperCase();
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    await logout();
+    navigate("/", { replace: true });
+  };
 
   return (
     <header className="app-header">
@@ -63,10 +72,10 @@ function Header({ user }) {
             Thiết lập bảo mật
             </Link>
 
-            <Link to="/" className="logout-button">
+            <a href="/" className="logout-button" onClick={handleLogout}>
               <LogOut size={20} />
               Đăng xuất
-            </Link>
+            </a>
           </div>
         )}
       </div>
