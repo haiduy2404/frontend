@@ -1,7 +1,7 @@
 .inspection-print-page {
   height: 100vh;
   background: #e5e7eb;
-  padding: 16px;
+  padding: 17px;
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
@@ -44,7 +44,7 @@
   box-sizing: border-box;
   color: #000000;
   font-family: "Times New Roman", Times, serif;
-  font-size: 11px;
+  font-size: 14pt;
 }
 
 .inspection-print-paper,
@@ -53,44 +53,54 @@
 }
 
 .inspection-print-header {
-  display: grid;
-  grid-template-columns: 42mm 1fr 42mm;
-  align-items: start;
-  column-gap: 3mm;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  min-height: 26mm;
 }
 
 .inspection-print-left-header {
-  font-size: 11px;
+  width: 60mm;
+  font-size: 14pt;
   line-height: 1.25;
 }
 
 .inspection-print-title-block {
-  text-align: center;
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 75mm;
+    text-align: center;
 }
 
 .inspection-print-title-block h1 {
   margin: 0;
-  font-size: 17px;
+  font-size: 16pt;
   line-height: 1.1;
   font-weight: 700;
 }
 
 .inspection-print-title-block div {
-  font-size: 11px;
+  font-size: 11pt;
   line-height: 1.2;
 }
 
 .inspection-print-right-header {
+  margin-left: auto;
+  width: 42mm;
   display: flex;
   justify-content: flex-end;
   align-items: flex-start;
+  transform: translateX(6mm);
 }
+
 
 .inspection-template-text {
   width: 41mm;
   min-height: 24mm;
   text-align: center;
-  font-size: 10px;
+  font-size: 7pt;
   line-height: 1.15;
   color: #000000;
   box-sizing: border-box;
@@ -98,25 +108,25 @@
 }
 
 .inspection-template-text strong {
-  font-size: 10.5px;
+  font-size: 8pt;
   font-weight: 700;
 }
 
 .inspection-template-number {
   margin-top: 1mm;
-  font-size: 12px;
+  font-size: 14pt;
   font-weight: 700;
 }
 
 .inspection-print-info {
   margin-top: 2mm;
-  font-size: 11px;
+  font-size: 14pt;
   line-height: 1.22;
 }
 
 .inspection-member-row {
   display: grid;
-  grid-template-columns: 43mm 43mm 35mm 1fr;
+  grid-template-columns: 45mm 63mm 35mm 25mm;
   column-gap: 2mm;
   line-height: 1.22;
 }
@@ -126,7 +136,7 @@
   margin-top: 1mm;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 9px;
+  font-size: 14pt;
 }
 
 .inspection-print-table,
@@ -163,12 +173,12 @@
 }
 
 .inspection-print-table tbody tr {
-  height: 6mm;
+  height: 10mm;
 }
 
 .inspection-print-table tbody td {
-  font-size: 9.5px;
-  line-height: 1.1;
+  font-size: 12pt;
+  line-height: 1.2;
 }
 
 .inspection-col-stt {
@@ -180,7 +190,7 @@
 }
 
 .inspection-col-code {
-  width: 15mm;
+  width: 20mm;
 }
 
 .inspection-col-method {
@@ -188,7 +198,7 @@
 }
 
 .inspection-col-unit {
-  width: 14mm;
+  width: 10mm;
 }
 
 .inspection-col-doc-qty {
@@ -204,7 +214,7 @@
 }
 
 .inspection-col-note {
-  width: 14mm;
+  width: 10mm;
 }
 
 .inspection-center-cell {
@@ -232,7 +242,7 @@
   display: flex;
   align-items: center;
   padding: 0 2mm;
-  font-size: 11px;
+  font-size: 14pt;
   font-weight: 700;
   box-sizing: border-box;
 }
@@ -240,7 +250,7 @@
 .inspection-signature-title-row {
   margin-top: 2mm;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1.3fr 0.7fr 1fr 1fr;
   text-align: center;
 }
 
@@ -250,22 +260,23 @@
 
 .inspection-signature-title-row strong {
   display: block;
-  font-size: 11px;
+  font-size: 14pt;
   font-weight: 700;
 }
 
 .inspection-signature-title-row span {
   display: block;
   margin-top: 1mm;
-  font-size: 10px;
+  font-size: 14pt;
   font-style: italic;
 }
 
 .inspection-signer-name-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1.3fr 0.7fr 1fr 1fr;
   text-align: center;
-  font-size: 11px;
+  font-size: 14pt;
+  margin-top: 10mm;
 }
 
 .inspection-print-loading {
@@ -282,21 +293,18 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 0;
+    margin: 2cm 1cm 2cm 2cm;
   }
 
   html,
   body {
-    width: 210mm;
-    min-height: 297mm;
     margin: 0;
     padding: 0;
     background: #ffffff;
   }
 
   .inspection-print-page {
-    width: 210mm;
-    min-height: 297mm;
+    height: auto;
     padding: 0;
     margin: 0;
     background: #ffffff;
@@ -307,26 +315,133 @@
   .inspection-print-scroll {
     overflow: visible;
     padding: 0;
+    width: auto;
   }
 
   .inspection-print-toolbar {
-    display: none;
+    display: none !important;
   }
 
   .inspection-print-paper {
-    width: 210mm;
-    min-height: 297mm;
+     width: 200mm !important;
+    max-width: 200mm !important;
+    min-height: auto;
     margin: 0;
-    padding: 8mm 7mm 8mm 7mm;
+    padding: 0;
     box-sizing: border-box;
     box-shadow: none;
+    overflow: visible;
+  }
+
+  .inspection-print-header,
+  .inspection-print-info,
+  .inspection-member-row,
+  .inspection-print-conclusion,
+  .inspection-signature-title-row,
+  .inspection-signer-name-row {
+    width: 200mm !important;
+    max-width: 200mm !important;
+    box-sizing: border-box;
   }
 
   .inspection-print-table {
-    width: 100%;
-    max-width: 100%;
+    width: 200mm !important;
+    max-width: 200mm !important;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 12pt;
+    margin-right: 0mm;
+  }
+
+  .inspection-print-table th,
+  .inspection-print-table td {
+    padding: 0.35mm 0.45mm;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .inspection-print-table tbody tr {
+    height: 8mm !important;
+  }
+
+  .inspection-print-table tbody td {
+    height: 8mm !important;
+    font-size: 13pt;
+    line-height: 1.1;
+  }
+
+  .inspection-col-stt {
+    width: 7mm;
+  }
+
+  .inspection-col-name {
+    width: 38mm;
+  }
+
+  .inspection-col-code {
+    width: 19mm;
+  }
+
+  .inspection-col-method {
+    width: 17mm;
+  }
+
+  .inspection-col-unit {
+    width: 10mm;
+  }
+
+  .inspection-col-doc-qty {
+    width: 17mm;
+  }
+
+  .inspection-col-good-qty {
+    width: 22mm;
+  }
+
+  .inspection-col-wrong-qty {
+    width: 22mm;
+  }
+
+  .inspection-col-note {
+    width: 14mm;
+  }
+
+    .inspection-print-header {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    width: 200mm !important;
+    max-width: 200mm !important;
+    min-height: 26mm;
+  }
+
+  .inspection-print-left-header {
+    width: 60mm;
+  }
+
+  .inspection-print-title-block {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 75mm;
+    text-align: center;
+  }
+
+  .inspection-print-right-header {
+    margin-left: auto;
+    width: 42mm;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    transform: translateX(6mm);
+  }
+
+  .inspection-print-modal-overlay {
+    display: none !important;
   }
 }
+
 
 .inspection-print-modal-overlay {
   position: fixed;

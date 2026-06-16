@@ -8,7 +8,11 @@ import {
   updateWarehouseReceiptInventoriesActual,
 } from "../../../services/warehouseReceiptService";
 
+import { useAuth } from "../../../contexts/AuthContext";
+
+
 function InspectionDetailPage() {
+  const { canDo } = useAuth();
   const [showWarehouseKeeperModal, setShowWarehouseKeeperModal] = useState(false);
   const [warehouseKeeperName, setWarehouseKeeperName] = useState("");
   const [inspectionOpinion, setInspectionOpinion] = useState("");
@@ -23,6 +27,8 @@ function InspectionDetailPage() {
   const [detailRows, setDetailRows] = useState([]);
   const [loadingReceipts, setLoadingReceipts] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const canUpdateInspection = canDo("update_inspection");
+  
 
   const [form, setForm] = useState({
     inspection_code: "",
@@ -212,6 +218,10 @@ function InspectionDetailPage() {
   };
 
     const handleSave = async () => {
+      if (!canUpdateInspection) {
+        alert("Bạn không có quyền cập nhật biên bản kiểm nghiệm");
+        return;
+    }
     if (!form.inspection_code) {
         alert("Vui lòng nhập số biên bản kiểm nghiệm");
         return;
@@ -311,14 +321,25 @@ function InspectionDetailPage() {
           >
             {isPrintMode ? "Quay lại" : "Hủy"}
           </button>
-
-        <button
-            type="button"
-            className="inspection-save-btn"
-            onClick={isPrintMode ? handleOpenWarehouseKeeperModal : handleSave}
-          >
-            {isPrintMode ? "In Biên bản kiểm nghiệm" : "Lưu"}
-        </button>
+            {isPrintMode ? (
+              <button
+                type="button"
+                className="inspection-save-btn"
+                onClick={handleOpenWarehouseKeeperModal}
+              >
+                In Biên bản kiểm nghiệm
+              </button>
+            ) : (
+              canUpdateInspection && (
+                <button
+                  type="button"
+                  className="inspection-save-btn"
+                  onClick={handleSave}
+                >
+                  Lưu
+                </button>
+              )
+            )}
         </div>
       </div>
 
@@ -438,7 +459,7 @@ function InspectionDetailPage() {
                         onChange={(e) =>
                           handleChangeAcceptedQuantity(item.id, e.target.value)
                         }
-                        disabled={isPrintMode}
+                        disabled={isPrintMode || !canUpdateInspection}
                       />
                     </td>
 

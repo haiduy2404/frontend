@@ -228,9 +228,9 @@ function InspectionPrintPage() {
             <div className="inspection-print-title-block">
               <h1>BIÊN BẢN KIỂM NGHIỆM</h1>
 
-              <div>
+              <div className="inspection-print-title-inside">
                 <strong>
-                  Vật tư, công cụ, sản phẩm, hàng hóa
+                  (Vật tư, công cụ, sản phẩm, hàng hóa)
                 </strong>
               </div>
 
