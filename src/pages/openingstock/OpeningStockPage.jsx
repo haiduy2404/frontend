@@ -21,7 +21,10 @@ import {
   importOpeningStockExcel,
 } from "../../services/openingStockService";
 
+import { useAuth } from "../../contexts/AuthContext";
+
 function OpeningStockPage() {
+  const { canDo } = useAuth();
   const [openingStocks, setOpeningStocks] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -152,6 +155,14 @@ const [showSettingModal, setShowSettingModal] = useState(false);
         localStorage.setItem("openingStockColumns", JSON.stringify(columns));
     }, [columns]);
 
+  if (!canDo("view_opening_stock")) {
+    return (
+      <div className="no-permission-page">
+        Tài khoản không được cấp quyền truy cập tồn kho đầu kì
+      </div>
+    );
+  }
+
 
   useEffect(() => {
     fetchOpeningStocks(search, page, pageSize);
@@ -206,6 +217,11 @@ const [showSettingModal, setShowSettingModal] = useState(false);
   };
 
 const handleBulkDeleteOpeningStock = async () => {
+
+  if (!canDo("delete_opening_stock")) {
+    alert("Bạn không có quyền xóa tồn kho đầu kỳ");
+    return;
+  }
   if (selectedIds.length === 0) {
     alert("Vui lòng chọn tồn kho cần xóa");
     return;
@@ -271,13 +287,13 @@ const resetForm = () => {
 };
 
 const handleSave = async (keepOpen = false) => {
-  if (
-    !formData.goods_id ||
-    !formData.warehouse_id ||
-    formData.original_quantity === "" ||
-    formData.unit_price === ""
-  ) {
-    alert("Vui lòng nhập đầy đủ Hàng hóa, Kho, Số lượng tồn và Đơn giá");
+  if (editingStockId && !canDo("update_opening_stock")) {
+    alert("Bạn không có quyền sửa tồn kho đầu kỳ");
+    return;
+  }
+
+  if (!editingStockId && !canDo("create_opening_stock")) {
+    alert("Bạn không có quyền thêm tồn kho đầu kỳ");
     return;
   }
 
@@ -323,6 +339,10 @@ const handleSave = async (keepOpen = false) => {
   }
 };
     const handleDeleteOpeningStock = async (item) => {
+        if (!canDo("delete_opening_stock")) {
+          alert("Bạn không có quyền xóa tồn kho đầu kỳ");
+          return;
+        }
       const confirmDelete = window.confirm(
         `Bạn có chắc muốn xóa tồn kho của "${item.goods_name || item.goods_code || ""}" không?`
       );
@@ -339,7 +359,12 @@ const handleSave = async (keepOpen = false) => {
       }
     };
     const handleImportExcelClick = () => {
-    fileInputRef.current.click();
+      if (!canDo("create_opening_stock")) {
+        alert("Bạn không có quyền thêm tồn kho đầu kỳ");
+        return;
+      }
+
+      fileInputRef.current.click();
     };
 
     const handleImportExcelChange = async (e) => {
@@ -492,7 +517,7 @@ const handleSave = async (keepOpen = false) => {
                 }}
             />
 
-            {selectedIds.length > 0 && (
+            {canDo("delete_opening_stock") && selectedIds.length > 0 && (
                 <button
                 className="bulk-delete-btn"
                 title="Xóa hàng loạt"
@@ -512,18 +537,6 @@ const handleSave = async (keepOpen = false) => {
                 <RiBox3Line />
                 <span>Danh mục vật tư hàng hóa</span>
             </NavLink>
-        
-        <button
-        className="icon-btn"
-        title="Làm mới"
-        onClick={() => fetchOpeningStocks(search, page, pageSize)}
-        >
-        <RiRefreshLine />
-        </button>
-
-        <button className="icon-btn excel-btn" title="Xuất ra Excel">
-            <RiFileExcel2Line />
-        </button>
 
         <button
             className="icon-btn"
@@ -533,10 +546,12 @@ const handleSave = async (keepOpen = false) => {
             <RiSettings3Line />
         </button>
 
+        {canDo("create_opening_stock") && (
         <button className="import-excel-btn" onClick={handleImportExcelClick}>
             <RiFileExcel2Line />
             <span>Nhập từ Excel</span>
         </button>
+        )}
 
         <input
             ref={fileInputRef}
@@ -546,6 +561,7 @@ const handleSave = async (keepOpen = false) => {
             onChange={handleImportExcelChange}
         />
 
+        {canDo("create_opening_stock") && (
         <button
             className="add-btn"
               onClick={() => {
@@ -561,6 +577,8 @@ const handleSave = async (keepOpen = false) => {
             >
             + Thêm
         </button>
+        )}
+
         </div>
         
       </div>
@@ -665,6 +683,7 @@ const handleSave = async (keepOpen = false) => {
                 ))}
 
             <td className="opening-stock-row-actions">
+              {canDo("update_opening_stock") && (
                 <button
                 className="row-edit-btn"
                 title="Sửa"
@@ -672,7 +691,9 @@ const handleSave = async (keepOpen = false) => {
                 >
                 <RiEdit2Line />
                 </button>
+              )}
 
+              {canDo("delete_opening_stock") && (
                 <button
                 className="row-delete-btn"
                 title="Xóa"
@@ -680,6 +701,7 @@ const handleSave = async (keepOpen = false) => {
                 >
                 <RiDeleteBin6Line />
                 </button>
+              )}
             </td>           
           </tr>
         ))}

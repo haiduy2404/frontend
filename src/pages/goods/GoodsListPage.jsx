@@ -3,6 +3,7 @@ import "../../styles/GoodsListPage.css";
 import { RiRefreshLine, RiEdit2Line, RiDeleteBin6Line } from "react-icons/ri";
 import { getGoods, deleteGoods } from "../../services/goodsService";
 import GoodsFormModal from "../../components/GoodsFormModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 function GoodsListPage() {
   const [goodsList, setGoodsList] = useState([]);
@@ -17,6 +18,7 @@ function GoodsListPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingGoods, setEditingGoods] = useState(null);
+  const { canDo } = useAuth();
 
   const fetchGoods = async (
     keyword = debouncedSearch,
@@ -150,6 +152,14 @@ function GoodsListPage() {
       alert("Xóa thất bại");
     }
   };
+
+  if (!canDo("view_goods")) {
+    return (
+      <div className="no-permission-page">
+        Bạn không có quyền truy cập vật tư hàng hóa
+      </div>
+    );
+  }
 
   return (
     <div className="goods-list-page">

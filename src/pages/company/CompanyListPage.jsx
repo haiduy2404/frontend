@@ -17,6 +17,7 @@ import {
 } from "../../services/companyService";
 
 import { lookupCompanyByTaxCode } from "../../services/externalService";
+import { useAuth } from "../../contexts/AuthContext";
 
 function CompanyListPage() {
   const [companies, setCompanies] = useState([]);
@@ -26,14 +27,13 @@ function CompanyListPage() {
   const [showForm, setShowForm] = useState(false);
   const [loadingTaxCode, setLoadingTaxCode] = useState(false);
   const resizingRef = useRef(null);
+  const { canDo } = useAuth();
 
   const defaultColumns = [
     { key: "supplier_code", label: "Mã KH", width: 120 },
     { key: "supplier_name", label: "Tên đơn vị cung cấp", width: 260 },
     { key: "tax_code", label: "Mã số thuế", width: 150 },
     { key: "address", label: "Địa chỉ", width: 300 },
-    { key: "bank_name", label: "Tên ngân hàng", width: 220 },
-    { key: "bank_account_number", label: "Số tài khoản ngân hàng", width: 220 },
   ];
 
   const [columns, setColumns] = useState(() => {
@@ -170,7 +170,6 @@ function CompanyListPage() {
       setCompanies(results.map(normalizeCompany));
     } catch (error) {
       console.error("LOAD COMPANIES ERROR:", error.response?.data || error);
-      window.alert("Không tải được danh sách công ty");
     }
   };
 
@@ -190,13 +189,7 @@ function CompanyListPage() {
         company.supplier_code.toLowerCase().includes(keyword) ||
         company.supplier_name.toLowerCase().includes(keyword) ||
         company.tax_code.toLowerCase().includes(keyword) ||
-        company.address.toLowerCase().includes(keyword) ||
-        company.bank_accounts?.some((bank) => {
-          return (
-            bank.bank_name?.toLowerCase().includes(keyword) ||
-            bank.bank_account_number?.toLowerCase().includes(keyword)
-          );
-        })
+        company.address.toLowerCase().includes(keyword)
       );
     });
   }, [companies, searchText]);
@@ -437,9 +430,9 @@ function CompanyListPage() {
         return bank.bank_name && bank.bank_account_number;
       });
 
-    if (!supplierName || !taxCode || validBankAccounts.length === 0) {
+    if (!supplierName || !taxCode) {
       window.alert(
-        "Vui lòng nhập tên đơn vị cung cấp, mã số thuế và ít nhất một tài khoản ngân hàng."
+        "Vui lòng nhập tên đơn vị cung cấp, mã số thuế."
       );
       return;
     }
@@ -496,6 +489,15 @@ function CompanyListPage() {
 
       return company[columnKey] || "";
     };
+
+  if (!canDo("view_company")) {
+    return (
+      <div className="no-permission-page">
+          Tài khoản này không được quyền truy cập danh mục khách hàng
+      </div>
+    );
+  }
+
 
   return (
     <div className="company-list-page">
@@ -590,20 +592,27 @@ function CompanyListPage() {
                           {renderCompanyCell(company, column.key)}
                         </td>
                       ))}
-
-                      <td className="row-actions">
-                        <button title="Sửa" onClick={() => handleOpenEditForm(company)}>
+                    <td className="action-cell">
+                      <div className="row-actions">
+                        <button
+                          type="button"
+                          className="row-edit-btn"
+                          title="Sửa"
+                          onClick={() => handleOpenEditForm(company)}
+                        >
                           <RiEdit2Line />
                         </button>
 
                         <button
+                          type="button"
                           title="Xóa"
                           className="row-delete-btn"
                           onClick={() => handleDeleteOne(company.id)}
                         >
                           <RiDeleteBin6Line />
                         </button>
-                      </td>
+                      </div>
+                    </td>
                     </tr>
                   ))
                 ) : (
@@ -678,10 +687,6 @@ function CompanyListPage() {
                 onChange={handleInputChange}
                 placeholder="Nhập địa chỉ"
               />
-
-              <label>
-                Tài khoản ngân hàng <span>*</span>
-              </label>
 
               {formData.bank_accounts.map((bank, index) => (
                 <div className="bank-account-row" key={index}>

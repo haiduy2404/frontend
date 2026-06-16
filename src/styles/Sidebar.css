@@ -10,17 +10,24 @@
 
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
 
   padding: 18px 14px;
   box-sizing: border-box;
   transition: width 0.25s ease, min-width 0.25s ease, flex-basis 0.25s ease;
+
+  position: relative;
 }
 
 .sidebar-menu {
   display: flex;
   flex-direction: column;
   gap: 8px;
+
+  overflow-y: auto;
+
+  /* chừa chỗ cho báo cáo + danh mục + thu gọn */
+  max-height: calc(100% - 220px);
 }
 
 .sidebar-item {
@@ -112,6 +119,11 @@
 }
 
 .sidebar-bottom {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 18px;
+
   padding-top: 12px;
   border-top: 1px solid #1e293b;
 }
@@ -308,4 +320,32 @@
 
 .activity-submenu {
   margin-top: 8px;
+}
+
+.sidebar-extra-menu {
+  position: absolute;
+
+  left: 14px;
+  right: 14px;
+
+  bottom: 92px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  padding-top: 12px;
+  border-top: 1px solid #1e293b;
+}
+
+.sidebar-bottom {
+  position: absolute;
+
+  left: 14px;
+  right: 14px;
+
+  bottom: 18px;
+
+  padding-top: 12px;
+  border-top: 1px solid #1e293b;
 }

@@ -309,12 +309,12 @@
 /* Detail section */
 .warehouse-import-detail {
   height: 260px;
-  flex: 0 0 260px;
+  flex: 1;
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
+  min-height: 320px;
+  overflow: auto;
 }
 
 .warehouse-import-detail h3 {
@@ -565,4 +565,100 @@
 
 .warehouse-import-date-input {
   min-width: 145px;
+}
+
+.import-list-detail-card {
+  background: #fff;
+  padding: 16px 22px;
+}
+
+.import-list-detail-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #d9dee7;
+  border-radius: 4px;
+}
+
+.import-list-detail-table {
+  width: 100%;
+  min-width: 1350px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #fff;
+}
+
+.import-list-detail-table th,
+.import-list-detail-table td {
+  border-right: 1px solid #d9dee7;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 14px;
+  font-size: 14px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.import-list-detail-table th {
+  background: #f5f7fa;
+  font-weight: 700;
+  text-align: left;
+}
+
+.import-list-detail-table .number-col {
+  text-align: right;
+  font-weight: 600;
+}
+
+.import-list-detail-table .center-col {
+  text-align: center;
+}
+
+.import-list-money-summary {
+  width: 420px;
+  margin-left: auto;
+  margin-top: 16px;
+  border: 1px solid #d9dee7;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.import-list-money-summary .money-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.import-list-money-summary .money-row:last-child {
+  border-bottom: none;
+}
+
+.import-list-money-summary .money-row.total {
+  font-weight: 700;
+  background: #f8fafc;
+}
+
+.warehouse-import-detail {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.import-list-detail-card {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.import-list-detail-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid #d9dee7;
+  border-radius: 4px;
+}
+
+.import-list-detail-table {
+  min-width: 1500px;
+  width: max-content;
+  border-collapse: collapse;
+  table-layout: fixed;
 }

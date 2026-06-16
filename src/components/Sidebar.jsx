@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import "../styles/Sidebar.css";
 import { NavLink } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 
 const Sidebar = () => {
   const [activeMenu, setActiveMenu] = useState("category");
   const [openMenu, setOpenMenu] = useState("");
   const [collapsed, setCollapsed] = useState(false);
-  const { canDo } = useAuth();
 
   const toggleMenu = (menu) => {
     setActiveMenu(menu);
@@ -16,27 +14,10 @@ const Sidebar = () => {
     }
   };
 
-  // Visibility flags per section / item
-  const showKho = canDo("view_warehouse");
-  const showTonKho = canDo("view_goods");
-  const showWarehouseSection = showKho || showTonKho;
-
-  const showNhapKho = canDo("view_warehouse_receipt");
-  const showActivitySection = showNhapKho;
-
-  const showReportSection = canDo("view_report");
-
-  const showGoods = canDo("view_goods");
-  const showCompany = canDo("view_company");
-  const showUsers = canDo("view_users");
-  const showCategorySection = showGoods || showCompany || showUsers;
-
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-menu">
         {/* QUẢN LÝ KHO */}
-        {showWarehouseSection && (
-          <>
             <div
               className={`sidebar-item ${
                 activeMenu === "warehouse" ? "active-parent" : ""
@@ -54,7 +35,6 @@ const Sidebar = () => {
 
             {!collapsed && openMenu === "warehouse" && (
               <div className="sidebar-submenu">
-                {showKho && (
                   <NavLink
                     to="/dashboard/stock-manager/stock-list"
                     className={({ isActive }) =>
@@ -64,9 +44,7 @@ const Sidebar = () => {
                   >
                     Kho
                   </NavLink>
-                )}
 
-                {showTonKho && (
                   <NavLink
                     to="/dashboard/stock-manager/opening-stock"
                     className={({ isActive }) =>
@@ -76,14 +54,10 @@ const Sidebar = () => {
                   >
                     Tồn kho đầu kỳ
                   </NavLink>
-                )}
               </div>
             )}
-          </>
-        )}
 
         {/* HOẠT ĐỘNG KHO */}
-        {showActivitySection && (
           <>
             <div
               className={`sidebar-item ${
@@ -104,7 +78,6 @@ const Sidebar = () => {
 
             {!collapsed && openMenu === "activity" && (
               <div className="sidebar-submenu activity-submenu">
-                {showNhapKho && (
                   <NavLink
                     to="/dashboard/activity/import"
                     className={({ isActive }) =>
@@ -114,7 +87,6 @@ const Sidebar = () => {
                   >
                     Nhập kho
                   </NavLink>
-                )}
 
                 <NavLink
                   to="/dashboard/activity/export"
@@ -128,12 +100,9 @@ const Sidebar = () => {
               </div>
             )}
           </>
-        )}
       </div>
-
-      <div className="sidebar-bottom">
+        <div className="sidebar-extra-menu">
         {/* BÁO CÁO */}
-        {showReportSection && (
           <div
             className={`sidebar-item sidebar-report-wrap ${
               activeMenu === "report" ? "active-parent" : ""
@@ -194,10 +163,8 @@ const Sidebar = () => {
               </div>
             )}
           </div>
-        )}
 
         {/* DANH MỤC */}
-        {showCategorySection && (
           <div
             className={`sidebar-item sidebar-category-wrap ${
               activeMenu === "category" ? "active-parent" : ""
@@ -213,7 +180,6 @@ const Sidebar = () => {
                 className="category-mega-menu"
                 onClick={(e) => e.stopPropagation()}
               >
-                {showGoods && (
                   <div className="category-column">
                     <div className="category-title">VẬT TƯ HÀNG HÓA</div>
 
@@ -243,13 +209,10 @@ const Sidebar = () => {
                       Đơn vị tính
                     </NavLink>
                   </div>
-                )}
 
-                {(showCompany || showUsers) && (
                   <div className="category-column">
                     <div className="category-title">ĐỐI TƯỢNG</div>
 
-                    {showCompany && (
                       <NavLink
                         to="/dashboard/stock-manager/company-list"
                         className={({ isActive }) =>
@@ -262,9 +225,7 @@ const Sidebar = () => {
                       >
                         Khách hàng / Nhà cung cấp
                       </NavLink>
-                    )}
 
-                    {showUsers && (
                       <NavLink
                         to="/dashboard/stock-manager/employee-list"
                         className={({ isActive }) =>
@@ -277,9 +238,7 @@ const Sidebar = () => {
                       >
                         Nhân viên
                       </NavLink>
-                    )}
 
-                    {showUsers && (
                       <>
                         <div className="category-title category-title-second">
                           KHÁC
@@ -298,14 +257,12 @@ const Sidebar = () => {
                           Cơ cấu tổ chức
                         </NavLink>
                       </>
-                    )}
                   </div>
-                )}
               </div>
             )}
           </div>
-        )}
-
+      </div>
+      <div className="sidebar-bottom">
         <button
           className="collapse-btn"
           onClick={() => setCollapsed(!collapsed)}

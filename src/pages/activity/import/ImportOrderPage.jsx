@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ImportOrderPage.css"; 
+import "../../../styles/ImportOrderDetailPage.css";
 import {
   getWarehouseReceiptsPageable,
   getWarehouseReceiptByCode,
@@ -181,16 +182,43 @@ const formatMoney = (value) => {
   });
 };
 
-    const detailTotalAmount = detailRows.reduce((sum, item) => {
-    const quantity = parseMoney(item.original_quantity || item.quantity || 0);
-    const unitPrice = parseMoney(item.unit_price || 0);
+    const formatViNumber = (value, fractionDigits = 2) => {
+      return parseMoney(value).toLocaleString("vi-VN", {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits,
+      });
+    };
 
-    return sum + quantity * unitPrice;
+    const detailTotalAmount = detailRows.reduce((sum, item) => {
+      const quantity = parseMoney(item.original_quantity || item.quantity || 0);
+      const unitPrice = parseMoney(item.unit_price || 0);
+      return sum + quantity * unitPrice;
     }, 0);
 
-    const detailVatRate = parseMoney(selectedReceiptDetail?.vat || 0);
-    const detailVatAmount = detailTotalAmount * (detailVatRate / 100);
-    const detailGrandTotal = detailTotalAmount + detailVatAmount;
+    const roundMoney = (value) =>
+      Math.round((Number(value) || 0) + Number.EPSILON);
+
+    const detailVatSummary = detailRows.reduce(
+      (acc, item) => {
+        const quantity = parseMoney(item.original_quantity || 0);
+        const unitPrice = parseMoney(item.unit_price || 0);
+        const amount = quantity * unitPrice;
+        const rate = String(Number(item.vat || 0));
+
+        acc[rate] = (acc[rate] || 0) + roundMoney(amount * (Number(rate) / 100));
+        return acc;
+      },
+      { 0: 0, 5: 0, 8: 0, 10: 0 }
+    );
+
+    const detailVatAmount =
+      detailVatSummary["0"] +
+      detailVatSummary["5"] +
+      detailVatSummary["8"] +
+      detailVatSummary["10"];
+
+    const detailGrandTotal = roundMoney(detailTotalAmount + detailVatAmount);
+
     const handleCompleteReceipt = async (row) => {
     const confirmed = window.confirm(
         `Bạn có chắc muốn hoàn thành phiếu ${row.code || row.invoice_code || ""} không?`
@@ -586,42 +614,69 @@ const formatMoney = (value) => {
         </div>
 
         <div className="detail-splitter">⌄</div>
+          <div className="warehouse-import-detail">
+            <h3>Chi tiết hàng hóa</h3>
 
-        <div className="warehouse-import-detail">
-          <h3>Chi tiết hàng hóa</h3>
+            <div className="import-list-detail-card">
+              <div className="detail-search">
+                <span>🔍</span>
+                <input placeholder="Tìm kiếm" readOnly />
+              </div>
 
-          <div className="detail-table-wrapper">
-            <table className="detail-table">
-              <thead>
-                <tr>
-                  <th>STT</th>
-                  <th>Mã hàng</th>
-                  <th>Tên hàng</th>
-                  <th>ĐVT</th>
-                  <th>SL yêu cầu</th>
-                  <th>SL thực nhập</th>
-                  <th>Đơn giá</th>
-                  <th>Thành tiền</th>
-                </tr>
-              </thead>
-                <tbody>
+              <div className="import-list-detail-table-wrapper">
+                <table className="import-list-detail-table">
+                  <colgroup>
+                    <col className="col-stt" />
+                    <col className="col-code" />
+                    <col className="col-name" />
+                    <col className="col-unit" />
+                    <col className="col-qty" />
+                    <col className="col-qty" />
+                    <col className="col-qty" />
+                    <col className="col-check" />
+                    <col className="col-price" />
+                    <col className="col-amount" />
+                    <col className="col-vat" />
+                  </colgroup>
+
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Mã hàng</th>
+                      <th>Tên hàng</th>
+                      <th>ĐVT</th>
+                      <th>Tỷ lệ chuyển đổi</th>
+                      <th>SL yêu cầu</th>
+                      <th>SL thực nhập</th>
+                      <th>Đánh dấu đủ</th>
+                      <th>Đơn giá</th>
+                      <th>Thành tiền</th>
+                      <th>Thuế VAT</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
                     {detailLoading && (
                       <tr>
-                        <td colSpan={8}>Đang tải chi tiết...</td>
+                        <td colSpan={11}>Đang tải chi tiết...</td>
                       </tr>
                     )}
 
                     {!detailLoading && detailRows.length === 0 && (
                       <tr>
-                        <td colSpan={8}>Không có chi tiết hàng hóa</td>
+                        <td colSpan={11}>Không có chi tiết hàng hóa</td>
                       </tr>
                     )}
 
                     {!detailLoading &&
                       detailRows.map((item, index) => {
-                        const quantity = parseMoney(item.original_quantity);
-                        const unitPrice = parseMoney(item.unit_price);
-                        const amount = quantity * unitPrice;
+                        const requestedQuantity = parseMoney(
+                          item.request_quantity || item.requested_quantity || 0
+                        );
+
+                        const originalQuantity = parseMoney(item.original_quantity || 0);
+                        const unitPrice = parseMoney(item.unit_price || 0);
+                        const amount = originalQuantity * unitPrice;
 
                         return (
                           <tr key={item.inventory_id || item.goods_id || index}>
@@ -629,102 +684,142 @@ const formatMoney = (value) => {
                             <td>{item.goods_code || "-"}</td>
                             <td>{item.goods_name || "-"}</td>
                             <td>{item.unit_name || "-"}</td>
+
                             <td className="number-col">
-                              {item.request_quantity !== null &&
-                              item.request_quantity !== undefined &&
-                              item.request_quantity !== ""
-                                ? formatMoney(parseMoney(item.request_quantity))
-                                : "-"}
+                              {formatViNumber(item.conversion_ratio || 1, 3)}
                             </td>
 
                             <td className="number-col">
-                              {item.original_quantity !== null &&
-                              item.original_quantity !== undefined &&
-                              item.original_quantity !== ""
-                                ? formatMoney(parseMoney(item.original_quantity))
-                                : "-"}
+                              {formatViNumber(requestedQuantity, 2)}
                             </td>
-                            <td className="number-col">{formatMoney(unitPrice)}</td>
-                            <td className="number-col">{formatMoney(amount)}</td>
+
+                            <td className="number-col">
+                              {formatViNumber(originalQuantity, 2)}
+                            </td>
+
+                            <td className="center-col">
+                              <input
+                                type="checkbox"
+                                checked={requestedQuantity === originalQuantity}
+                                readOnly
+                                disabled
+                              />
+                            </td>
+
+                            <td className="number-col">
+                              {formatViNumber(unitPrice, 3)}
+                            </td>
+
+                            <td className="number-col">
+                              {formatViNumber(amount, 0)}
+                            </td>
+
+                            <td className="number-col">
+                              {Number(item.vat || 0)}%
+                            </td>
                           </tr>
                         );
                       })}
 
                     {!detailLoading && detailRows.length > 0 && (
-                      <>
-                        <tr className="detail-total-row">
-                          <td></td>
-                          <td>Tổng</td>
-                          <td></td>
-                          <td></td>
-                            <td className="number-col">
-                              {formatMoney(
-                                detailRows.reduce(
-                                  (sum, item) => sum + parseMoney(item.request_quantity),
-                                  0
-                                )
-                              )}
-                            </td>
+                      <tr className="table-total-row">
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
 
-                            <td className="number-col">
-                              {formatMoney(
-                                detailRows.reduce(
-                                  (sum, item) => sum + parseMoney(item.original_quantity),
-                                  0
-                                )
-                              )}
-                            </td>
-                          <td></td>
-                          <td className="number-col">{formatMoney(detailTotalAmount)}</td>
-                        </tr>
+                        <td className="number-col">
+                          {formatViNumber(
+                            detailRows.reduce(
+                              (sum, item) =>
+                                sum +
+                                parseMoney(
+                                  item.request_quantity || item.requested_quantity || 0
+                                ),
+                              0
+                            ),
+                            2
+                          )}
+                        </td>
 
-                        <tr className="detail-money-row">
-                          <td colSpan={6}></td>
-                          <td className="money-label">Cộng</td>
-                          <td className="number-col money-value">
-                            {formatMoney(detailTotalAmount)}
-                          </td>
-                        </tr>
+                        <td className="number-col">
+                          {formatViNumber(
+                            detailRows.reduce(
+                              (sum, item) => sum + parseMoney(item.original_quantity || 0),
+                              0
+                            ),
+                            2
+                          )}
+                        </td>
 
-                        <tr className="detail-money-row">
-                          <td colSpan={6}></td>
-                          <td className="money-label">
-                            Tiền thuế VAT {detailVatRate ? `(${detailVatRate}%)` : ""}
-                          </td>
-                          <td className="number-col money-value">
-                            {formatMoney(detailVatAmount)}
-                          </td>
-                        </tr>
+                        <td></td>
+                        <td></td>
 
-                        <tr className="detail-money-row detail-grand-total-row">
-                          <td colSpan={6}></td>
-                          <td className="money-label">Tổng cộng</td>
-                          <td className="number-col money-value">
-                            {formatMoney(detailGrandTotal)}
-                          </td>
-                        </tr>
-                      </>
+                        <td className="number-col">
+                          {formatViNumber(detailTotalAmount, 0)}
+                        </td>
+
+                        <td></td>
+                      </tr>
                     )}
                   </tbody>
-            </table>
-          </div>
+                </table>
+              </div>
 
-          <div className="detail-pagination">
-            <div>
-              Tổng số: <strong>{detailRows.length}</strong>
-            </div>
+              {!detailLoading && detailRows.length > 0 && (
+                <div className="import-list-money-summary">
+                  <div className="money-row">
+                    <span>Cộng</span>
+                    <strong>{formatViNumber(detailTotalAmount, 0)}</strong>
+                  </div>
 
-            <div className="pagination-right">
-              <span>Số dòng/trang</span>
-              <select defaultValue={30}>
-                <option value={30}>30</option>
-              </select>
-              <strong>1 - {detailRows.length}</strong>
-              <button>‹</button>
-              <button>›</button>
+                  <div className="money-row">
+                    <span>Thuế VAT 0%</span>
+                    <strong>{formatViNumber(detailVatSummary["0"], 0)}</strong>
+                  </div>
+
+                  <div className="money-row">
+                    <span>Thuế VAT 5%</span>
+                    <strong>{formatViNumber(detailVatSummary["5"], 0)}</strong>
+                  </div>
+
+                  <div className="money-row">
+                    <span>Thuế VAT 8%</span>
+                    <strong>{formatViNumber(detailVatSummary["8"], 0)}</strong>
+                  </div>
+
+                  <div className="money-row">
+                    <span>Thuế VAT 10%</span>
+                    <strong>{formatViNumber(detailVatSummary["10"], 0)}</strong>
+                  </div>
+
+                  <div className="money-row total">
+                    <span>Tổng cộng</span>
+                    <strong>{formatViNumber(detailGrandTotal, 0)}</strong>
+                  </div>
+                </div>
+              )}
+
+              <div className="table-bottom-bar">
+                <div>
+                  Tổng số: <strong>{detailRows.length}</strong>
+                </div>
+
+                <div className="table-pagination">
+                  <span>Số dòng/trang</span>
+                  <select defaultValue={20}>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <strong>1 - {detailRows.length}</strong>
+                  <button disabled>‹</button>
+                  <button disabled>›</button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
       </div>
     {openActionId && menuPosition && (
     <div

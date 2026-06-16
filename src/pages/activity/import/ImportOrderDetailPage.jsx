@@ -33,8 +33,12 @@ function ImportOrderDetailPage() {
     const navigate = useNavigate();
     const { id } = useParams();
     const { canDo } = useAuth();
-    const canSave = canDo("create_warehouse_receipt", "update_warehouse_receipt");
-    const canComplete = canDo("update_warehouse_receipt");
+    const canSave =
+      (id && id !== "new")
+        ? canDo("update_warehouse_receipt")
+        : canDo("create_warehouse_receipt");
+
+    const canComplete = canDo("complete_warehouse_receipt");
 
     const isCreateMode = !id;
     const [companyLoading, setCompanyLoading] = useState(false);
@@ -67,6 +71,8 @@ function ImportOrderDetailPage() {
     const [deletedItems, setDeletedItems] = useState([]);
     const [companyId, setCompanyId] = useState(null);
     const [debouncedGoodsKeyword, setDebouncedGoodsKeyword] = useState("");
+    const canPrintTransfer = canDo("print_transfer_request");
+    const canPrintReceipt = canDo("print_warehouse_receipt");
     const handlePrint = () => {
       window.print();
     };
@@ -1158,6 +1164,11 @@ const handleComplete = async () => {
     };
 
 const handleOpenTransferPrint = () => {
+   if (!canPrintTransfer) {
+    alert("Bạn không có quyền in giấy đề nghị chuyển tiền");
+    return;
+  }
+
   if (!id || id === "new") {
     alert("Cần lưu phiếu trước khi in giấy đề nghị chuyển tiền");
     return;
@@ -1171,6 +1182,11 @@ const handleOpenTransferPrint = () => {
 };
 
   const handleOpenReceiptPrint = () => {
+    if (!canPrintReceipt) {
+      alert("Bạn không có quyền in phiếu nhập kho");
+      return;
+    }
+
     if (!id || id === "new") {
       alert("Cần lưu phiếu trước khi in phiếu nhập kho");
       return;
@@ -1905,15 +1921,19 @@ const handleOpenTransferPrint = () => {
 
         {isPrintMode ? (
           <>
-            <button className="complete-btn" onClick={handleOpenReceiptPrint}>
-              <RiPrinterLine />
-              <span>In Phiếu nhập kho</span>
-            </button>
+            {canPrintReceipt && (
+              <button className="complete-btn" onClick={handleOpenReceiptPrint}>
+                <RiPrinterLine />
+                <span>In Phiếu nhập kho</span>
+              </button>
+            )}
 
-            <button className="complete-btn" onClick={handleOpenTransferPrint}>
-              <RiPrinterLine />
-              <span>In Giấy Đề Nghị Chuyển tiền</span>
-            </button>
+            {canPrintTransfer && (
+              <button className="complete-btn" onClick={handleOpenTransferPrint}>
+                <RiPrinterLine />
+                <span>In Giấy Đề Nghị Chuyển tiền</span>
+              </button>
+            )}
           </>
         ) : (
           <>

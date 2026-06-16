@@ -4,6 +4,7 @@ import "../../styles/WarehouseImportCompanyReportPage.css";
 import { getWarehouseReceiptByCode } from "../../services/warehouseReceiptService";
 import { getWarehouseReceiptCompanySummary } from "../../services/warehouseReceiptReportService";
 import { getCompanies } from "../../services/companyService";
+import { useAuth } from "../../contexts/AuthContext";
 
 function WarehouseImportCompanyReportPage() {
   const companyDropdownRef = useRef(null);
@@ -30,8 +31,7 @@ function WarehouseImportCompanyReportPage() {
     vatAmount: true,
     totalAmount: true,
   });
-  
-
+  const { canDo } = useAuth();
   const unwrapData = (response) => response?.data || response;
 
     useEffect(() => {
@@ -75,7 +75,6 @@ function WarehouseImportCompanyReportPage() {
       setCompanies(results);
     } catch (error) {
       console.error("LOAD COMPANIES ERROR:", error.response?.data || error);
-      alert("Không tải được danh sách công ty");
       setCompanies([]);
     } finally {
       setCompanyLoading(false);
@@ -419,6 +418,14 @@ const handleToggleChartMetric = (metricKey) => {
 
       setIsChartModalOpen(false);
     };
+
+  if (!canDo("view_report")) {
+    return (
+      <div className="no-permission-page">
+        Tài khoản không có quyền truy cập báo cáo kho
+      </div>
+    );
+  }
 
   return (
     <div className="warehouse-company-report-page">

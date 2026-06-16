@@ -4,6 +4,7 @@ import "../../styles/StockListPage.css";
 import { createWarehouse, getWarehouses, deleteWarehouse, updateWarehouse, importWarehouseExcel } from "../../services/warehouseService";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { RiEdit2Line } from "react-icons/ri";
+import { useAuth } from "../../contexts/AuthContext";
 
 function StockListPage() {
   const [warehouses, setWarehouses] = useState([]);
@@ -18,6 +19,7 @@ function StockListPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
+  const { canDo } = useAuth();
 
 
   const handleExcelClick = () => {
@@ -126,7 +128,6 @@ const fetchWarehouses = async (
     setTotalPages(payload?.total_pages ?? 1);
   } catch (error) {
     console.error("GET WAREHOUSES ERROR:", error.response?.data || error);
-    alert("Không tải được danh sách kho");
     setWarehouses([]);
     setTotal(0);
     setTotalPages(1);
@@ -240,6 +241,14 @@ const fetchWarehouses = async (
     }
   };
 
+  if (!canDo("view_warehouse")) {
+    return (
+      <div className="no-permission-page">
+          Tài khoản không được cấp quyền truy cập kho
+      </div>
+    );
+  } 
+
 
   return (
     <div className="stock-list-page">
@@ -268,32 +277,18 @@ const fetchWarehouses = async (
           )}
         </div>
         <div className="stock-actions">
-          <button className="icon-btn">⟳</button>
-          <button
-            className="icon-btn excel-btn"
-            title="Nhập từ Excel"
-            onClick={handleExcelClick}
-          >
-            <RiFileExcel2Line />
-          </button>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            style={{ display: "none" }}
-            onChange={handleExcelChange}
-          />
-          <button
-            className="add-btn"
-            onClick={() => {
-              setEditingWarehouseId(null);
-              resetForm();
-              setShowModal(true);
-            }}
-          >
-            + Thêm
-          </button>
+          {canDo("update_warehouse") && (
+            <button
+              className="add-btn"
+              onClick={() => {
+                setEditingWarehouseId(null);
+                resetForm();
+                setShowModal(true);
+              }}
+            >
+              + Thêm
+            </button>
+          )}
         </div>
       </div>
 <div className="stock-table-wrapper">
@@ -350,6 +345,7 @@ const fetchWarehouses = async (
     </td>
 
    <td className="row-actions">
+      {canDo("update_warehouse") && (
           <button
             className="row-edit-btn"
             title="Sửa"
@@ -368,8 +364,10 @@ const fetchWarehouses = async (
           >
             <RiEdit2Line />
           </button>
+      )}
 
       <div className="row-more-wrapper">
+        {canDo("update_warehouse") && (
           <button
             className="row-more-btn"
             onClick={(e) => {
@@ -379,6 +377,7 @@ const fetchWarehouses = async (
           >
             ...
           </button>
+        )}
 
       {openMenuId === warehouse.id && (
             <div className="row-more-menu">
@@ -433,7 +432,7 @@ const fetchWarehouses = async (
                   Kích hoạt lại
                 </button>
               )}
-
+          {canDo("delete_warehouse") && (
           <button
             className="danger"
             onClick={async (e) => {
@@ -453,6 +452,7 @@ const fetchWarehouses = async (
           >
             Xóa
           </button>
+          )}
         </div>
       )}
       </div>
