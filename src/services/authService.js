@@ -4,10 +4,8 @@ import axios from "axios";
 // on the same origin — required for httpOnly cookies and CSRF double-submit.
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
-// CSRF token from login/me/refresh response body. Needed when FE and API are on
-// different ports (cross-origin) because document.cookie cannot read cookies
-// set by another origin. Same-origin deployments can also use the csrftoken cookie.
 let csrfToken = null;
+let refreshPromise = null;
 
 const setCsrfToken = (token) => {
   csrfToken = token || null;
@@ -52,9 +50,29 @@ const extractUser = (payload) => {
   return user;
 };
 
+const isAuthEndpoint = (url = "") =>
+  url.includes("/auth/refresh") || url.includes("/auth/login");
+
+/**
+ * Call refresh outside axiosInstance so a 401 on this request is NOT caught
+ * by the response interceptor (which would retry refresh → infinite loop).
+ */
 export const refreshAccessToken = async () => {
-  const response = await axiosInstance.post("/auth/refresh", {});
-  extractUser(response.data);
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = axios
+    .post(`${API_URL}/auth/refresh`, {}, { withCredentials: true })
+    .then((response) => {
+      extractUser(response.data);
+      return response;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
 };
 
 axiosInstance.interceptors.response.use(
@@ -64,7 +82,13 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
     const status = error.response?.status;
 
-    if (status === 401 && originalRequest && !originalRequest._retry) {
+    // Never retry refresh/login on 401 — especially /auth/refresh itself.
+    if (
+      status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest.url)
+    ) {
       originalRequest._retry = true;
 
       try {
