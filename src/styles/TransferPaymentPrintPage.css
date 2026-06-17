@@ -176,9 +176,50 @@
     overflow: hidden;
   }
 
-  .transfer-print-toolbar {
-    display: none;
-  }
+.transfer-print-toolbar {
+  width: 210mm;
+  margin: 0 auto 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.transfer-print-toolbar button {
+  min-width: 110px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.transfer-print-toolbar button:first-child {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.transfer-print-toolbar button:first-child:hover {
+  background: #f3f4f6;
+  transform: translateY(-1px);
+}
+
+.transfer-print-toolbar button:last-child {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.transfer-print-toolbar button:last-child:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.transfer-print-toolbar button:active {
+  transform: translateY(0);
+}
 
   .transfer-paper {
     width: 210mm;
