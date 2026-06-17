@@ -6,7 +6,6 @@ import mauthongtu from "../../../assets/mauthongtu.png";
 import { getMetadata } from "../../../services/metadataService";
 
 function ImportReceiptPrintVatForm() {
-  alert("VAT PAGE");
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -215,11 +214,7 @@ const numberToVietnameseText = (value) => {
     const invoiceCode = receipt?.invoice_code || "";
     const invoiceDate = formatViDate(receipt?.invoice_date);
     const receiptDateText = formatReceiptDateText(receipt?.receipt_date);
-
-    console.log("RAW RECEIPT", receipt);
-    console.log("RAW receipt_date", receipt?.receipt_date);
-    console.log("RAW invoice_date", receipt?.invoice_date);
-
+    
     const warehouseName = receipt?.warehouse?.name || receipt?.warehouse_name || "";
     const companyName = toTitleCaseVi(
         receipt?.company?.name || receipt?.company_name || ""
@@ -302,11 +297,6 @@ const numberToVietnameseText = (value) => {
             </div>
           </div>
 
-          <div className="receipt-title-block">
-            <h1>PHIẾU NHẬP KHO</h1>
-            <div className="receipt-date">{receiptDateText}</div>
-            <div className="receipt-code">Số: {id || "...................."}</div>
-          </div>
 
           <div className="receipt-right-header">
             <img
