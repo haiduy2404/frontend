@@ -215,11 +215,10 @@ const numberToVietnameseText = (value) => {
     const invoiceDate = formatViDate(receipt?.invoice_date);
     const receiptDateText = formatReceiptDateText(receipt?.receipt_date);
 
-    console.log("PRINT DATE TEXT:", {
-      invoiceDate,
-      receiptDateText,
-    });
-    
+    console.log("RAW RECEIPT", receipt);
+    console.log("RAW receipt_date", receipt?.receipt_date);
+    console.log("RAW invoice_date", receipt?.invoice_date);
+
     const warehouseName = receipt?.warehouse?.name || receipt?.warehouse_name || "";
     const companyName = toTitleCaseVi(
         receipt?.company?.name || receipt?.company_name || ""
