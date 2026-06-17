@@ -126,8 +126,8 @@
 
 .inspection-member-row {
   display: grid;
-  grid-template-columns: 55mm 70mm 38mm 25mm;
-  column-gap: 4mm;
+  grid-template-columns: 65mm 65mm 38mm 25mm;
+  column-gap: 3mm;
   line-height: 1.22;
 }
 
