@@ -178,20 +178,35 @@ const toTitleCaseVi = (value) => {
     return `${result.charAt(0).toUpperCase()}${result.slice(1)} đồng`;
     };
 
-  const totalAmount = useMemo(() => {
-    const lines = receipt?.inventory_lines || [];
 
-    return lines.reduce((sum, line) => {
-      const quantity = Number(line.original_quantity || line.quantity || 0);
-      const unitPrice = Number(line.unit_price || 0);
+    const totalAmount = useMemo(() => {
+      const lines = receipt?.inventory_lines || [];
 
-      return sum + quantity * unitPrice;
-    }, 0);
-  }, [receipt]);
+      return lines.reduce((sum, line) => {
+        const quantity = Number(line.original_quantity || line.quantity || 0);
+        const unitPrice = Number(line.unit_price || 0);
 
-    const vatRate = Number(receipt?.vat || 0);
-    const vatAmount = totalAmount * (vatRate / 100);
-    const grandTotal = totalAmount + vatAmount;
+        return sum + quantity * unitPrice;
+      }, 0);
+    }, [receipt]);
+
+    const roundMoney = (value) =>
+      Math.round((Number(value) || 0) + Number.EPSILON);
+
+    const vatAmount = useMemo(() => {
+      const lines = receipt?.inventory_lines || [];
+
+      return lines.reduce((sum, line) => {
+        const quantity = Number(line.original_quantity || line.quantity || 0);
+        const unitPrice = Number(line.unit_price || 0);
+        const amount = quantity * unitPrice;
+        const vatRate = Number(line.vat || line.vat_rate || 0);
+
+        return sum + roundMoney(amount * (vatRate / 100));
+      }, 0);
+    }, [receipt]);
+
+    const grandTotal = roundMoney(totalAmount + vatAmount);
 
     useEffect(() => {
     const fetchMetadata = async () => {
