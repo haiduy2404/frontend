@@ -1010,6 +1010,9 @@ const handleComplete = async () => {
         );
       } catch (error) {
         console.error("LOAD RECEIPT DETAIL ERROR:", error.response?.data || error);
+          console.log("STATUS", error?.response?.status);
+  console.log("DATA", error?.response?.data);
+  console.log("FULL", error);
         alert("Không tải được chi tiết phiếu nhập");
       } finally {
         setDetailLoading(false);
@@ -1108,6 +1111,9 @@ const handleComplete = async () => {
     navigate("/dashboard/activity/import/order");
   } catch (error) {
     console.error("SAVE DRAFT WAREHOUSE RECEIPT ERROR:", error.response?.data || error);
+    console.log("STATUS", error?.response?.status);
+    console.log("DATA", error?.response?.data);
+     console.log("FULL", error);
     alert(
       error.response?.data?.message ||
         error.response?.data?.detail ||
@@ -1155,6 +1161,9 @@ const handleComplete = async () => {
         navigate("/dashboard/activity/import/order-detail/new", { replace: true });
       } catch (error) {
         console.error("SAVE DRAFT AND ADD NEW ERROR:", error.response?.data || error);
+          console.log("STATUS", error?.response?.status);
+          console.log("DATA", error?.response?.data);
+           console.log("FULL", error);
         alert(
           error.response?.data?.message ||
             error.response?.data?.detail ||
