@@ -92,7 +92,7 @@
 
 .transfer-row {
   display: grid;
-  grid-template-columns: 38mm 1fr;
+  grid-template-columns: 60mm 1fr;
   align-items: baseline;
   font-size: 14pt;
   line-height: 1.15;
