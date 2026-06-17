@@ -26,6 +26,7 @@ import WarehouseImportCompanyReportPage from "./pages/report/WarehouseImportComp
 import WarehouseImportCompanyChartPage from "./pages/report/WarehouseImportCompanyChartPage";
 import NoPermissionPage from "./pages/NoPermissionPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import GuestRoute from "./components/GuestRoute";
 import RequireRole from "./components/RequireRole";
 import { AuthProvider } from "./contexts/AuthContext";
 import "./styles/auth.css";
@@ -55,7 +56,7 @@ function App() {
       <AuthProvider>
         <AuthEventBridge />
         <Routes>
-          <Route path="/" element={<LoginPage />} />
+          <Route path="/" element={<GuestRoute><LoginPage /></GuestRoute>} />
           <Route path="/no-permission" element={<NoPermissionPage />} />
 
           {/* All authenticated areas live behind ProtectedRoute */}

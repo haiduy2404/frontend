@@ -8,4 +8,14 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  server: {
+    // Proxy /api to Django so dev is same-origin (localhost:5173/api → :8000).
+    // This lets httpOnly auth cookies and the csrftoken cookie work correctly.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
 })
