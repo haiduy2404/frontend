@@ -297,6 +297,11 @@ const numberToVietnameseText = (value) => {
             </div>
           </div>
 
+          <div className="receipt-title-block">
+            <h1>PHIẾU NHẬP KHO</h1>
+            <div className="receipt-date">{receiptDateText}</div>
+            <div className="receipt-code">Số: {id || "...................."}</div>
+          </div>
 
           <div className="receipt-right-header">
             <img
