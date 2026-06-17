@@ -24,16 +24,32 @@ function ImportReceiptPrintNoVatForm() {
     return metadataMap[normalizeKey(key)] || "";
   };
 
-  const formatReceiptDateText = (value) => {
-    if (!value) return "Ngày      tháng      năm";
+    const formatReceiptDateText = (value) => {
+      if (!value) return "Ngày      tháng      năm";
 
-    const dateOnly = String(value).split("T")[0];
-    const [day, month, year] = dateOnly.split("-");
+      const dateOnly = String(value).split("T")[0];
 
-    if (!day || !month || !year) return "Ngày      tháng      năm";
+      if (dateOnly.includes("/")) {
+        const [day, month, year] = dateOnly.split("/");
+        return `Ngày ${day} tháng ${month} năm ${year}`;
+      }
 
-    return `Ngày ${day} tháng ${month} năm ${year}`;
-  };
+      const [year, month, day] = dateOnly.split("-");
+      return `Ngày ${day} tháng ${month} năm ${year}`;
+    };
+
+    const formatViDate = (value) => {
+      if (!value) return "........";
+
+      const dateOnly = String(value).split("T")[0];
+
+      if (dateOnly.includes("/")) {
+        return dateOnly;
+      }
+
+      const [year, month, day] = dateOnly.split("-");
+      return `${day}/${month}/${year}`;
+    };
 
     useEffect(() => {
     const fetchMetadata = async () => {
@@ -164,16 +180,6 @@ const numberToVietnameseText = (value) => {
     if (!numbers) return "";
 
     return numbers.slice(-2).padStart(2, "0");
-  };
-    const formatViDate = (value) => {
-        if (!value) return "........";
-
-        const dateOnly = String(value).split("T")[0];
-        const [day, month, year] = dateOnly.split("-");
-
-        if (!day || !month || !year) return "........";
-
-        return `${day}/${month}/${year}`;
   };
 
     const toTitleCaseVi = (value) => {

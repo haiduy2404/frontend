@@ -90,17 +90,6 @@ function ImportReceiptPrintVatForm() {
         const response = await getWarehouseReceiptByCode(id);
         setReceipt(response?.data || response);
         const data = response?.data || response;
-        alert(
-            JSON.stringify(
-              {
-                id,
-                invoice_date: data?.invoice_date,
-                receipt_date: data?.receipt_date,
-              },
-              null,
-              2
-            )
-          );
       } catch (error) {
         console.error("LOAD IMPORT RECEIPT VAT PRINT ERROR:", error.response?.data || error);
         alert("Không tải được dữ liệu phiếu nhập kho");

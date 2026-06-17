@@ -87,19 +87,18 @@ const toTitleCaseVi = (value) => {
     
 
   const formatReceiptDateText = (value) => {
-        if (!value) {
-            return "Ngày      tháng      năm";
-        }
+    if (!value) return "Ngày      tháng      năm";
 
-        const dateOnly = String(value).split("T")[0];
-        const [day, month, year] = dateOnly.split("-");
+    const dateOnly = String(value).split("T")[0];
 
-        if (!day || !month || !year) {
-            return "Ngày      tháng      năm";
-        }
+    if (dateOnly.includes("/")) {
+      const [day, month, year] = dateOnly.split("/");
+      return `Ngày ${day} tháng ${month} năm ${year}`;
+    }
 
-        return `Ngày ${day} tháng ${month} năm ${year}`;
-    };
+    const [year, month, day] = dateOnly.split("-");
+    return `Ngày ${day} tháng ${month} năm ${year}`;
+  };
 
   const readThreeDigits = (number, hasHundredsBefore = false) => {
   const units = [
