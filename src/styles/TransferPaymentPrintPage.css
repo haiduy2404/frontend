@@ -177,7 +177,7 @@
   }
 
   .transfer-print-toolbar {
-    display: none;
+    display: none !important;
   }
 
   .transfer-paper {
