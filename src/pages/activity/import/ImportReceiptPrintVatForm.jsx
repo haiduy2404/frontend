@@ -58,10 +58,13 @@ function ImportReceiptPrintVatForm() {
     if (!value) return "Ngày      tháng      năm";
 
     const dateOnly = String(value).split("T")[0];
+
+    if (dateOnly.includes("/")) {
+      const [day, month, year] = dateOnly.split("/");
+      return `Ngày ${day} tháng ${month} năm ${year}`;
+    }
+
     const [year, month, day] = dateOnly.split("-");
-
-    if (!day || !month || !year) return "Ngày      tháng      năm";
-
     return `Ngày ${day} tháng ${month} năm ${year}`;
   };
 
@@ -69,10 +72,12 @@ function ImportReceiptPrintVatForm() {
     if (!value) return "........";
 
     const dateOnly = String(value).split("T")[0];
+
+    if (dateOnly.includes("/")) {
+      return dateOnly;
+    }
+
     const [year, month, day] = dateOnly.split("-");
-
-    if (!day || !month || !year) return "........";
-
     return `${day}/${month}/${year}`;
   };
 
