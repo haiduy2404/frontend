@@ -26,15 +26,15 @@
 
 .transfer-paper {
   width: 210mm;
-  min-height: 297mm;
+  min-height: 148mm;
   margin: 0 auto;
   position: relative;
   background: #ffffff;
-  padding: 10mm 14mm 12mm;
+  padding: 8mm 10mm;
   box-sizing: border-box;
   color: #000000;
   font-family: "Times New Roman", Times, serif;
-  font-size: 18px;
+  font-size: 14pt;
 }
 
 .transfer-paper,
@@ -45,7 +45,7 @@
 .transfer-top {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 10mm;
+  column-gap: 8mm;
   align-items: start;
 }
 
@@ -55,60 +55,53 @@
   font-weight: 700;
 }
 
-.transfer-company div {
+.transfer-company div,
+.transfer-company strong {
   display: block;
   white-space: nowrap;
-  font-size: 14px;
-  line-height: 1.35;
-  font-weight: 700;
-}
-
-.transfer-company strong {
-  display: inline-block;
-  white-space: nowrap;
-  font-size: 14px;
-  line-height: 1.35;
+  font-size: 14pt;
+  line-height: 1.25;
   font-weight: 700;
 }
 
 .transfer-national strong {
   display: block;
   white-space: nowrap;
-  font-size: 13.5px;
-  line-height: 1.35;
+  font-size: 14pt;
+  line-height: 1.25;
   font-weight: 700;
 }
 
 .transfer-national > span {
   display: inline-block;
   white-space: nowrap;
-  font-size: 14px;
-  line-height: 1.35;
+  font-size: 14pt;
+  line-height: 1.25;
   font-weight: 700;
   border-bottom: 1px solid #000000;
   padding-bottom: 1px;
 }
 
 .transfer-paper h1 {
-  margin: 4mm 0 15mm;
+  margin: 3mm 0 10mm;
   text-align: center;
-  font-size: 23px;
-  line-height: 1.2;
+  font-size: 14pt;
+  line-height: 1.25;
   font-weight: 700;
+  text-transform: uppercase;
 }
 
 .transfer-content {
   width: 100%;
-  margin-top: 0;
 }
 
 .transfer-row {
   display: grid;
-  grid-template-columns: 48mm 1fr;
+  grid-template-columns: 45mm 1fr;
   align-items: baseline;
-  font-size: 18px;
-  line-height: 1.25;
-  margin: 0 0 2mm;
+  font-size: 14pt;
+  line-height: 1.3;
+  margin-bottom: 2mm;
 }
 
 .transfer-row label {
@@ -116,89 +109,16 @@
 }
 
 .transfer-row span {
-  min-height: 0mm;
+  min-height: 0;
 }
 
 .transfer-row-company span {
   white-space: normal;
 }
 
-.signature-row {
-  margin-top: 5mm;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  text-align: center;
-  column-gap: 8mm;
-}
-
-.signature-row div {
-  min-height: 24mm;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.signature-row strong {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.signature-row span {
-  margin-top: 2mm;
-  font-size: 16px;
-  font-style: italic;
-  line-height: 1.25;
-}
-
-.transfer-print-loading {
-  padding: 24px;
-  font-size: 16px;
-}
-
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
-
-  html,
-  body {
-    width: 210mm;
-    min-height: 297mm;
-    margin: 0;
-    padding: 0;
-    background: #ffffff;
-  }
-
-  .transfer-print-page {
-    width: 210mm;
-    min-height: 297mm;
-    padding: 0;
-    margin: 0;
-    background: #ffffff;
-    overflow: visible;
-    display: block;
-  }
-
-  .transfer-print-toolbar {
-    display: none;
-  }
-
-  .transfer-paper {
-    width: 210mm;
-    min-height: 297mm;
-    margin: 0;
-    padding: 10mm 14mm 12mm;
-    box-sizing: border-box;
-    box-shadow: none;
-  }
-}
-
 .transfer-row-text-money span {
   white-space: normal;
-  line-height: 1.2;
-  font-style: italic;
+  line-height: 1.25;
 }
 
 .transfer-value-bold {
@@ -210,18 +130,13 @@
   font-style: italic;
 }
 
-.transfer-row-text-money span {
-  white-space: normal;
-  line-height: 1.2;
-}
-
 .transfer-date-line {
   position: absolute;
-  top: 35mm;
-  right: 14mm;
-  width: 80mm;
-  font-size: 15px;
-  line-height: 1.35;
+  top: 20mm;
+  right: 10mm;
+  width: 75mm;
+  font-size: 14pt;
+  line-height: 1.25;
   font-style: italic;
   font-weight: 400;
   text-align: center;
@@ -242,6 +157,78 @@
   position: absolute;
   left: 10mm;
   right: 10mm;
-  bottom: 1.2mm;
+  bottom: 1mm;
   border-bottom: 1px solid #000000;
+}
+
+.signature-row {
+  margin-top: 8mm;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 6mm;
+  text-align: center;
+}
+
+.signature-row div {
+  min-height: 20mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.signature-row strong {
+  font-size: 14pt;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.signature-row span {
+  margin-top: 1mm;
+  font-size: 14pt;
+  font-style: italic;
+  line-height: 1.25;
+}
+
+.transfer-print-loading {
+  padding: 24px;
+  font-size: 14pt;
+}
+
+@media print {
+  @page {
+    size: A5 landscape;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 210mm;
+    height: 148mm;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .transfer-print-page {
+    width: 210mm;
+    height: 148mm;
+    padding: 0;
+    margin: 0;
+    background: #ffffff;
+    overflow: hidden;
+  }
+
+  .transfer-print-toolbar {
+    display: none;
+  }
+
+  .transfer-paper {
+    width: 210mm;
+    height: 148mm;
+    margin: 0;
+    padding: 8mm 10mm;
+    box-sizing: border-box;
+    box-shadow: none;
+    font-size: 14pt;
+  }
 }
