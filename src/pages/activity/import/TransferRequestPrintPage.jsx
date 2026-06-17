@@ -33,18 +33,57 @@ function TransferRequestPrintPage() {
     });
   };
 
-  const toTitleCaseVi = (value) => {
-    if (!value) return "";
+const toTitleCaseVi = (value) => {
+  if (!value) return "";
 
-    return String(value)
-        .toLowerCase()
-        .split(" ")
-        .filter(Boolean)
-        .map((word) => {
-        return word.charAt(0).toUpperCase() + word.slice(1);
-        })
-        .join(" ");
-    };
+  const UPPERCASE_WORDS = new Set([
+    "TNHH",
+    "MTV",
+    "TM",
+    "DV",
+    "SX",
+    "XD",
+    "XNK",
+    "CP",
+    "CTCP",
+    "JSC",
+    "LLC",
+    "CO",
+    "LTD",
+    "KCN",
+    "KKT",
+    "KCX",
+    "VN",
+    "VNPT",
+    "VIETTEL",
+    "FPT",
+    "EVN",
+    "PVC",
+    "PVCFC",
+    "PVD",
+    "PVGAS",
+    "PVT",
+    "HCM",
+    "TP",
+  ]);
+
+  return String(value)
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      const upperWord = word.toUpperCase();
+
+      if (UPPERCASE_WORDS.has(upperWord)) {
+        return upperWord;
+      }
+
+      return (
+        word.charAt(0).toUpperCase() +
+        word.slice(1).toLowerCase()
+      );
+    })
+    .join(" ");
+};
     
 
   const formatReceiptDateText = (value) => {
