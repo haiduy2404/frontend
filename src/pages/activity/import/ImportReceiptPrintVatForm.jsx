@@ -58,11 +58,22 @@ function ImportReceiptPrintVatForm() {
     if (!value) return "Ngày      tháng      năm";
 
     const dateOnly = String(value).split("T")[0];
-    const [day, month, year] = dateOnly.split("-");
+    const [year, month, day] = dateOnly.split("-");
 
     if (!day || !month || !year) return "Ngày      tháng      năm";
 
     return `Ngày ${day} tháng ${month} năm ${year}`;
+  };
+
+  const formatViDate = (value) => {
+    if (!value) return "........";
+
+    const dateOnly = String(value).split("T")[0];
+    const [year, month, day] = dateOnly.split("-");
+
+    if (!day || !month || !year) return "........";
+
+    return `${day}/${month}/${year}`;
   };
 
   useEffect(() => {
@@ -167,17 +178,6 @@ const numberToVietnameseText = (value) => {
 
   return `${result.charAt(0).toUpperCase()}${result.slice(1)} đồng chẵn.`;
 };
-
-    const formatViDate = (value) => {
-        if (!value) return "........";
-
-        const dateOnly = String(value).split("T")[0];
-        const [day, month, year] = dateOnly.split("-");
-
-        if (!day || !month || !year) return "........";
-
-        return `${day}/${month}/${year}`;
-  };
 
     const toTitleCaseVi = (value) => {
     if (!value) return "";

@@ -758,7 +758,19 @@ function ImportOrderDetailPage() {
     const convertDateToISO = (value) => {
       if (!value) return null;
 
-      return String(value).trim();
+      const text = String(value).trim();
+
+      // dd/mm/yyyy -> yyyy-mm-dd
+      if (text.includes("/")) {
+        const [day, month, year] = text.split("/");
+
+        if (day && month && year) {
+          return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+        }
+      }
+
+      // yyyy-mm-dd giữ nguyên
+      return text.split("T")[0];
     };
 
   const buildReceiptPayload = (status) => {
