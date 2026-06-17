@@ -6,6 +6,7 @@ import mauthongtu from "../../../assets/mauthongtu.png";
 import { getMetadata } from "../../../services/metadataService";
 
 function ImportReceiptPrintVatForm() {
+  alert("VAT PAGE");
   const navigate = useNavigate();
   const { id } = useParams();
 
