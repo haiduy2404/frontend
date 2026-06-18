@@ -292,3 +292,34 @@
 .receipt-vat-table td {
   box-sizing: border-box;
 }
+
+/* ── Print ────────────────────────────────────────────────── */
+/* @page size được inject động qua printUtils.js để tránh bị đè bởi trang khác */
+@media print {
+  .import-receipt-print-toolbar {
+    display: none !important;
+  }
+
+  .import-receipt-print-page {
+    background: none;
+    padding: 0;
+    height: auto;
+    overflow: visible;
+    display: block;
+  }
+
+  .import-receipt-print-scroll {
+    overflow: visible;
+    flex: none;
+    padding: 0;
+  }
+
+  /* A4 portrait: 210 × 297 mm, standard 10/8 mm margins */
+  .import-receipt-paper {
+    margin: 0;
+    box-shadow: none;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 10mm 8mm 10mm;
+  }
+}

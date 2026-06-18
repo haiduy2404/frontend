@@ -179,3 +179,26 @@
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
+
+/* ── Print ────────────────────────────────────────────────── */
+/* @page size được inject động qua printUtils.js để tránh bị đè bởi trang khác */
+@media print {
+  .transfer-print-toolbar {
+    display: none !important;
+  }
+
+  .transfer-print-page {
+    background: none;
+    padding: 0;
+    min-height: auto;
+  }
+
+  .transfer-paper {
+    margin: 0;
+    box-shadow: none;
+    width: 210mm;
+    height: 148mm;
+    /* 10mm trên/dưới, 12mm trái/phải — giữ nguyên padding screen */
+    padding: 8mm 12mm 7mm;
+  }
+}
