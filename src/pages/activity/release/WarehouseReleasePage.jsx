@@ -19,7 +19,9 @@ function WarehouseReleasePage() {
   const navigate = useNavigate();
   const { canDo } = useAuth();
 
-  const canInputActualQuantity = canDo("update_warehouse_release");
+  const canUpdateRelease = canDo("update_warehouse_release");
+  const canInputActualQuantity = canDo("update_actual_released_quantity");
+  const canUseReleaseActualPage = canUpdateRelease && canInputActualQuantity;
 
   const [releaseOrders, setReleaseOrders] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -297,7 +299,7 @@ function WarehouseReleasePage() {
     };
 
     const handleSaveActualQuantity = async () => {
-    if (!canInputActualQuantity) {
+    if (!canUseReleaseActualPage) {
         alert("Bạn không có quyền nhập số lượng thực xuất");
         return;
     }
@@ -355,9 +357,9 @@ function WarehouseReleasePage() {
         <button
           type="button"
           className="release-order-tab active"
-          disabled={!canInputActualQuantity}
+          disabled={!canUseReleaseActualPage}
           onClick={() => {
-            if (!canInputActualQuantity) {
+            if (!canUseReleaseActualPage) {
               alert("Bạn không có quyền xuất kho");
               return;
             }
@@ -380,7 +382,7 @@ function WarehouseReleasePage() {
         </div>
 
         <div className="release-order-actions">
-          {canInputActualQuantity && (
+          {canUseReleaseActualPage && (
             <>
               <button
                 className="release-edit-btn"
@@ -561,7 +563,7 @@ function WarehouseReleasePage() {
                           <input
                             className="table-number-input"
                             value={item.actual_quantity}
-                            disabled={!canInputActualQuantity}
+                            disabled={!canUseReleaseActualPage}
                             onChange={(e) =>
                               handleChangeActualQuantity(item.id, e.target.value)
                             }
