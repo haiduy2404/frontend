@@ -827,6 +827,7 @@ function ImportOrderDetailPage() {
         conversion_ratio: parseConversionRatio(item.conversion_ratio || 1),
         vat: Number(item.vat || 0),
         is_delete: Boolean(item.is_delete),
+        sort_order: index + 1,
       })),
 
     bank_account_id: headerData.bank_account_id || null,
