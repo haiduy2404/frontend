@@ -27,7 +27,7 @@ function InspectionDetailPage() {
   const [detailRows, setDetailRows] = useState([]);
   const [loadingReceipts, setLoadingReceipts] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const canUpdateInspection = canDo("update_inspection");
+  const canUpdateInspection = canDo("update_warehouse_receipt_items");
   
 
   const [form, setForm] = useState({
