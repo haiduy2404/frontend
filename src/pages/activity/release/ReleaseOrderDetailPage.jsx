@@ -20,6 +20,8 @@ import {
   RiCalendarLine,
 } from "react-icons/ri";
 
+import Select from "react-select";
+
 function ReleaseOrderDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -815,40 +817,58 @@ function ReleaseOrderDetailPage() {
               <label>
                 Đơn vị lĩnh vật tư <span>*</span>
               </label>
-                <select
-                    name="receiver_unit"
-                    value={headerData.receiver_unit}
-                    onChange={handleHeaderChange}
-                    disabled={isPrintMode}
-                    >
-                    <option value="">Chọn đơn vị lĩnh vật tư</option>
-
-                    {receiverUnitOptions.map((item) => (
-                        <option key={item.id} value={item.name}>
-                        {item.name}
-                        </option>
-                    ))}
-                </select>
+                <Select
+                    options={receiverUnitOptions.map((item) => ({
+                        value: item.name,
+                        label: item.name,
+                    }))}
+                    value={
+                        headerData.receiver_unit
+                        ? {
+                            value: headerData.receiver_unit,
+                            label: headerData.receiver_unit,
+                            }
+                        : null
+                    }
+                    onChange={(selected) =>
+                        setHeaderData((prev) => ({
+                        ...prev,
+                        receiver_unit: selected?.value || "",
+                        }))
+                    }
+                    isSearchable
+                    placeholder="Chọn đơn vị lĩnh vật tư"
+                    isDisabled={isPrintMode}
+                />
             </div>
 
             <div className="form-group">
               <label>
                 Đối tượng xuất kho <span>*</span>
               </label>
-                <select
-                    name="release_target"
-                    value={headerData.release_target}
-                    onChange={handleHeaderChange}
-                    disabled={isPrintMode}
-                    >
-                    <option value="">Chọn đối tượng xuất kho</option>
-
-                    {releaseTargetOptions.map((item) => (
-                        <option key={item.id} value={item.name}>
-                        {item.name}
-                        </option>
-                    ))}
-                </select>
+                <Select
+                    options={releaseTargetOptions.map((item) => ({
+                        value: item.name,
+                        label: item.name,
+                    }))}
+                    value={
+                        headerData.release_target
+                        ? {
+                            value: headerData.release_target,
+                            label: headerData.release_target,
+                            }
+                        : null
+                    }
+                    onChange={(selected) =>
+                        setHeaderData((prev) => ({
+                        ...prev,
+                        release_target: selected?.value || "",
+                        }))
+                    }
+                    isSearchable
+                    placeholder="Chọn đối tượng xuất kho"
+                    isDisabled={isPrintMode}
+                />
             </div>
 
             <div className="form-group description-group">
