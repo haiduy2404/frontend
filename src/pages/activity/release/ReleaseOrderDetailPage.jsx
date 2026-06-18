@@ -20,7 +20,7 @@ import {
   RiCalendarLine,
 } from "react-icons/ri";
 
-import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 
 function ReleaseOrderDetailPage() {
   const navigate = useNavigate();
@@ -817,7 +817,7 @@ function ReleaseOrderDetailPage() {
               <label>
                 Đơn vị lĩnh vật tư <span>*</span>
               </label>
-                <Select
+                <CreatableSelect
                     classNamePrefix="release-select"
                     options={receiverUnitOptions.map((item) => ({
                         value: item.name,
@@ -837,8 +837,14 @@ function ReleaseOrderDetailPage() {
                         receiver_unit: selected?.value || "",
                         }))
                     }
+                    onCreateOption={(inputValue) =>
+                        setHeaderData((prev) => ({
+                        ...prev,
+                        receiver_unit: inputValue,
+                        }))
+                    }
                     isSearchable
-                    placeholder="Chọn đơn vị lĩnh vật tư"
+                    placeholder="Chọn hoặc nhập đơn vị lĩnh vật tư"
                     isDisabled={isPrintMode}
                 />
             </div>
@@ -847,29 +853,35 @@ function ReleaseOrderDetailPage() {
               <label>
                 Đối tượng xuất kho <span>*</span>
               </label>
-                <Select
-                    classNamePrefix="release-select"
-                    options={releaseTargetOptions.map((item) => ({
-                        value: item.name,
-                        label: item.name,
-                    }))}
-                    value={
-                        headerData.release_target
-                        ? {
-                            value: headerData.release_target,
-                            label: headerData.release_target,
-                            }
-                        : null
-                    }
-                    onChange={(selected) =>
-                        setHeaderData((prev) => ({
-                        ...prev,
-                        release_target: selected?.value || "",
-                        }))
-                    }
-                    isSearchable
-                    placeholder="Chọn đối tượng xuất kho"
-                    isDisabled={isPrintMode}
+                <CreatableSelect
+                classNamePrefix="release-select"
+                options={releaseTargetOptions.map((item) => ({
+                    value: item.name,
+                    label: item.name,
+                }))}
+                value={
+                    headerData.release_target
+                    ? {
+                        value: headerData.release_target,
+                        label: headerData.release_target,
+                        }
+                    : null
+                }
+                onChange={(selected) =>
+                    setHeaderData((prev) => ({
+                    ...prev,
+                    release_target: selected?.value || "",
+                    }))
+                }
+                onCreateOption={(inputValue) =>
+                    setHeaderData((prev) => ({
+                    ...prev,
+                    release_target: inputValue,
+                    }))
+                }
+                isSearchable
+                placeholder="Chọn hoặc nhập đối tượng xuất kho"
+                isDisabled={isPrintMode}
                 />
             </div>
 
