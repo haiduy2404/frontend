@@ -32,10 +32,10 @@ function ReleaseOrderDetailPage() {
   const isPrintMode = searchParams.get("mode") === "print";
 
   const canSave = isCreateMode
-    ? canDo("create_release_order")
-    : canDo("update_release_order");
+    ? canDo("create_warehouse_release")
+    : canDo("update_warehouse_release");
 
-  const canComplete = canDo("complete_release_order");
+  const canComplete = canDo("complete_warehouse_release");
 
   const [releaseId, setReleaseId] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
