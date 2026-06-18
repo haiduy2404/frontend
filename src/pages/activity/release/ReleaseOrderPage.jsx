@@ -352,7 +352,7 @@ function ReleaseOrderPage() {
         </div>
 
         <div className="release-order-actions">
-          {canDo("update_release_order") && (
+          {canDo("update_warehouse_release") && (
             <button
               className="edit-btn"
               disabled={!selectedRow || selectedRow.status === "COMPLETED"}
@@ -379,7 +379,7 @@ function ReleaseOrderPage() {
             </button>
           )}
 
-          {canDo("complete_release_order") && (
+          {canDo("complete warehouse release") && (
             <button
               className="complete-toolbar-btn"
               disabled={!selectedRow}
@@ -397,7 +397,7 @@ function ReleaseOrderPage() {
             </button>
           )}
 
-          {canDo("delete_release_order") && (
+          {canDo("delete_warehouse_release") && (
             <button
               className="delete-toolbar-btn"
               disabled={!selectedRow && selectedIds.length === 0}
@@ -422,7 +422,7 @@ function ReleaseOrderPage() {
             </button>
           )}
 
-          {canDo("create_release_order") && (
+          {canDo("create_warehouse_release") && (
             <button
               className="add-btn"
               onClick={() =>
