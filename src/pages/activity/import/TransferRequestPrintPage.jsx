@@ -263,7 +263,9 @@ const toTitleCaseVi = (value) => {
     <div className="transfer-print-page">
       <div className="transfer-print-toolbar">
         <button onClick={() => navigate(-1)}>Quay lại</button>
-        <button onClick={() => window.print()}>In</button>
+          <button onClick={() => window.print()}>
+             In
+          </button>
       </div>
 
       <div className="transfer-paper">

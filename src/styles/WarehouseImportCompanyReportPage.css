@@ -386,50 +386,6 @@
   color: #334155;
 }
 
-/* ===== Print ===== */
-
-@media print {
-  body {
-    background: #ffffff;
-  }
-
-  .warehouse-company-report-page {
-    height: auto;
-    background: #ffffff;
-    padding: 0;
-    overflow: visible;
-  }
-
-  .warehouse-company-report-toolbar,
-  .report-card-actions {
-    display: none;
-  }
-
-  .warehouse-company-report-card {
-    border: none;
-    border-radius: 0;
-    padding: 0;
-  }
-
-  .warehouse-company-report-paper {
-    width: 100%;
-    padding: 0;
-  }
-
-  .warehouse-company-report-table th,
-  .warehouse-company-report-table td {
-    padding: 6px 7px;
-    font-size: 12px;
-  }
-
-  .warehouse-company-report-paper h1 {
-    font-size: 20px;
-  }
-
-  .report-note {
-    font-size: 12px;
-  }
-}
 
 /* ===== Responsive ===== */
 
