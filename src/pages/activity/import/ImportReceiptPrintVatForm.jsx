@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "../../../styles/ImportReceiptPrintVatForm.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
@@ -101,6 +101,35 @@ function ImportReceiptPrintVatForm() {
 
     fetchDetail();
   }, [id]);
+
+  const inventoryLines = receipt?.inventory_lines || [];
+  const DEFAULT_ITEM_ROWS = 10;
+  const FIRST_PAGE_MAX_ROWS = 27;
+  const NEXT_PAGE_MAX_ROWS = 24;
+  const firstPageRows = useMemo(() => {
+        if (inventoryLines.length <= FIRST_PAGE_MAX_ROWS) {
+          return Array.from({
+            length: Math.max(DEFAULT_ITEM_ROWS, inventoryLines.length),
+          }).map((_, index) => inventoryLines[index] || null);
+        }
+
+        return inventoryLines.slice(0, FIRST_PAGE_MAX_ROWS);
+      }, [inventoryLines]);
+
+    const remainingRows = useMemo(() => {
+      if (inventoryLines.length <= FIRST_PAGE_MAX_ROWS) return [];
+      return inventoryLines.slice(FIRST_PAGE_MAX_ROWS);
+    }, [inventoryLines]);
+
+    const extraPages = useMemo(() => {
+      const pages = [];
+
+      for (let i = 0; i < remainingRows.length; i += NEXT_PAGE_MAX_ROWS) {
+        pages.push(remainingRows.slice(i, i + NEXT_PAGE_MAX_ROWS));
+      }
+
+      return pages;
+    }, [remainingRows]);
 
   if (loading) {
     return <div className="import-receipt-print-loading">Đang tải dữ liệu...</div>;
@@ -227,14 +256,9 @@ const numberToVietnameseText = (value) => {
         receipt?.company?.name || receipt?.company_name || ""
     );
     const deliveryPerson = receipt?.delivery_persion || "";
+    
 
-    const DEFAULT_ITEM_ROWS = 10;
-
-    const inventoryLines = receipt?.inventory_lines || [];
-
-    const displayRows = Array.from({
-        length: Math.max(DEFAULT_ITEM_ROWS, inventoryLines.length),
-    }).map((_, index) => inventoryLines[index] || null);
+    const hasExtraPages = extraPages.length > 0;
 
     const totalAmount = inventoryLines.reduce((sum, line) => {
     const quantity = Number(line?.original_quantity || line?.quantity || 0);
@@ -343,7 +367,6 @@ const numberToVietnameseText = (value) => {
             </span>
           </div>
         </div>
-
         <table className="receipt-vat-table">
             <colgroup>
                 <col className="receipt-col-stt" />
@@ -387,7 +410,7 @@ const numberToVietnameseText = (value) => {
             </thead>
 
             <tbody>
-                {displayRows.map((line, index) => {
+                {firstPageRows.map((line, index) => {
                 const quantity = Number(line?.original_quantity || line?.quantity || 0);
                 const unitPrice = Number(line?.unit_price || 0);
                 const amount = quantity * unitPrice;
@@ -426,7 +449,8 @@ const numberToVietnameseText = (value) => {
                     </tr>
                 );
                 })}
-
+                {!hasExtraPages && (
+                <>
                 <tr className="receipt-total-row">
                     <td colSpan={7} className="receipt-total-label">
                         Cộng tiền hàng
@@ -457,8 +481,12 @@ const numberToVietnameseText = (value) => {
                         {formatViNumber(grandTotal, 0)}
                     </td>
                 </tr>
+                </>
+              )}
             </tbody>
             </table>
+            {!hasExtraPages && (
+            <>
             <div className="receipt-money-text-row">
                 <span>Tổng số tiền (viết bằng chữ):</span>
                 <strong>{numberToVietnameseText(grandTotal)}</strong>
@@ -502,9 +530,189 @@ const numberToVietnameseText = (value) => {
               <div>{signerKeToanTruong}</div>
               <div>{signerGiamDoc}</div>
             </div>
-            </div>
+          </>
+          )}
         </div>
+        {extraPages.map((pageRows, pageIndex) => {
+          const isLastPage = pageIndex === extraPages.length - 1;
+          const startIndex = FIRST_PAGE_MAX_ROWS + pageIndex * NEXT_PAGE_MAX_ROWS;
+
+          return (
+            <div
+              key={pageIndex}
+              className="import-receipt-paper import-receipt-paper-break"
+            >
+            <table className="receipt-vat-table">
+                <colgroup>
+                    <col className="receipt-col-stt" />
+                    <col className="receipt-col-name" />
+                    <col className="receipt-col-code" />
+                    <col className="receipt-col-unit" />
+                    <col className="receipt-col-doc-qty" />
+                    <col className="receipt-col-real-qty" />
+                    <col className="receipt-col-price" />
+                    <col className="receipt-col-amount" />
+                </colgroup>
+
+                <thead>
+                    <tr>
+                    <th rowSpan={2}>TT</th>
+                    <th rowSpan={2}>
+                        Tên, nhãn hiệu, quy cách, phẩm chất vật tư, dụng cụ, sản phẩm, hàng hóa
+                    </th>
+                    <th rowSpan={2}>Mã số</th>
+                    <th rowSpan={2}>Đơn vị tính</th>
+                    <th colSpan={2}>Số lượng</th>
+                    <th rowSpan={2}>Đơn giá</th>
+                    <th rowSpan={2}>Thành tiền</th>
+                    </tr>
+
+                    <tr>
+                    <th>Theo chứng từ</th>
+                    <th>Thực nhập</th>
+                    </tr>
+
+                    <tr className="receipt-symbol-row">
+                    <th>A</th>
+                    <th>B</th>
+                    <th>C</th>
+                    <th>D</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                    <th>4</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {pageRows.map((line, index) => {
+                    const quantity = Number(line?.original_quantity || line?.quantity || 0);
+                    const unitPrice = Number(line?.unit_price || 0);
+                    const amount = quantity * unitPrice;
+
+                    return (
+                        <tr key={index} className="receipt-item-row">
+                        <td className="receipt-center-cell">{startIndex + index + 1}</td>
+
+                        <td className="receipt-goods-name-cell">
+                            {line?.goods_name || ""}
+                        </td>
+
+                        <td className="receipt-center-cell">
+                            {line?.goods_code || ""}
+                        </td>
+
+                        <td className="receipt-center-cell">
+                            {line?.unit_name || ""}
+                        </td>
+
+                        <td className="receipt-quantity-cell">
+                            {line ? formatViNumber(quantity, 2) : ""}
+                        </td>
+
+                        <td className="receipt-quantity-cell">
+                            {line ? formatViNumber(quantity, 2) : ""}
+                        </td>
+
+                        <td className="receipt-money-cell">
+                            {line ? formatViNumber(unitPrice, 0) : ""}
+                        </td>
+
+                        <td className="receipt-money-cell">
+                            {line ? formatViNumber(amount, 0) : ""}
+                        </td>
+                        </tr>
+                    );
+                    })}
+                    {isLastPage && (
+                    <>
+                      <tr className="receipt-total-row">
+                        <td colSpan={7} className="receipt-total-label">
+                          Cộng tiền hàng
+                        </td>
+                        <td className="receipt-total-value">
+                          {formatViNumber(totalAmount, 0)}
+                        </td>
+                      </tr>
+
+                      {Object.entries(vatSummary)
+                        .filter(([, value]) => value > 0)
+                        .map(([rate, value]) => (
+                          <tr key={rate} className="receipt-total-row">
+                            <td colSpan={7} className="receipt-total-label">
+                              VAT ({rate}%)
+                            </td>
+                            <td className="receipt-total-value">
+                              {formatViNumber(value, 0)}
+                            </td>
+                          </tr>
+                      ))}
+
+                      <tr className="receipt-total-row">
+                        <td colSpan={7} className="receipt-total-label">
+                          Tổng cộng
+                        </td>
+                        <td className="receipt-total-value">
+                          {formatViNumber(grandTotal, 0)}
+                        </td>
+                      </tr>
+                    </>
+                  )}
+                </tbody>
+            </table>
+
+              {isLastPage && (
+                <>
+                  <div className="receipt-money-text-row">
+                      <span>Tổng số tiền (viết bằng chữ):</span>
+                      <strong>{numberToVietnameseText(grandTotal)}</strong>
+                  </div>
+
+                  <div className="receipt-attachment-row">
+                      Số chứng từ gốc kèm theo: ...
+                  </div>
+
+                  <div className="receipt-signature-row">
+                  <div className="receipt-signature-item">
+                      <strong>NGƯỜI LẬP PHIẾU</strong>
+                      <span>(Ký, họ tên)</span>
+                  </div>
+
+                  <div className="receipt-signature-item">
+                      <strong>THỦ KHO</strong>
+                      <span>(Ký, họ tên)</span>
+                  </div>
+
+                  <div className="receipt-signature-item">
+                      <strong>PHÒNG KHVT</strong>
+                      <span>(Ký, họ tên)</span>
+                  </div>
+
+                  <div className="receipt-signature-item">
+                      <strong>KẾ TOÁN TRƯỞNG</strong>
+                      <span>(Ký, họ tên)</span>
+                  </div>
+
+                  <div className="receipt-signature-item">
+                      <strong>GIÁM ĐỐC</strong>
+                      <span>(Ký, họ tên, đóng dấu)</span>
+                  </div>
+                  </div>
+
+                  <div className="receipt-signer-name-row">
+                    <div>{signerNguoiLapPhieu}</div>
+                    <div>{signerThuKho}</div>
+                    <div>{signerPhongKhvt}</div>
+                    <div>{signerKeToanTruong}</div>
+                    <div>{signerGiamDoc}</div>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
+    </div>
   );
 }
 

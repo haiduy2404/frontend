@@ -21,7 +21,41 @@ function InspectionPrintPage() {
   const [metadataMap, setMetadataMap] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const DEFAULT_PRINT_ROWS = 15;
+  const DEFAULT_PRINT_ROWS = 10;
+  const FIRST_PAGE_MAX_ROWS = 12;
+  const NEXT_PAGE_MAX_ROWS = 22;
+
+  const firstPageRows = useMemo(() => {
+  if (detailRows.length <= FIRST_PAGE_MAX_ROWS) {
+    return Array.from({
+      length: Math.max(DEFAULT_PRINT_ROWS, detailRows.length),
+    }).map((_, index) => detailRows[index] || null);
+  }
+
+  return detailRows.slice(0, FIRST_PAGE_MAX_ROWS);
+}, [detailRows]);
+
+  const remainingRows = useMemo(() => {
+    if (detailRows.length <= FIRST_PAGE_MAX_ROWS) {
+      return [];
+    }
+
+    return detailRows.slice(FIRST_PAGE_MAX_ROWS);
+  }, [detailRows]);
+
+  const extraPages = useMemo(() => {
+    const pages = [];
+
+    for (let i = 0; i < remainingRows.length; i += NEXT_PAGE_MAX_ROWS) {
+      pages.push(
+        remainingRows.slice(i, i + NEXT_PAGE_MAX_ROWS)
+      );
+    }
+
+    return pages;
+  }, [remainingRows]);
+
+  const hasExtraPages = extraPages.length > 0;
 
   const unwrapData = (response) => response?.data || response;
 
@@ -140,7 +174,6 @@ function InspectionPrintPage() {
               const wrongQuantity = item.rejected_quantity;
 
               return {
-                id: item.inventory_id || item.goods_id || index + 1,
                     id: item.inventory_id || item.goods_id || index + 1,
                     goods_id: item.goods_id || "",
                     goods_code: item.goods_code || "",
@@ -170,12 +203,6 @@ function InspectionPrintPage() {
 
     fetchReceiptDetail();
   }, [id]);
-
-  const printRows = useMemo(() => {
-    return Array.from({
-      length: Math.max(DEFAULT_PRINT_ROWS, detailRows.length),
-    }).map((_, index) => detailRows[index] || null);
-  }, [detailRows]);
 
   if (loading) {
     return (
@@ -419,7 +446,7 @@ function InspectionPrintPage() {
             </thead>
 
             <tbody>
-              {printRows.map((item, index) => (
+              {firstPageRows.map((item, index) => (
                 <tr key={index}>
                   <td className="inspection-center-cell">
                     {item ? index + 1 : ""}
@@ -461,39 +488,179 @@ function InspectionPrintPage() {
             </tbody>
           </table>
 
-          <div className="inspection-print-conclusion">
-            Ý kiến của Ban kiểm nghiệm : {inspectionOpinion}
-          </div>
+          {!hasExtraPages && (
+            <>
+              <div className="inspection-print-conclusion">
+                Ý kiến của Ban kiểm nghiệm : {inspectionOpinion}
+              </div>
 
-          <div className="inspection-signature-title-row">
-            <div>
-              <strong>ĐẠI DIỆN KỸ THUẬT</strong>
-              <span>(Ký, họ tên)</span>
-            </div>
+              <div className="inspection-signature-title-row">
+                <div>
+                  <strong>ĐẠI DIỆN KỸ THUẬT</strong>
+                  <span>(Ký, họ tên)</span>
+                </div>
 
-            <div>
-              <strong>THỦ KHO</strong>
-              <span>(Ký, họ tên)</span>
-            </div>
+                <div>
+                  <strong>THỦ KHO</strong>
+                  <span>(Ký, họ tên)</span>
+                </div>
 
-            <div>
-              <strong>PHÒNG KHVT</strong>
-              <span>(Ký, họ tên)</span>
-            </div>
+                <div>
+                  <strong>PHÒNG KHVT</strong>
+                  <span>(Ký, họ tên)</span>
+                </div>
 
-            <div>
-              <strong>PHÓ GIÁM ĐỐC</strong>
-              <span>(Ký, họ tên)</span>
-            </div>
-          </div>
+                <div>
+                  <strong>PHÓ GIÁM ĐỐC</strong>
+                  <span>(Ký, họ tên)</span>
+                </div>
+              </div>
 
-          <div className="inspection-signer-name-row">
-            <div>{signerDaiDienKyThuat}</div>
-            <div>{signerThuKho}</div>
-            <div>{signerTruongPhongVatTu}</div>
-            <div>{signerPhoGiamDoc}</div>
-          </div>
+              <div className="inspection-signer-name-row">
+                <div>{signerDaiDienKyThuat}</div>
+                <div>{signerThuKho}</div>
+                <div>{signerTruongPhongVatTu}</div>
+                <div>{signerPhoGiamDoc}</div>
+              </div>
+            </>
+          )}
         </div>
+          {extraPages.map((pageRows, pageIndex) => {
+            const isLastPage = pageIndex === extraPages.length - 1;
+            const startIndex = FIRST_PAGE_MAX_ROWS + pageIndex * NEXT_PAGE_MAX_ROWS;
+
+            return (
+              <div
+                key={pageIndex}
+                className="inspection-print-paper inspection-print-paper-break"
+              >
+                <table className="inspection-print-table">
+                  <colgroup>
+                    <col className="inspection-col-stt" />
+                    <col className="inspection-col-name" />
+                    <col className="inspection-col-code" />
+                    <col className="inspection-col-method" />
+                    <col className="inspection-col-unit" />
+                    <col className="inspection-col-doc-qty" />
+                    <col className="inspection-col-good-qty" />
+                    <col className="inspection-col-wrong-qty" />
+                    <col className="inspection-col-note" />
+                  </colgroup>
+
+                  <thead>
+                    <tr>
+                      <th rowSpan={2}>TT</th>
+                      <th rowSpan={2}>
+                        Tên, nhãn hiệu, quy cách, vật tư, công cụ, sản phẩm, hàng hóa
+                      </th>
+                      <th rowSpan={2}>Mã số</th>
+                      <th rowSpan={2}>Phương thức kiểm nghiệm</th>
+                      <th rowSpan={2}>Đơn vị tính</th>
+                      <th rowSpan={2}>Số lượng theo chứng từ</th>
+                      <th colSpan={2}>Kết quả kiểm nghiệm</th>
+                      <th rowSpan={2}>Ghi chú</th>
+                    </tr>
+
+                    <tr>
+                      <th>Số lượng đúng quy cách, phẩm chất</th>
+                      <th>Số lượng không đúng quy cách, phẩm chất</th>
+                    </tr>
+
+                    <tr className="inspection-symbol-row">
+                      <th>A</th>
+                      <th>B</th>
+                      <th>C</th>
+                      <th>D</th>
+                      <th>E</th>
+                      <th>1</th>
+                      <th>2</th>
+                      <th>3</th>
+                      <th>4</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {pageRows.map((item, rowIndex) => (
+                      <tr key={rowIndex}>
+                        <td className="inspection-center-cell">
+                          {startIndex + rowIndex + 1}
+                        </td>
+
+                        <td className="inspection-name-cell">
+                          {item?.goods_name || ""}
+                        </td>
+
+                        <td className="inspection-center-cell">
+                          {item?.goods_code || ""}
+                        </td>
+
+                        <td className="inspection-center-cell">
+                          {item?.inspection_method || ""}
+                        </td>
+
+                        <td className="inspection-center-cell">
+                          {item?.unit_name || ""}
+                        </td>
+
+                        <td className="inspection-number-cell">
+                          {formatPrintQuantity(item?.document_quantity)}
+                        </td>
+
+                        <td className="inspection-number-cell">
+                          {formatPrintQuantity(item?.qualified_quantity)}
+                        </td>
+
+                        <td className="inspection-number-cell">
+                          {formatPrintQuantity(item?.wrong_quantity)}
+                        </td>
+
+                        <td className="inspection-note-cell">
+                          {item?.note || ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {isLastPage && (
+                  <>
+                    <div className="inspection-print-conclusion">
+                      Ý kiến của Ban kiểm nghiệm : {inspectionOpinion}
+                    </div>
+
+                    <div className="inspection-signature-title-row">
+                      <div>
+                        <strong>ĐẠI DIỆN KỸ THUẬT</strong>
+                        <span>(Ký, họ tên)</span>
+                      </div>
+
+                      <div>
+                        <strong>THỦ KHO</strong>
+                        <span>(Ký, họ tên)</span>
+                      </div>
+
+                      <div>
+                        <strong>PHÒNG KHVT</strong>
+                        <span>(Ký, họ tên)</span>
+                      </div>
+
+                      <div>
+                        <strong>PHÓ GIÁM ĐỐC</strong>
+                        <span>(Ký, họ tên)</span>
+                      </div>
+                    </div>
+
+                    <div className="inspection-signer-name-row">
+                      <div>{signerDaiDienKyThuat}</div>
+                      <div>{signerThuKho}</div>
+                      <div>{signerTruongPhongVatTu}</div>
+                      <div>{signerPhoGiamDoc}</div>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
       </div>
     </div>
   );

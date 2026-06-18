@@ -553,69 +553,62 @@ function ImportOrderDetailPage() {
     maximumFractionDigits: fractionDigits,
   });
 };
+  const handleSelectGoods = (goods) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== activeGoodsRowId) {
+          return item;
+        }
 
-    const handleSelectGoods = (goods) => {
-      setItems((prev) =>
-        prev.map((item) => {
-          if (item.id !== activeGoodsRowId) {
-            return item;
-          }
+        const quantity = parseNumber(item.requested_quantity || 0);
 
-          const quantity = parseNumber(item.requested_quantity || 0);
+        const unitOptions = Array.isArray(goods.units)
+          ? goods.units.map((unitItem) => ({
+              unit_id: unitItem.unit_id || "",
+              unit_name: unitItem.unit_name || "",
+              conversion_ratio: Number(unitItem.conversion_ratio || 1),
+              last_unit_price: unitItem.last_unit_price,
+              is_default: Boolean(unitItem.is_default),
+            }))
+          : [];
 
-          const unitPrice = parseNumber(
-            goods.unit_price || goods.price || goods.purchase_price || 0
-          );
+        const defaultUnit =
+          unitOptions.find((unitItem) => unitItem.is_default) ||
+          unitOptions[0] ||
+          null;
 
-          const unitOptions = Array.isArray(goods.units)
-            ? goods.units.map((unitItem) => ({
-                unit_id: unitItem.unit_id || unitItem.unit?.id || "",
-                unit_name:
-                  unitItem.unit_name ||
-                  unitItem.unit?.name ||
-                  unitItem.name ||
-                  "",
-                conversion_ratio: Number(unitItem.conversion_ratio || 1),
-                is_default: Boolean(unitItem.is_default),
-              }))
-            : [];
+        const unitPrice = parseNumber(
+          defaultUnit?.last_unit_price || 0
+        );
 
-          const defaultUnit =
-            unitOptions.find((unitItem) => unitItem.is_default) ||
-            unitOptions[0] ||
-            null;
+        return {
+          ...item,
+          goods_id: goods.id,
+          goods_code: goods.code || goods.goods_code || "",
+          goods_name: goods.name || goods.goods_name || "",
 
-          return {
-            ...item,
-            goods_id: goods.id,
-            goods_code: goods.code || goods.goods_code || "",
-            goods_name: goods.name || goods.goods_name || "",
+          unit_id: defaultUnit?.unit_id || "",
+          unit: defaultUnit?.unit_name || "",
+          unit_options: unitOptions,
 
-            unit_id: defaultUnit?.unit_id || goods.unit_id || "",
-            unit:
-              defaultUnit?.unit_name ||
-              goods.unit ||
-              goods.unit_name ||
-              goods.goods_unit_name ||
-              goods.main_unit ||
-              "",
-            unit_options: unitOptions,
-            conversion_ratio: defaultUnit?.conversion_ratio
-                ? String(defaultUnit.conversion_ratio)
-                : "1",
-            unit_price: formatViNumber(unitPrice, 2),
-            amount: formatViNumber(
+          conversion_ratio: String(
+            defaultUnit?.conversion_ratio || 1
+          ),
+
+          unit_price: formatViNumber(unitPrice, 3),
+
+          amount: formatViNumber(
             Math.round(quantity * unitPrice),
             0
           ),
-          };
-        })
-      );
+        };
+      })
+    );
 
-      setShowGoodsDropdown(false);
-      setActiveGoodsRowId(null);
-      setGoodsKeyword("");
-    };
+    setShowGoodsDropdown(false);
+    setActiveGoodsRowId(null);
+    setGoodsKeyword("");
+  };
 
     const handleChangeItemUnit = (rowId, unitId) => {
       setItems((prev) =>
@@ -626,13 +619,18 @@ function ImportOrderDetailPage() {
             (unitItem) => String(unitItem.unit_id) === String(unitId)
           );
 
+          const quantity = parseNumber(item.requested_quantity);
+          const unitPrice = parseNumber(selectedUnit?.last_unit_price || 0);
+
           return {
             ...item,
             unit_id: unitId,
             unit: selectedUnit?.unit_name || item.unit,
             conversion_ratio: selectedUnit?.conversion_ratio
               ? String(selectedUnit.conversion_ratio)
-              : "",
+              : "1",
+            unit_price: formatViNumber(unitPrice, 3),
+            amount: formatViNumber(Math.round(quantity * unitPrice), 0),
           };
         })
       );
@@ -972,14 +970,15 @@ const handleComplete = async () => {
                     unit_id: line.goods_unit_id || "",
                     unit: selectedUnit?.unit_name || line.unit_name || "",
 
-                    unit_options: Array.isArray(line.units)
-                      ? line.units.map((unitItem) => ({
-                          unit_id: unitItem.unit_id || "",
-                          unit_name: unitItem.unit_name || "",
-                          conversion_ratio: unitItem.conversion_ratio || "",
-                          is_default: Boolean(unitItem.is_default),
-                        }))
-                      : [],
+                  unit_options: Array.isArray(line.units)
+                    ? line.units.map((unitItem) => ({
+                        unit_id: unitItem.unit_id || "",
+                        unit_name: unitItem.unit_name || "",
+                        conversion_ratio: unitItem.conversion_ratio || "",
+                        last_unit_price: unitItem.last_unit_price || 0,
+                        is_default: Boolean(unitItem.is_default),
+                      }))
+                    : [],
 
                     conversion_ratio:
                       selectedUnit?.conversion_ratio !== null &&

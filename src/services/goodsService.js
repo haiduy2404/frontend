@@ -1,7 +1,10 @@
 import axiosInstance from "./authService";
 
 export const getGoods = async (params = {}) => {
-  const response = await axiosInstance.get("/inventory/goods", { params });
+  const response = await axiosInstance.get("/inventory/goods/pageable", {
+    params,
+  });
+
   return response.data;
 };
 
