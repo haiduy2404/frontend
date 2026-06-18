@@ -380,7 +380,7 @@ function ReleaseOrderPage() {
             </button>
           )}
 
-          {canDo("complete warehouse release") && (
+          {canDo("complete_warehouse_release") && (
             <button
               className="complete-toolbar-btn"
               disabled={!selectedRow}
