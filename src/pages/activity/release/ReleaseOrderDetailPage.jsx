@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
-import "../../../styles/ImportOrderDetailPage.css";
+import "../../../styles/ReleaseOrderDetailPage.css";
 import { getGoods } from "../../../services/goodsService";
 import { getWarehouses } from "../../../services/warehouseService";
 import {
@@ -818,6 +818,7 @@ function ReleaseOrderDetailPage() {
                 Đơn vị lĩnh vật tư <span>*</span>
               </label>
                 <Select
+                    classNamePrefix="release-select"
                     options={receiverUnitOptions.map((item) => ({
                         value: item.name,
                         label: item.name,
@@ -847,6 +848,7 @@ function ReleaseOrderDetailPage() {
                 Đối tượng xuất kho <span>*</span>
               </label>
                 <Select
+                    classNamePrefix="release-select"
                     options={releaseTargetOptions.map((item) => ({
                         value: item.name,
                         label: item.name,
