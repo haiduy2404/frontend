@@ -5,7 +5,10 @@ import {
   Route,
   Navigate,
   useNavigate,
+  Outlet,
 } from "react-router-dom";
+import ReleaseOrderPage from "./pages/activity/release/ReleaseOrderPage";
+import ReleaseOrderDetailPage from "./pages/activity/release/ReleaseOrderDetailPage";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./layouts/DashboardLayout";
 import ImportLayout from "./layouts/ImportLayout";
@@ -29,6 +32,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import GuestRoute from "./components/GuestRoute";
 import RequireRole from "./components/RequireRole";
 import { AuthProvider } from "./contexts/AuthContext";
+import WarehouseReleasePage from "./pages/activity/release/WarehouseReleasePage";
+
 import "./styles/auth.css";
 
 // Bridges global auth events from the axios interceptor to router navigation.
@@ -105,6 +110,27 @@ function App() {
                   }
                 />
               </Route>
+                <Route path="activity/export" element={<Outlet />}>
+                  <Route index element={<Navigate to="order" replace />} />
+
+                  <Route
+                    path="order"
+                    element={
+                      <RequireRole roles={["view_release_order"]}>
+                        <ReleaseOrderPage />
+                      </RequireRole>
+                    }
+                  />
+
+                  <Route
+                    path="release"
+                    element={
+                      <RequireRole roles={["update_actual_released_quantity"]}>
+                        <WarehouseReleasePage />
+                      </RequireRole>
+                    }
+                  />
+                </Route>
             </Route>
 
             <Route
@@ -115,6 +141,7 @@ function App() {
                 </RequireRole>
               }
             />
+
             <Route
               path="/dashboard/activity/import/order-detail/:id"
               element={
@@ -123,6 +150,23 @@ function App() {
                 </RequireRole>
               }
             />
+              <Route
+                path="/dashboard/activity/export/order-detail/new"
+                element={
+                  <RequireRole roles={["create_release_order"]}>
+                    <ReleaseOrderDetailPage />
+                  </RequireRole>
+                }
+              />
+
+              <Route
+                path="/dashboard/activity/export/order-detail/:id"
+                element={
+                  <RequireRole roles={["view_release_order"]}>
+                    <ReleaseOrderDetailPage />
+                  </RequireRole>
+                }
+              />
             <Route
               path="/dashboard/activity/import/inspection-detail/new"
               element={

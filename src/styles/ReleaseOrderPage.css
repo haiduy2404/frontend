@@ -1,0 +1,384 @@
+.release-order-page {
+  height: 100%;
+  background: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Tabs */
+.release-order-tabs {
+  height: 44px;
+  display: flex;
+  align-items: flex-end;
+  background: #e5e7eb;
+  padding: 0 20px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.release-order-tab {
+  height: 42px;
+  min-width: 128px;
+  padding: 0 22px;
+  border: none;
+  background: transparent;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+}
+
+.release-order-tab.active {
+  background: #ffffff;
+  color: #2563eb;
+}
+
+.release-order-tab:hover {
+  color: #2563eb;
+}
+
+/* Toolbar */
+.release-order-toolbar {
+  min-height: 56px;
+  background: #ffffff;
+  border-bottom: 1px solid #d9dee7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.release-order-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.release-order-search {
+  width: 280px;
+  height: 38px;
+  border: 1px solid #d5dbe5;
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.release-order-search:focus {
+  border-color: #2563eb;
+}
+
+.release-order-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.release-order-actions button {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid #d5dbe5;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.release-order-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.release-add-btn {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.release-edit-btn {
+  color: #2563eb !important;
+}
+
+.release-delete-btn {
+  color: #ef4444 !important;
+}
+
+.release-complete-btn {
+  color: #16a34a !important;
+}
+
+/* Main */
+.release-order-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* Table */
+.release-order-table-wrapper {
+  flex: 1;
+  overflow: auto;
+  background: #ffffff;
+}
+
+.release-order-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.release-order-table th,
+.release-order-table td {
+  height: 41px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 12px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.release-order-table th {
+  background: #f8fafc;
+  color: #111827;
+  font-weight: 700;
+  border-right: 1px solid #e5e7eb;
+}
+
+.release-order-table tbody tr {
+  cursor: pointer;
+}
+
+.release-order-table tbody tr:hover {
+  background: #eff6ff;
+}
+
+.release-order-table tbody tr.selected {
+  background: #bfdbfe;
+}
+
+.release-order-checkbox-col {
+  width: 42px;
+  text-align: center !important;
+}
+
+.release-order-checkbox-col input {
+  width: 16px;
+  height: 16px;
+}
+
+.release-order-link-text {
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.release-order-link-text:hover {
+  text-decoration: underline;
+}
+
+.release-number-col {
+  text-align: right !important;
+}
+
+.release-center-col {
+  text-align: center !important;
+}
+
+/* Pagination */
+.release-order-pagination {
+  height: 56px;
+  border-top: 1px solid #d9dee7;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.release-pagination-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.release-pagination-right select {
+  height: 36px;
+  min-width: 80px;
+  border: 1px solid #d5dbe5;
+  border-radius: 6px;
+  padding: 0 8px;
+}
+
+.release-pagination-right button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.release-pagination-right button:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* Splitter */
+.release-detail-splitter {
+  height: 22px;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Detail */
+.release-order-detail {
+  height: 260px;
+  background: #ffffff;
+  border-top: 1px solid #d9dee7;
+  padding: 12px 20px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.release-order-detail h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.release-detail-card {
+  height: calc(100% - 32px);
+  border: 1px solid #d9dee7;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.release-detail-search {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+
+.release-detail-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+}
+
+.release-detail-table-wrapper {
+  flex: 1;
+  overflow: auto;
+}
+
+.release-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.release-detail-table th,
+.release-detail-table td {
+  height: 38px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.release-detail-table th {
+  background: #f8fafc;
+  font-weight: 700;
+  color: #111827;
+}
+
+.release-total-row td {
+  background: #f9fafb;
+  font-weight: 700;
+}
+
+.release-table-bottom-bar {
+  height: 44px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+
+.release-table-pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.release-table-pagination select {
+  height: 32px;
+  border: 1px solid #d5dbe5;
+  border-radius: 6px;
+  padding: 0 8px;
+}
+
+.release-table-pagination button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+}
+
+/* Detail colgroup */
+.release-col-stt {
+  width: 50px;
+}
+
+.release-col-code {
+  width: 140px;
+}
+
+.release-col-name {
+  width: 320px;
+}
+
+.release-col-unit {
+  width: 90px;
+}
+
+.release-col-qty {
+  width: 140px;
+}
+
+.release-col-check {
+  width: 110px;
+}
