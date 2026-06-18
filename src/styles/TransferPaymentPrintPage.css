@@ -155,21 +155,21 @@
 @media print {
   @page {
     size: A5 landscape;
-    margin: 0;
+    margin: 5mm;
   }
 
   html,
   body {
-    width: 210mm;
-    height: 148mm;
+    width: 200mm;
+    height: 138mm;
     margin: 0;
     padding: 0;
     background: #fff;
   }
 
   .transfer-print-page {
-    width: 210mm;
-    height: 148mm;
+    width: 200mm;
+    height: 138mm;
     padding: 0;
     margin: 0;
     background: #fff;
@@ -181,16 +181,16 @@
   }
 
   .transfer-paper {
-    width: 210mm;
-    height: 148mm;
+    width: 200mm;
+    height: 138mm;
     margin: 0;
-    padding: 8mm 12mm;
+    padding: 5mm 7mm;
     box-shadow: none;
   }
 }
 
 .transfer-print-toolbar {
-  width: 210mm;
+  width: 200mm;
   margin: 0 auto 16px;
   display: flex;
   justify-content: flex-end;
