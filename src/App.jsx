@@ -153,7 +153,7 @@ function App() {
               <Route
                 path="/dashboard/activity/export/order-detail/new"
                 element={
-                  <RequireRole roles={["create_release_order"]}>
+                  <RequireRole roles={["create_warehouse_release"]}>
                     <ReleaseOrderDetailPage />
                   </RequireRole>
                 }
@@ -162,7 +162,7 @@ function App() {
               <Route
                 path="/dashboard/activity/export/order-detail/:id"
                 element={
-                  <RequireRole roles={["view_release_order"]}>
+                  <RequireRole roles={["view_warehouse_release"]}>
                     <ReleaseOrderDetailPage />
                   </RequireRole>
                 }
