@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../../../styles/InspectionPrintPage.css";
+import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 
 import { getWarehouseReceiptByCode } from "../../../services/warehouseReceiptService";
 import { getMetadata } from "../../../services/metadataService";
@@ -207,7 +208,7 @@ function InspectionPrintPage() {
           Quay lại
         </button>
 
-        <button type="button" onClick={() => window.print()}>
+        <button type="button" onClick={() => printWithPageSize(PAGE_SIZE.A4_PORTRAIT.width, PAGE_SIZE.A4_PORTRAIT.height)}>
           In
         </button>
       </div>

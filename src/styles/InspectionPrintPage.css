@@ -383,3 +383,40 @@
   background: #2563eb;
   color: #ffffff;
 }
+
+/* ── Print ────────────────────────────────────────────────── */
+/* @page size được inject động qua printUtils.js để tránh bị đè bởi trang khác */
+@media print {
+  .inspection-print-toolbar {
+    display: none !important;
+  }
+
+  /* Reset outer wrapper so the paper fills the page */
+  .inspection-print-page {
+    background: none;
+    padding: 0;
+    height: auto;
+    overflow: visible;
+    display: block;
+  }
+
+  .inspection-print-scroll {
+    overflow: visible;
+    flex: none;
+    padding: 0;
+  }
+
+  .inspection-print-paper {
+    margin: 0;
+    box-shadow: none;
+    /* A4 portrait: 210 × 297 mm, standard 10 mm margins → 190 × 277 mm printable */
+    width: 210mm;
+    min-height: 297mm !important;
+    padding: 10mm 10mm 10mm;
+  }
+
+  /* Keep modal hidden */
+  .inspection-print-modal-overlay {
+    display: none !important;
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "../../../styles/TransferPaymentPrintPage.css";
+import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getWarehouseReceiptByCode } from "../../../services/warehouseReceiptService";
 import { getMetadata } from "../../../services/metadataService";
 
@@ -263,7 +264,7 @@ const toTitleCaseVi = (value) => {
     <div className="transfer-print-page">
       <div className="transfer-print-toolbar">
         <button onClick={() => navigate(-1)}>Quay lại</button>
-          <button onClick={() => window.print()}>
+          <button onClick={() => printWithPageSize(PAGE_SIZE.A5_LANDSCAPE.width, PAGE_SIZE.A5_LANDSCAPE.height)}>
              In
           </button>
       </div>

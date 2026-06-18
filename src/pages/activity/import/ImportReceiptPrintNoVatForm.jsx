@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "../../../styles/ImportReceiptPrintNoVatForm.css";
+import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getWarehouseReceiptByCode } from "../../../services/warehouseReceiptService";
 import mauthongtu from "../../../assets/mauthongtu.png";
 import { getMetadata } from "../../../services/metadataService";
@@ -252,7 +253,7 @@ const signerGiamDoc = getMetadataValue("GIÁM ĐỐC");
     <div className="import-receipt-print-page">
       <div className="import-receipt-print-toolbar">
         <button onClick={() => navigate(-1)}>Quay lại</button>
-        <button onClick={() => window.print()}>In</button>
+        <button onClick={() => printWithPageSize(PAGE_SIZE.A4_PORTRAIT.width, PAGE_SIZE.A4_PORTRAIT.height)}>In</button>
       </div>
     <div className="import-receipt-print-scroll">
       <div className="import-receipt-paper">
