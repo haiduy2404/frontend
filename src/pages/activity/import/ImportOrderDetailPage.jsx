@@ -817,7 +817,7 @@ function ImportOrderDetailPage() {
     description: headerData.description || null,
     inventory: inventoryPayloadItems
       .filter((item) => item.goods_id)
-      .map((item) => ({
+      .map((item,index) => ({
         inventory_id: item.inventory_id || null,
         goods_id: item.goods_id,
         goods_unit_id: item.unit_id || null,

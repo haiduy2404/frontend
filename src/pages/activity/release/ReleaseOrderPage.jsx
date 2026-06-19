@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ReleaseOrderPage.css";
 import "../../../styles/ReleaseOrderDetailPage.css";
-import { getGoods } from "../../../services/goodsService";
 
 import {
   getReleaseOrdersPageable,
@@ -22,7 +21,6 @@ import {
 function ReleaseOrderPage() {
   const { canDo } = useAuth();
   const navigate = useNavigate();
-  const [goodsMap, setGoodsMap] = useState({});
 
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -39,29 +37,6 @@ function ReleaseOrderPage() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const unwrapData = (response) => response?.data || response;
-  
-
-  const fetchGoodsMap = async () => {
-  const response = await getGoods({
-    search: "",
-    page: 1,
-    page_size: 10000,
-  });
-
-  const results = response.data.results;
-
-  const nextMap = {};
-  results.forEach((goods) => {
-    nextMap[goods.id] = goods;
-  });
-
-  setGoodsMap(nextMap);
-};
-
-    useEffect(() => {
-    fetchGoodsMap();
-    }, []);
-
   const filteredReleaseOrders = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
@@ -611,16 +586,9 @@ function ReleaseOrderPage() {
                       return (
                         <tr key={item.release_inventory_id || item.goods_id || index}>
                           <td>{index + 1}</td>
-                        <td>{goodsMap[item.goods_id]?.code || ""}</td>
-                        <td>{goodsMap[item.goods_id]?.name || ""}</td>
-                        <td>
-                        {
-                            goodsMap[item.goods_id]?.units?.find(
-                            (unit) => String(unit.unit_id) === String(item.goods_unit_id)
-                            )?.unit_name || ""
-                        }
-                        </td>
-
+                            <td>{item.goods_code || ""}</td>
+                            <td>{item.goods_name || ""}</td>
+                            <td>{item.goods_unit_name || ""}</td>
                           <td className="number-col">
                             {formatViNumber(item.conversion_ratio || 1, 3)}
                           </td>

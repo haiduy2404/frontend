@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ReleaseOrderDetailPage.css";
-import { getGoods } from "../../../services/goodsService";
 import { getWarehouses } from "../../../services/warehouseService";
+import { getOpeningStocks } from "../../../services/openingStockService";
 import {
   createReleaseOrder,
   submitReleaseOrder,
@@ -20,8 +20,6 @@ import {
   RiCalendarLine,
 } from "react-icons/ri";
 
-import CreatableSelect from "react-select/creatable";
-
 function ReleaseOrderDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -29,7 +27,8 @@ function ReleaseOrderDetailPage() {
   const [searchParams] = useSearchParams();
   const [receiverUnitOptions, setReceiverUnitOptions] = useState([]);
   const [releaseTargetOptions, setReleaseTargetOptions] = useState([]);
-
+  const [receiverUnitMode, setReceiverUnitMode] = useState("select");
+  const [releaseTargetMode, setReleaseTargetMode] = useState("select");
   const isCreateMode = !id || id === "new";
   const isPrintMode = searchParams.get("mode") === "print";
 
@@ -232,14 +231,23 @@ function ReleaseOrderDetailPage() {
     is_delete: false,
   });
 
-  const handleHeaderChange = (e) => {
+    const handleHeaderChange = (e) => {
     const { name, value } = e.target;
 
     setHeaderData((prev) => ({
-      ...prev,
-      [name]: value,
+        ...prev,
+        [name]: value,
     }));
-  };
+
+    if (name === "warehouse_id") {
+        setGoodsList([]);
+        setGoodsKeyword("");
+        setShowGoodsDropdown(false);
+        setActiveGoodsRowId(null);
+        setItems([createEmptyRow()]);
+        setDeletedItems([]);
+    }
+    };
 
   const fetchWarehouseList = async () => {
     try {
@@ -276,16 +284,21 @@ function ReleaseOrderDetailPage() {
     pageNumber = 1,
     append = false,
   } = {}) => {
+    if (!headerData.warehouse_id) {
+        alert("Vui lòng chọn kho xuất trước");
+        return;
+    }
     if (goodsLoading) return;
 
     try {
       setGoodsLoading(true);
 
-      const data = await getGoods({
+        const data = await getOpeningStocks({
         search: keyword,
+        warehouse_id: headerData.warehouse_id,
         page: pageNumber,
         page_size: 30,
-      });
+        });
 
       const results = Array.isArray(data)
         ? data
@@ -334,19 +347,14 @@ function ReleaseOrderDetailPage() {
       prev.map((item) => {
         if (item.id !== activeGoodsRowId) return item;
 
-        const unitOptions = Array.isArray(goods.units)
-          ? goods.units.map((unitItem) => ({
-              unit_id: unitItem.unit_id || unitItem.unit?.id || "",
-              unit_name:
-                unitItem.unit_name ||
-                unitItem.unit?.name ||
-                unitItem.name ||
-                "",
-              conversion_ratio: Number(unitItem.conversion_ratio || 1),
-              is_default: Boolean(unitItem.is_default),
+        const unitOptions = Array.isArray(goods.goods_units)
+        ? goods.goods_units.map((unitItem) => ({
+            unit_id: unitItem.goods_unit_id,
+            unit_name: unitItem.goods_unit_name,
+            conversion_ratio: Number(unitItem.conversion_ratio || 1),
+            is_default: Boolean(unitItem.is_default),
             }))
-          : [];
-
+        : [];
         const defaultUnit =
           unitOptions.find((unitItem) => unitItem.is_default) ||
           unitOptions[0] ||
@@ -354,9 +362,10 @@ function ReleaseOrderDetailPage() {
 
         return {
           ...item,
-          goods_id: goods.id,
-          goods_code: goods.code || goods.goods_code || "",
-          goods_name: goods.name || goods.goods_name || "",
+          goods_id: goods.goods_id,
+          goods_code: goods.goods_code || "",
+          goods_name: goods.goods_name || "",
+          remaining_quantity: goods.remaining_quantity || 0,
           unit_id: defaultUnit?.unit_id || goods.unit_id || "",
           unit:
             defaultUnit?.unit_name ||
@@ -524,7 +533,7 @@ function ReleaseOrderDetailPage() {
       alert("Vui lòng chọn ít nhất một vật tư");
       return false;
     }
-
+    
     return true;
   };
 
@@ -591,18 +600,16 @@ function ReleaseOrderDetailPage() {
 
         const response = await getReleaseOrderByCode(releaseCode);
         const data = response.data;
-
-        const goodsResponse = await getGoods({
-        search: "",
-        page: 1,
-        page_size: 10000,
+        const goodsResponse = await getOpeningStocks({
+            warehouse_id: data.warehouse_id,
+            page: 1,
+            page_size: 10000,
         });
-
         const goodsResults = goodsResponse.data.results;
 
         const goodsMap = {};
-        goodsResults.forEach((goods) => {
-        goodsMap[goods.id] = goods;
+            goodsResults.forEach((goods) => {
+            goodsMap[goods.goods_id] = goods;
         });
 
         setReleaseId(data.id);
@@ -624,10 +631,10 @@ function ReleaseOrderDetailPage() {
             ? lines.map((line, index) => {
                 const goods = goodsMap[line.goods_id];
 
-                const unitOptions = Array.isArray(goods?.units)
-                ? goods.units.map((unitItem) => ({
-                    unit_id: unitItem.unit_id || "",
-                    unit_name: unitItem.unit_name || "",
+                const unitOptions = Array.isArray(goods?.goods_units)
+                ? goods.goods_units.map((unitItem) => ({
+                    unit_id: unitItem.goods_unit_id,
+                    unit_name: unitItem.goods_unit_name,
                     conversion_ratio: Number(unitItem.conversion_ratio || 1),
                     is_default: Boolean(unitItem.is_default),
                     }))
@@ -646,8 +653,8 @@ function ReleaseOrderDetailPage() {
                 id: line.item_id || index + 1,
                 release_inventory_id: line.item_id || "",
                 goods_id: line.goods_id || "",
-                goods_code: goods?.code || "",
-                goods_name: goods?.name || "",
+                goods_code: goods?.goods_code || "",
+                goods_name: goods?.goods_name || "",
                 unit_id: line.goods_unit_id || "",
                 unit: selectedUnit?.unit_name || "",
                 unit_options: unitOptions,
@@ -812,79 +819,127 @@ function ReleaseOrderDetailPage() {
                 ))}
               </select>
             </div>
-
             <div className="form-group">
-              <label>
-                Đơn vị lĩnh vật tư <span>*</span>
-              </label>
-                <CreatableSelect
-                    classNamePrefix="release-select"
-                    options={receiverUnitOptions.map((item) => ({
-                        value: item.name,
-                        label: item.name,
-                    }))}
-                    value={
-                        headerData.receiver_unit
-                        ? {
-                            value: headerData.receiver_unit,
-                            label: headerData.receiver_unit,
-                            }
-                        : null
-                    }
-                    onChange={(selected) =>
-                        setHeaderData((prev) => ({
-                        ...prev,
-                        receiver_unit: selected?.value || "",
-                        }))
-                    }
-                    onCreateOption={(inputValue) =>
-                        setHeaderData((prev) => ({
-                        ...prev,
-                        receiver_unit: inputValue,
-                        }))
-                    }
-                    isSearchable
-                    placeholder="Chọn hoặc nhập đơn vị lĩnh vật tư"
-                    isDisabled={isPrintMode}
-                />
-            </div>
-
-            <div className="form-group">
-              <label>
-                Đối tượng xuất kho <span>*</span>
-              </label>
-                <CreatableSelect
-                classNamePrefix="release-select"
-                options={releaseTargetOptions.map((item) => ({
-                    value: item.name,
-                    label: item.name,
-                }))}
-                value={
-                    headerData.release_target
-                    ? {
-                        value: headerData.release_target,
-                        label: headerData.release_target,
+                <label>
+                    Đơn vị lĩnh vật tư <span>*</span>
+                </label>
+                    {receiverUnitMode === "manual" ? (
+                    <>
+                        <input
+                        value={headerData.receiver_unit}
+                        onChange={(e) =>
+                            setHeaderData((prev) => ({
+                            ...prev,
+                            receiver_unit: e.target.value,
+                            }))
                         }
-                    : null
-                }
-                onChange={(selected) =>
-                    setHeaderData((prev) => ({
-                    ...prev,
-                    release_target: selected?.value || "",
-                    }))
-                }
-                onCreateOption={(inputValue) =>
-                    setHeaderData((prev) => ({
-                    ...prev,
-                    release_target: inputValue,
-                    }))
-                }
-                isSearchable
-                placeholder="Chọn hoặc nhập đối tượng xuất kho"
-                isDisabled={isPrintMode}
-                />
-            </div>
+                        placeholder="Nhập đơn vị lĩnh vật tư"
+                        disabled={isPrintMode}
+                        />
 
+                        <button
+                        type="button"
+                        className="switch-select-btn"
+                        onClick={() => {
+                            setReceiverUnitMode("select");
+                            setHeaderData((prev) => ({
+                            ...prev,
+                            receiver_unit: "",
+                            }));
+                        }}
+                        >
+                        Chọn từ danh sách
+                        </button>
+                    </>
+                    ) : (
+                <select
+                value={headerData.receiver_unit}
+                onChange={(e) => {
+                    if (e.target.value === "__manual__") {
+                    setReceiverUnitMode("manual");
+                    return;
+                    }
+
+                    setHeaderData((prev) => ({
+                    ...prev,
+                    receiver_unit: e.target.value,
+                    }));
+                }}
+                disabled={isPrintMode}
+                >
+                <option value="">Chọn đơn vị lĩnh vật tư</option>
+                <option value="__manual__">Không chọn / Nhập tay</option>
+
+                {receiverUnitOptions.map((item) => (
+                    <option key={item.id || item.name} value={item.name}>
+                    {item.name}
+                    </option>
+                ))}
+                </select>
+            )}
+            </div>
+            <div className="form-group">
+            <label>
+                Đối tượng xuất kho <span>*</span>
+            </label>
+
+            {releaseTargetMode === "manual" ? (
+                <>
+                <input
+                    value={headerData.release_target}
+                    onChange={(e) =>
+                    setHeaderData((prev) => ({
+                        ...prev,
+                        release_target: e.target.value,
+                    }))
+                    }
+                    placeholder="Nhập đối tượng xuất kho"
+                    disabled={isPrintMode}
+                />
+
+                <button
+                    type="button"
+                    className="switch-select-btn"
+                    onClick={() => {
+                    setReleaseTargetMode("select");
+                    setHeaderData((prev) => ({
+                        ...prev,
+                        release_target: "",
+                    }));
+                    }}
+                >
+                    Chọn từ danh sách
+                </button>
+                </>
+            ) : (
+                <select
+                value={headerData.release_target}
+                onChange={(e) => {
+                    const value = e.target.value;
+
+                    if (value === "__manual__") {
+                    setReleaseTargetMode("manual");
+                    return;
+                    }
+
+                    setHeaderData((prev) => ({
+                    ...prev,
+                    release_target: value,
+                    }));
+                }}
+                disabled={isPrintMode}
+                >
+                <option value="">Chọn đối tượng xuất kho</option>
+                <option value="__manual__">Không chọn / Nhập tay</option>
+
+                {releaseTargetOptions.map((item) => (
+                    <option key={item.id || item.name} value={item.name}>
+                    {item.name}
+                    </option>
+                ))}
+                </select>
+            )}
+            </div>
             <div className="form-group description-group">
               <label>Diễn giải</label>
               <input
@@ -951,16 +1006,21 @@ function ReleaseOrderDetailPage() {
                           placeholder="Chọn mã VT"
                           disabled={isPrintMode}
                           onFocus={() => {
-                            setActiveGoodsRowId(item.id);
-                            setShowGoodsDropdown(true);
-                            setGoodsKeyword(item.goods_code || "");
+                                if (!headerData.warehouse_id) {
+                                    alert("Vui lòng chọn kho xuất trước");
+                                    return;
+                                }
 
-                            fetchGoodsDropdown({
-                              keyword: item.goods_code || "",
-                              pageNumber: 1,
-                              append: false,
-                            });
-                          }}
+                                setActiveGoodsRowId(item.id);
+                                setShowGoodsDropdown(true);
+                                setGoodsKeyword(item.goods_code || "");
+
+                                fetchGoodsDropdown({
+                                    keyword: item.goods_code || "",
+                                    pageNumber: 1,
+                                    append: false,
+                                });
+                            }}
                           onChange={(e) => {
                             const value = e.target.value;
 
@@ -975,17 +1035,22 @@ function ReleaseOrderDetailPage() {
                         <button
                           type="button"
                           disabled={isPrintMode}
-                          onClick={() => {
-                            setActiveGoodsRowId(item.id);
-                            setShowGoodsDropdown(!showGoodsDropdown);
-                            setGoodsKeyword(item.goods_code || "");
+                            onClick={() => {
+                                if (!headerData.warehouse_id) {
+                                    alert("Vui lòng chọn kho xuất trước");
+                                    return;
+                                }
 
-                            fetchGoodsDropdown({
-                              keyword: item.goods_code || "",
-                              pageNumber: 1,
-                              append: false,
+                                setActiveGoodsRowId(item.id);
+                                setShowGoodsDropdown(!showGoodsDropdown);
+                                setGoodsKeyword(item.goods_code || "");
+
+                                fetchGoodsDropdown({
+                                    keyword: item.goods_code || "",
+                                    pageNumber: 1,
+                                    append: false,
                             });
-                          }}
+                            }}
                         >
                           ▾
                         </button>
@@ -1003,7 +1068,7 @@ function ReleaseOrderDetailPage() {
 
                             {goodsList.map((goods) => (
                               <div
-                                key={goods.id}
+                                key={goods.goods_id}
                                 className="goods-code-dropdown-item"
                                 onClick={() => handleSelectGoods(goods)}
                               >

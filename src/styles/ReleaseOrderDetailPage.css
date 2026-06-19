@@ -68,6 +68,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+  align-items: start;
 }
 
 .form-group {
@@ -403,4 +404,31 @@ select:disabled {
 .release-select__placeholder,
 .release-select__single-value {
   line-height: 38px !important;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: start;
+}
+
+.manual-select-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.manual-select-row input {
+  width: 100%;
+}
+
+.switch-select-btn {
+  position: static;
+  width: 100%;
+  height: 38px;
+  border: 1px solid #d0d7de;
+  background: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
 }
