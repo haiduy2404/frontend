@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ReleaseOrderPage.css";
@@ -28,6 +28,7 @@ function ReleaseOrderPage() {
   const [loading, setLoading] = useState(false);
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
   const [total, setTotal] = useState(0);
@@ -37,27 +38,8 @@ function ReleaseOrderPage() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const unwrapData = (response) => response?.data || response;
-  const filteredReleaseOrders = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
 
-    if (!keyword) return releaseOrders;
-
-    return releaseOrders.filter((row) => {
-      const code = String(row.code || row.release_code || "").toLowerCase();
-      const receiverUnit = String(row.receiver_unit || "").toLowerCase();
-      const target = String(row.release_target || "").toLowerCase();
-
-      return (
-        code.includes(keyword) ||
-        receiverUnit.includes(keyword) ||
-        target.includes(keyword)
-      );
-    });
-  }, [releaseOrders, search]);
-
-  const selectedRow = filteredReleaseOrders.find(
-    (item) => item.id === selectedId
-  );
+  const selectedRow = releaseOrders.find((item) => item.id === selectedId);
 
     const getReleaseStatusText = (status) => {
     switch (status) {
@@ -177,8 +159,16 @@ function ReleaseOrderPage() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     fetchReleaseOrders();
-  }, [page, pageSize]);
+  }, [page, pageSize, debouncedSearch]);
 
     const handleCompleteRelease = async (row) => {
     const confirmed = window.confirm(
@@ -236,14 +226,14 @@ function ReleaseOrderPage() {
   };
 
   const isAllChecked =
-    filteredReleaseOrders.length > 0 &&
-    filteredReleaseOrders.every((row) => selectedIds.includes(row.id));
+    releaseOrders.length > 0 &&
+    releaseOrders.every((row) => selectedIds.includes(row.id));
 
   const handleToggleAll = (e) => {
     const checked = e.target.checked;
 
     if (checked) {
-      setSelectedIds(filteredReleaseOrders.map((row) => row.id));
+      setSelectedIds(releaseOrders.map((row) => row.id));
     } else {
       setSelectedIds([]);
     }
@@ -451,14 +441,14 @@ function ReleaseOrderPage() {
                 </tr>
               )}
 
-              {!loading && filteredReleaseOrders.length === 0 && (
+              {!loading && releaseOrders.length === 0 && (
                 <tr>
                   <td colSpan={9}>Không có dữ liệu phiếu xuất kho</td>
                 </tr>
               )}
 
               {!loading &&
-                filteredReleaseOrders.map((row) => (
+                releaseOrders.map((row) => (
                   <tr
                     key={row.id}
                     className={selectedId === row.id ? "selected" : ""}
@@ -531,8 +521,8 @@ function ReleaseOrderPage() {
             </select>
 
             <strong>
-              {filteredReleaseOrders.length > 0 ? 1 : 0} -{" "}
-              {filteredReleaseOrders.length}
+              {releaseOrders.length > 0 ? 1 : 0} -{" "}
+              {releaseOrders.length}
             </strong>
 
             <button disabled={page <= 1} onClick={() => setPage((prev) => prev - 1)}>

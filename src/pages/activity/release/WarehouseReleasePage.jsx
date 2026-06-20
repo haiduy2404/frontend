@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ReleaseOrderPage.css";
@@ -28,6 +28,7 @@ function WarehouseReleasePage() {
   const [detailRows, setDetailRows] = useState([]);
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -118,23 +119,15 @@ function WarehouseReleasePage() {
     });
   };
 
-  const filteredReleaseOrders = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+  const formatDateTime = (value) => {
+    if (!value) return "-";
 
-    if (!keyword) return releaseOrders;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
 
-    return releaseOrders.filter((row) => {
-    const code = String(row.code || row.release_code || "").toLowerCase();
-    const receiverUnit = String(row.receiver_unit?.name || "").toLowerCase();
-    const target = String(row.release_target?.name || "").toLowerCase();
+    return date.toLocaleString("vi-VN");
+  };
 
-      return (
-        code.includes(keyword) ||
-        receiverUnit.includes(keyword) ||
-        target.includes(keyword)
-      );
-    });
-  }, [releaseOrders, search]);
 
   const getReleaseStatusText = (status) => {
     switch (status) {
@@ -291,8 +284,16 @@ function WarehouseReleasePage() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     fetchReleaseOrders();
-  }, [page, pageSize]);
+  }, [page, pageSize, debouncedSearch]);
 
     const handleChangeActualQuantity = (rowId, value) => {
         setDetailRows((prev) =>
@@ -427,24 +428,26 @@ function WarehouseReleasePage() {
                 <th>Đối tượng xuất kho</th>
                 <th>Người tạo</th>
                 <th>Ngày tạo</th>
+                <th>Người sửa</th>
+                <th>Ngày sửa</th>
               </tr>
             </thead>
 
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={8}>Đang tải danh sách lệnh xuất kho...</td>
+                  <td colSpan={10}>Đang tải danh sách lệnh xuất kho...</td>
                 </tr>
               )}
 
-              {!loading && filteredReleaseOrders.length === 0 && (
+              {!loading && releaseOrders.length === 0 && (
                 <tr>
-                  <td colSpan={8}>Không có dữ liệu lệnh xuất kho</td>
+                  <td colSpan={10}>Không có dữ liệu lệnh xuất kho</td>
                 </tr>
               )}
 
               {!loading &&
-                filteredReleaseOrders.map((row) => (
+                releaseOrders.map((row) => (
                   <tr
                     key={row.id}
                     className={selectedId === row.id ? "selected" : ""}
@@ -468,7 +471,9 @@ function WarehouseReleasePage() {
                     <td>{row.receiver_unit?.name || "-"}</td>
                     <td>{row.release_target?.name || "-"}</td>
                     <td>{row.created_by_admin_name || row.created_by || "-"}</td>
-                    <td>{row.created_at || "-"}</td>
+                    <td>{formatDateTime(row.created_at)}</td>
+                    <td>{row.last_updated_by_admin_name || row.updated_by || "-"}</td>
+                    <td>{formatDateTime(row.updated_at)}</td>
                   </tr>
                 ))}
             </tbody>
