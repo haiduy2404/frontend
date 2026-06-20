@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../styles/WarehouseTransferPage.css";
+import { useAuth } from "../../../contexts/AuthContext";
 
-import { getWarehouseTransfersPageable } from "../../../services/warehouseTransferService";
+import {
+  getWarehouseTransfersPageable,
+  deleteWarehouseTransfer,
+} from "../../../services/warehouseTransferService";
 
 export default function WarehouseTransferPage() {
   const navigate = useNavigate();
-
+  const { canDo } = useAuth();
+  const canView = canDo("view_warehouse_transfer");
+  const canUpdate = canDo("update_warehouse_transfer");
+  const canDelete = canDo("delete_warehouse_transfer");
+  const canCreate = canDo("create_warehouse_transfer");
   const [transfers, setTransfers] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [timeRange, setTimeRange] = useState("month");
   const [pageSize, setPageSize] = useState(20);
+  const [selectedTransfer, setSelectedTransfer] = useState(null);
 
   const unwrapList = (data) => {
     return Array.isArray(data)
@@ -54,18 +63,38 @@ export default function WarehouseTransferPage() {
     navigate("/dashboard/activity/transfer/detail/new");
   };
 
-  const handleOpenDetail = (transfer) => {
-    const code =
-      transfer.code ||
-      transfer.transfer_code ||
-      transfer.warehouse_transfer_code;
+  const getTransferCode = (transfer) =>
+    transfer.code ||
+    transfer.transfer_code ||
+    transfer.warehouse_transfer_code ||
+  "";
 
-    if (!code) {
-      console.error("Không tìm thấy mã phiếu điều chuyển:", transfer);
-      return;
+  const handleOpenView = (transfer) => {
+    const code = getTransferCode(transfer);
+
+    if (!code) return;
+
+    navigate(`/dashboard/activity/transfer/detail/${code}?mode=view`);
+  };
+
+  const handleOpenEdit = (transfer) => {
+    const code = getTransferCode(transfer);
+    if (!code) return;
+    navigate(`/dashboard/activity/transfer/detail/${code}?mode=edit`);
+  };
+
+  const handleDelete = async (transfer) => {
+      if (!transfer.id) return;
+      if (!window.confirm("Bạn có chắc muốn xóa?")) {
+        return;
     }
-
-    navigate(`/dashboard/activity/transfer/detail/${code}`);
+    try {
+      await deleteWarehouseTransfer(transfer.id);
+      await loadTransfers();
+    } catch (error) {
+      console.error(error);
+      alert("Xóa thất bại");
+    }
   };
 
   return (
@@ -110,9 +139,30 @@ export default function WarehouseTransferPage() {
             ↻
           </button>
 
-          <button type="button" className="add-btn" onClick={handleAdd}>
-            + Thêm
-          </button>
+          {canUpdate && (
+            <button
+              type="button"
+              className="edit-btn"
+              disabled={!selectedTransfer}
+              onClick={() => {
+                const transfer = transfers.find(
+                  (x) => x.id === selectedTransfer
+                );
+
+                if (transfer) {
+                  handleOpenEdit(transfer);
+                }
+              }}
+            >
+              Sửa
+            </button>
+          )}
+
+          {canCreate && (
+            <button type="button" className="add-btn" onClick={handleAdd}>
+              + Thêm
+            </button>
+          )}
         </div>
 
         <div className="transfer-table-wrap">
@@ -120,7 +170,7 @@ export default function WarehouseTransferPage() {
             <thead>
               <tr>
                 <th className="check-col">
-                  <input type="checkbox" />
+                  <input type="checkbox" disabled />
                 </th>
                 <th>Số phiếu điều chuyển</th>
                 <th>Ngày điều chuyển</th>
@@ -128,27 +178,40 @@ export default function WarehouseTransferPage() {
                 <th>Kho xuất</th>
                 <th>Kho nhập</th>
                 <th>Tình trạng</th>
+                <th></th>
               </tr>
             </thead>
 
             <tbody>
-              {transfers.map((item, index) => (
+              {transfers.map((item, index) => {
+                const code = getTransferCode(item) || "-";
+
+                return (
                 <tr key={item.id || item.code || index}>
-                  <td>
-                    <input type="checkbox" />
-                  </td>
+                <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedTransfer === item.id}
+                      onChange={() =>
+                        setSelectedTransfer(
+                          selectedTransfer === item.id ? null : item.id
+                        )
+                      }
+                    />
+                </td>
 
                   <td>
-                    <button
-                      type="button"
-                      className="code-link"
-                      onClick={() => handleOpenDetail(item)}
-                    >
-                      {item.code ||
-                        item.transfer_code ||
-                        item.warehouse_transfer_code ||
-                        "-"}
-                    </button>
+                    {canView ? (
+                      <button
+                        type="button"
+                        className="code-link"
+                        onClick={() => handleOpenView(item)}
+                      >
+                        {code}
+                      </button>
+                    ) : (
+                      code
+                    )}
                   </td>
 
                   <td>
@@ -176,12 +239,24 @@ export default function WarehouseTransferPage() {
                   <td>
                     <span className="status-badge">{item.status || "-"}</span>
                   </td>
+                    <td>
+                      {canDelete && (
+                        <button
+                          type="button"
+                          className="delete-row-btn"
+                          onClick={() => handleDelete(item)}
+                        >
+                          🗑
+                        </button>
+                      )}
+                    </td>
                 </tr>
-              ))}
+                );
+              })}
 
               {transfers.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="empty-row">
+                  <td colSpan="8" className="empty-row">
                     Không có phiếu điều chuyển
                   </td>
                 </tr>

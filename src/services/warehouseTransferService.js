@@ -40,3 +40,10 @@ export const updateWarehouseTransferStatus = async (transferId, payload) => {
   );
   return response.data;
 };
+
+export const deleteWarehouseTransfer = async (transferId) => {
+  const response = await axiosInstance.delete(
+    `/inventory/warehouse-transfers/${transferId}`
+  );
+  return response.data;
+};
