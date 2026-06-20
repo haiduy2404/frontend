@@ -46,6 +46,7 @@ export default function WarehouseTransferDetailPage() {
   const [rows, setRows] = useState([
     {
       row_id: 1,
+      item_id: "",
       inventory_id: "",
       goods_id: "",
       goods_code: "",
@@ -55,9 +56,6 @@ export default function WarehouseTransferDetailPage() {
       remaining_quantity: 0,
       transfer_quantity: "1,00",
       transfer_main_quantity: "1,00",
-      actual_received_quantity: "0,00",
-      actual_received_main_quantity: "0,00",
-      note: "",
     },
   ]);
 
@@ -112,6 +110,7 @@ export default function WarehouseTransferDetailPage() {
 
   const createEmptyRow = () => ({
     row_id: Date.now(),
+    item_id: "",
     inventory_id: "",
     goods_id: "",
     goods_code: "",
@@ -121,8 +120,6 @@ export default function WarehouseTransferDetailPage() {
     remaining_quantity: 0,
     transfer_quantity: "1,00",
     transfer_main_quantity: "1,00",
-    actual_received_quantity: "0,00",
-    actual_received_main_quantity: "0,00",
   });
 
   const loadWarehouses = async () => {
@@ -168,22 +165,8 @@ export default function WarehouseTransferDetailPage() {
 
             const fromWarehouseId = data.source_warehouse_id || "";
 
-            let stockMap = {};
-
             if (fromWarehouseId) {
-            const stockResponse = await getOpeningStocks({
-                warehouse_id: fromWarehouseId,
-                page: 1,
-                page_size: 10000,
-            });
-
-            const stockResults = unwrapList(stockResponse);
-
-            stockResults.forEach((item) => {
-                stockMap[item.goods_id] = item;
-            });
-
-            setStockItems(stockResults);
+              await loadStockByWarehouse(fromWarehouseId);
             }
 
             setForm({
@@ -202,65 +185,25 @@ export default function WarehouseTransferDetailPage() {
 
             setRows(
             details.length > 0
-                ? details.map((item, index) => {
-                    const stock = stockMap[item.goods_id] || {};
-
-                    return {
+                ? details.map((item, index) => ({
                     row_id: item.item_id || index + 1,
-
-                    inventory_id:
-                        item.inventory_id ||
-                        stock.inventory_id ||
-                        "",
-
+                    item_id: item.item_id || "",
+                    inventory_id: item.inventory_id || "",
                     goods_id: item.goods_id || "",
-
-                    goods_code:
-                        stock.goods_code ||
-                        item.goods_code ||
-                        "",
-
-                    goods_name:
-                        stock.goods_name ||
-                        item.goods_name ||
-                        "",
-
-                    unit_name:
-                        stock.goods_unit_name ||
-                        item.goods_unit_name ||
-                        "",
-
-                    conversion_rate:
-                        item.conversion_ratio || 1,
-
-                    remaining_quantity:
-                        stock.remaining_quantity ||
-                        item.remaining_quantity ||
-                        0,
-
-                    transfer_quantity: formatViNumber(
-                        item.requested_quantity || 0,
-                        2
-                    ),
-
+                    goods_unit_id: item.goods_unit_id || "",
+                    goods_code: item.goods_code || "",
+                    goods_name: item.goods_name || "",
+                    unit_name: item.goods_unit_name || "",
+                    conversion_rate: item.conversion_ratio || 1,
+                    remaining_quantity: item.remaining_quantity || 0,
+                    transfer_quantity: formatViNumber(item.quantity || 0, 2),
                     transfer_main_quantity: formatViNumber(
                         item.quantity_in_default_unit ||
-                        item.requested_quantity ||
+                        item.quantity ||
                         0,
                         2
                     ),
-
-                    actual_received_quantity: formatViNumber(
-                        item.actual_quantity || 0,
-                        2
-                    ),
-
-                    actual_received_main_quantity: formatViNumber(
-                        item.actual_quantity || 0,
-                        2
-                    ),
-                    };
-                })
+                }))
                 : [createEmptyRow()]
             );
         } catch (err) {
@@ -388,13 +331,6 @@ export default function WarehouseTransferDetailPage() {
           nextRow.transfer_main_quantity = formatViNumber(qty * rate, 2);
         }
 
-        if (field === "actual_received_quantity") {
-          const qty = parseNumber(value);
-          const rate = parseNumber(nextRow.conversion_rate || 1);
-
-          nextRow.actual_received_main_quantity = formatViNumber(qty * rate, 2);
-        }
-
         return nextRow;
       })
     );
@@ -423,6 +359,7 @@ export default function WarehouseTransferDetailPage() {
             ...row,
             inventory_id: item.inventory_id || item.id || "",
             goods_id: item.goods_id || item.goods?.id || item.id || "",
+            goods_unit_id: item.unit_id || item.goods_unit_id || "",
             goods_code: item.goods_code || item.code || item.goods?.code || "",
             goods_name: item.goods_name || item.name || item.goods?.name || "",
             unit_name:
@@ -437,8 +374,6 @@ export default function WarehouseTransferDetailPage() {
             qty * parseNumber(conversionRate),
             2
             ),
-            actual_received_quantity: "0,00",
-            actual_received_main_quantity: "0,00",
         };
         })
     );
@@ -482,21 +417,19 @@ export default function WarehouseTransferDetailPage() {
             ...rows
                 .filter((row) => row.goods_id)
                 .map((row, index) => ({
-                inventory_id: row.inventory_id || null,
+                item_id: row.item_id || null,
                 goods_id: row.goods_id,
-                requested_quantity: parseNumber(row.transfer_quantity),
-                original_quantity: parseNumber(row.transfer_main_quantity),
-                accepted_quantity: parseNumber(row.actual_received_quantity),
+                goods_unit_id: row.goods_unit_id || null,
+                quantity: parseNumber(row.transfer_quantity),
                 is_delete: false,
                 sort_order: index + 1,
                 })),
 
             ...deletedRows.map((row) => ({
-                inventory_id: row.inventory_id || null,
+                item_id: row.item_id || null,
                 goods_id: row.goods_id,
-                requested_quantity: parseNumber(row.transfer_quantity),
-                original_quantity: parseNumber(row.transfer_main_quantity),
-                accepted_quantity: parseNumber(row.actual_received_quantity),
+                goods_unit_id: row.goods_unit_id || null,
+                quantity: parseNumber(row.transfer_quantity),
                 is_delete: true,
         })),
     ],
@@ -710,8 +643,6 @@ export default function WarehouseTransferDetailPage() {
                   <th>Tồn kho</th>
                   <th>SL điều chuyển</th>
                   <th>SL điều chuyển theo ĐVT chính</th>
-                  <th>SL thực nhận</th>
-                  <th>SL thực nhận theo ĐVT chính</th>
                   <th></th>
                 </tr>
               </thead>
