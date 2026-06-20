@@ -1642,12 +1642,6 @@ const handleOpenTransferPrint = () => {
                             setActiveGoodsRowId(item.id);
                             setShowGoodsDropdown(true);
                             setGoodsKeyword(item.goods_code || "");
-
-                            fetchGoodsDropdown({
-                            keyword: item.goods_code || "",
-                            pageNumber: 1,
-                            append: false,
-                            });
                         }}
                         onChange={(e) => {
                             const value = e.target.value;
@@ -1666,12 +1660,6 @@ const handleOpenTransferPrint = () => {
                             setActiveGoodsRowId(item.id);
                             setShowGoodsDropdown(!showGoodsDropdown);
                             setGoodsKeyword(item.goods_code || "");
-
-                            fetchGoodsDropdown({
-                            keyword: item.goods_code || "",
-                            pageNumber: 1,
-                            append: false,
-                            });
                         }}
                         >
                         ▾

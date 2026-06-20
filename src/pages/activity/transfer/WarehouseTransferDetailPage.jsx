@@ -120,7 +120,6 @@ export default function WarehouseTransferDetailPage() {
     transfer_main_quantity: "1,00",
     actual_received_quantity: "0,00",
     actual_received_main_quantity: "0,00",
-    note: "",
   });
 
   const loadWarehouses = async () => {
@@ -257,8 +256,6 @@ export default function WarehouseTransferDetailPage() {
                         item.actual_quantity || 0,
                         2
                     ),
-
-                    note: item.note || "",
                     };
                 })
                 : [createEmptyRow()]
@@ -487,7 +484,6 @@ export default function WarehouseTransferDetailPage() {
                 requested_quantity: parseNumber(row.transfer_quantity),
                 original_quantity: parseNumber(row.transfer_main_quantity),
                 accepted_quantity: parseNumber(row.actual_received_quantity),
-                note: row.note || null,
                 is_delete: false,
                 sort_order: index + 1,
                 })),
@@ -498,7 +494,6 @@ export default function WarehouseTransferDetailPage() {
                 requested_quantity: parseNumber(row.transfer_quantity),
                 original_quantity: parseNumber(row.transfer_main_quantity),
                 accepted_quantity: parseNumber(row.actual_received_quantity),
-                note: row.note || null,
                 is_delete: true,
         })),
     ],
@@ -696,7 +691,6 @@ export default function WarehouseTransferDetailPage() {
                 <col className="col-main-qty" />
                 <col className="col-qty" />
                 <col className="col-main-qty" />
-                <col className="col-note" />
                 <col className="col-action" />
                 </colgroup>
 
@@ -711,7 +705,6 @@ export default function WarehouseTransferDetailPage() {
                   <th>SL điều chuyển theo ĐVT chính</th>
                   <th>SL thực nhận</th>
                   <th>SL thực nhận theo ĐVT chính</th>
-                  <th>Ghi chú</th>
                   <th></th>
                 </tr>
               </thead>
@@ -811,12 +804,6 @@ export default function WarehouseTransferDetailPage() {
 
       <td>{row.actual_received_main_quantity}</td>
 
-      <td>
-        <input
-          value={row.note}
-          onChange={(e) => handleRowChange(row.row_id, "note", e.target.value)}
-        />
-      </td>
 
         <td className="delete-row-col">
             <div className="detail-action-row add-row-action">
