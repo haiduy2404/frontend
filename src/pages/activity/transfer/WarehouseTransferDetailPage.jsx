@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "../../../styles/WarehouseTransferDetailPage.css";
 import {
@@ -29,6 +29,7 @@ export default function WarehouseTransferDetailPage() {
   const [showStockDropdown, setShowStockDropdown] = useState(false);
   const [activeStockRowId, setActiveStockRowId] = useState(null);
   const [stockKeyword, setStockKeyword] = useState("");
+  const stockSearchTimerRef = useRef(null);
   const [deletedRows, setDeletedRows] = useState([]);
 
   const [form, setForm] = useState({
@@ -137,7 +138,7 @@ export default function WarehouseTransferDetailPage() {
     }
   };
 
-  const loadStockByWarehouse = async (warehouseId) => {
+  const loadStockItems = async (warehouseId, keyword = "") => {
     try {
       if (!warehouseId) {
         setStockItems([]);
@@ -146,6 +147,7 @@ export default function WarehouseTransferDetailPage() {
 
       const data = await getOpeningStocks({
         warehouse_id: warehouseId,
+        search: keyword,
         page: 1,
         page_size: 100,
       });
@@ -165,8 +167,8 @@ export default function WarehouseTransferDetailPage() {
 
             const fromWarehouseId = data.source_warehouse_id || "";
 
-            if (fromWarehouseId) {
-              await loadStockByWarehouse(fromWarehouseId);
+            if (fromWarehouseId && !isViewMode) {
+              await loadStockItems(fromWarehouseId);
             }
 
             setForm({
@@ -195,7 +197,7 @@ export default function WarehouseTransferDetailPage() {
                     goods_name: item.goods_name || "",
                     unit_name: item.goods_unit_name || "",
                     conversion_rate: item.conversion_ratio || 1,
-                    remaining_quantity: item.remaining_quantity || 0,
+                    remaining_quantity: formatViNumber(item.available_quantity ?? item.remaining_quantity ?? 0, 2),
                     transfer_quantity: formatViNumber(item.quantity || 0, 2),
                     transfer_main_quantity: formatViNumber(
                         item.quantity_in_default_unit ||
@@ -220,14 +222,19 @@ export default function WarehouseTransferDetailPage() {
     }
   }, [code]);
 
-  const filteredStockItems = stockItems.filter((item) => {
-  const keyword = stockKeyword.toLowerCase().trim();
-  if (!keyword) return true;
-    return (
-        String(item.goods_code || item.code || "").toLowerCase().includes(keyword) ||
-        String(item.goods_name || item.name || "").toLowerCase().includes(keyword)
-    );
-});
+  const handleStockKeywordChange = (rowId, value) => {
+    handleRowChange(rowId, "goods_code", value);
+    setActiveStockRowId(rowId);
+    setShowStockDropdown(true);
+    setStockKeyword(value);
+
+    if (stockSearchTimerRef.current) clearTimeout(stockSearchTimerRef.current);
+    stockSearchTimerRef.current = setTimeout(() => {
+      if (form.from_warehouse_id) {
+        loadStockItems(form.from_warehouse_id, value);
+      }
+    }, 300);
+  };
 
   const handleFormChange = (field, value) => {
     setForm((prev) => ({
@@ -251,7 +258,7 @@ export default function WarehouseTransferDetailPage() {
     }));
 
     setRows([createEmptyRow()]);
-    await loadStockByWarehouse(warehouseId);
+    await loadStockItems(warehouseId);
   };
 
   const handleToWarehouseChange = (warehouseId) => {
@@ -629,8 +636,6 @@ export default function WarehouseTransferDetailPage() {
                 <col className="col-stock" />
                 <col className="col-qty" />
                 <col className="col-main-qty" />
-                <col className="col-qty" />
-                <col className="col-main-qty" />
                 <col className="col-action" />
                 </colgroup>
 
@@ -662,13 +667,12 @@ export default function WarehouseTransferDetailPage() {
               setActiveStockRowId(row.row_id);
               setShowStockDropdown(true);
               setStockKeyword(row.goods_code || "");
+              if (form.from_warehouse_id && stockItems.length === 0) {
+                loadStockItems(form.from_warehouse_id, row.goods_code || "");
+              }
             }}
             onChange={(e) => {
-              const value = e.target.value;
-              handleRowChange(row.row_id, "goods_code", value);
-              setActiveStockRowId(row.row_id);
-              setShowStockDropdown(true);
-              setStockKeyword(value);
+              handleStockKeywordChange(row.row_id, e.target.value);
             }}
           />
 
@@ -677,8 +681,12 @@ export default function WarehouseTransferDetailPage() {
             disabled={isViewMode || !form.from_warehouse_id}
             onClick={() => {
               setActiveStockRowId(row.row_id);
-              setShowStockDropdown(!showStockDropdown);
+              const nextOpen = !showStockDropdown;
+              setShowStockDropdown(nextOpen);
               setStockKeyword(row.goods_code || "");
+              if (nextOpen && form.from_warehouse_id && stockItems.length === 0) {
+                loadStockItems(form.from_warehouse_id, row.goods_code || "");
+              }
             }}
           >
             ▾
@@ -690,9 +698,9 @@ export default function WarehouseTransferDetailPage() {
                 <span>Tên hàng</span>
                 </div>
 
-                {filteredStockItems.map((item) => (
+                {stockItems.map((item) => (
                 <div
-                    key={item.inventory_id || item.id}
+                    key={item.inventory_id || item.goods_id || item.id}
                     className="goods-code-dropdown-item"
                     onMouseDown={(e) => {
                         e.preventDefault();
@@ -708,7 +716,7 @@ export default function WarehouseTransferDetailPage() {
                 </div>
                 ))}
 
-                {filteredStockItems.length === 0 && (
+                {stockItems.length === 0 && (
                 <div className="goods-code-dropdown-status">
                     Không có dữ liệu
                 </div>
@@ -732,18 +740,6 @@ export default function WarehouseTransferDetailPage() {
       </td>
 
       <td>{row.transfer_main_quantity}</td>
-
-      <td>
-        <input
-          disabled={isViewMode}
-          value={row.actual_received_quantity}
-          onChange={(e) => handleRowChange(row.row_id, "actual_received_quantity", e.target.value)}
-          onBlur={(e) => handleRowChange(row.row_id, "actual_received_quantity", formatViNumber(e.target.value, 2))}
-        />
-      </td>
-
-      <td>{row.actual_received_main_quantity}</td>
-
 
         <td className="delete-row-col">
           {!isViewMode && (

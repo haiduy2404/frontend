@@ -53,7 +53,7 @@ function OpeningStockPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 1500);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [search]);
