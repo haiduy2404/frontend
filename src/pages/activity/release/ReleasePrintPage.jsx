@@ -3,16 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import "../../../styles/ReleasePrintPage.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getReleaseOrderByCode } from "../../../services/releaseOrderService";
-import { getGoods } from "../../../services/goodsService";
-import { getOpeningStocks } from "../../../services/openingStockService";
 
 function ReleasePrintPage() {
   const navigate = useNavigate();
   const { code } = useParams();
 
   const [release, setRelease] = useState(null);
-  const [goodsMap, setGoodsMap] = useState({});
-  const [openingStockMap, setOpeningStockMap] = useState({});
   const [loading, setLoading] = useState(false);
 
   const unwrapData = (res) => res?.data || res;
@@ -43,36 +39,6 @@ function ReleasePrintPage() {
     return `Ngày ${day} tháng ${month} năm ${year}`;
   };
 
-  const getGoodsUnitName = (line) => {
-    const goods = goodsMap[line.goods_id];
-
-    return (
-      goods?.units?.find(
-        (u) => String(u.unit_id) === String(line.goods_unit_id)
-      )?.unit_name ||
-      line.unit_name ||
-      ""
-    );
-  };
-
-  const getOpeningStockPrice = (line) => {
-    const warehouseId =
-      release?.warehouse_id ||
-      release?.warehouse?.id ||
-      release?.warehouse;
-
-    const key = `${line.goods_id}_${warehouseId}`;
-    const stock = openingStockMap[key] || openingStockMap[line.goods_id];
-
-    return parseNumber(
-      stock?.unit_price ||
-        stock?.price ||
-        stock?.opening_unit_price ||
-        line.unit_price ||
-        0
-    );
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       if (!code) return;
@@ -80,45 +46,8 @@ function ReleasePrintPage() {
       try {
         setLoading(true);
 
-        const [releaseRes, goodsRes, openingRes] = await Promise.all([
-          getReleaseOrderByCode(code),
-          getGoods({
-            search: "",
-            page: 1,
-            page_size: 10000,
-          }),
-          getOpeningStocks({
-            search: "",
-            page: 1,
-            page_size: 10000,
-          }),
-        ]);
-
-        const releaseData = unwrapData(releaseRes);
-        setRelease(releaseData);
-
-        const goodsResults = unwrapData(goodsRes)?.results || [];
-        const nextGoodsMap = {};
-        goodsResults.forEach((item) => {
-          nextGoodsMap[item.id] = item;
-        });
-        setGoodsMap(nextGoodsMap);
-
-        const openingResults = unwrapData(openingRes)?.results || [];
-        const nextOpeningMap = {};
-        openingResults.forEach((item) => {
-          const goodsId = item.goods_id || item.goods?.id;
-          const warehouseId = item.warehouse_id || item.warehouse?.id;
-
-          if (goodsId && warehouseId) {
-            nextOpeningMap[`${goodsId}_${warehouseId}`] = item;
-          }
-
-          if (goodsId) {
-            nextOpeningMap[goodsId] = item;
-          }
-        });
-        setOpeningStockMap(nextOpeningMap);
+        const releaseRes = await getReleaseOrderByCode(code);
+        setRelease(unwrapData(releaseRes));
       } catch (error) {
         console.error("LOAD RELEASE PRINT ERROR:", error.response?.data || error);
         alert("Không tải được dữ liệu phiếu xuất kho");
@@ -140,7 +69,6 @@ function ReleasePrintPage() {
 
   const rows = useMemo(() => {
     return releaseLines.map((line, index) => {
-      const goods = goodsMap[line.goods_id] || {};
       const requestedQuantity = parseNumber(
         line.requested_quantity ||
           line.request_quantity ||
@@ -155,23 +83,27 @@ function ReleasePrintPage() {
           0
       );
 
-      const unitPrice = getOpeningStockPrice(line);
+      const unitPrice = parseNumber(line.unit_price || 0);
       const amount = actualQuantity * unitPrice;
 
       return {
         id: line.id || line.item_id || index + 1,
         goods_id: line.goods_id,
-        goods_name: goods.name || line.goods_name || "",
-        goods_code: goods.code || line.goods_code || "",
+        goods_name: line.goods_name || line.goods?.name || "",
+        goods_code: line.goods_code || line.goods?.code || "",
         goods_unit_id: line.goods_unit_id || line.unit_id || "",
-        unit_name: getGoodsUnitName(line),
+        unit_name:
+          line.goods_unit_name ||
+          line.unit_name ||
+          line.goods_unit?.name ||
+          "",
         requested_quantity: requestedQuantity,
         actual_quantity: actualQuantity,
         unit_price: unitPrice,
         amount,
       };
     });
-  }, [releaseLines, goodsMap, openingStockMap, release]);
+  }, [releaseLines]);
 
   const DEFAULT_ROWS = 15;
   const displayRows = useMemo(() => {

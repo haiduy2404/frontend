@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ReleaseOrderPage.css";
-import { getGoods } from "../../../services/goodsService";
 import {
   getReleaseOrdersPageable,
   getReleaseOrderByCode,
@@ -35,28 +34,6 @@ function WarehouseReleasePage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
   const [total, setTotal] = useState(0);
-  const [goodsMap, setGoodsMap] = useState({});
-  const fetchGoodsMap = async () => {
-  const response = await getGoods({
-    search: "",
-    page: 1,
-    page_size: 10000,
-  });
-
-  const results = response.data.results;
-
-        const nextMap = {};
-
-        results.forEach((goods) => {
-            nextMap[goods.id] = goods;
-        });
-
-        setGoodsMap(nextMap);
-    };
-
-    useEffect(() => {
-        fetchGoodsMap();
-    }, []);
 
   const unwrapData = (response) => response?.data || response;
 
@@ -244,6 +221,19 @@ function WarehouseReleasePage() {
                   item.exported_quantity ||
                   0
               );
+              const quantityInDefaultUnit = parseNumber(
+                item.quantity_in_default_unit
+              );
+              const baseQuantity =
+                actualQuantity > 0 ? actualQuantity : requestedQuantity;
+              const conversionRatio =
+                item.goods_unit_id &&
+                baseQuantity > 0 &&
+                quantityInDefaultUnit !== null &&
+                !Number.isNaN(quantityInDefaultUnit)
+                  ? quantityInDefaultUnit / baseQuantity
+                  : parseNumber(item.conversion_ratio || 1) || 1;
+
                 return {
                     id:
                         item.item_id ||
@@ -283,7 +273,7 @@ function WarehouseReleasePage() {
                         item.unit_name ||
                         item.goods_unit?.name ||
                     "",
-                    conversion_ratio: item.conversion_ratio || 1,
+                    conversion_ratio: conversionRatio,
                     requested_quantity: formatViNumber(requestedQuantity, 2),
                     actual_quantity: formatViNumber(actualQuantity, 2),
                 };
@@ -565,21 +555,11 @@ function WarehouseReleasePage() {
                     detailRows.map((item, index) => (
                       <tr key={item.id}>
                         <td>{index + 1}</td>
-                        <td>
-                            {goodsMap[item.goods_id]?.code || item.goods_code || "-"}
-                        </td>
+                        <td>{item.goods_code || "-"}</td>
 
-                        <td>
-                            {goodsMap[item.goods_id]?.name || item.goods_name || "-"}
-                        </td>
+                        <td>{item.goods_name || "-"}</td>
 
-                        <td>
-                        {item.unit_name ||
-                            goodsMap[item.goods_id]?.units?.find(
-                            (u) => String(u.unit_id) === String(item.goods_unit_id)
-                            )?.unit_name ||
-                            "-"}
-                        </td>
+                        <td>{item.unit_name || "-"}</td>
                         <td className="release-number-col">
                           {formatViNumber(item.conversion_ratio || 1, 3)}
                         </td>

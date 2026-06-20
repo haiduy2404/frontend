@@ -623,17 +623,6 @@ function ReleaseOrderDetailPage() {
 
         const response = await getReleaseOrderByCode(releaseCode);
         const data = response.data;
-        const goodsResponse = await getOpeningStocks({
-            warehouse_id: data.warehouse_id,
-            page: 1,
-            page_size: 10000,
-        });
-        const goodsResults = goodsResponse.data.results;
-
-        const goodsMap = {};
-            goodsResults.forEach((goods) => {
-            goodsMap[goods.goods_id] = goods;
-        });
 
         setReleaseId(data.id);
 
@@ -652,37 +641,43 @@ function ReleaseOrderDetailPage() {
         setItems(
         lines.length > 0
             ? lines.map((line, index) => {
-                const goods = goodsMap[line.goods_id];
-
-                const unitOptions = Array.isArray(goods?.goods_units)
-                ? goods.goods_units.map((unitItem) => ({
-                    unit_id: unitItem.goods_unit_id,
-                    unit_name: unitItem.goods_unit_name,
-                    conversion_ratio: Number(unitItem.conversion_ratio || 1),
-                    is_default: Boolean(unitItem.is_default),
-                    }))
-                : [];
-
-                const selectedUnit =
-                unitOptions.find(
-                    (unitItem) =>
-                    String(unitItem.unit_id) === String(line.goods_unit_id)
-                ) || null;
-
                 const requestedQuantity = parseNumber(line.requested_quantity);
                 const actualQuantity = parseNumber(line.actual_quantity);
+                const quantityInDefaultUnit = parseNumber(
+                  line.quantity_in_default_unit
+                );
+                const baseQuantity =
+                  actualQuantity > 0 ? actualQuantity : requestedQuantity;
+                const conversionRatio =
+                  line.goods_unit_id &&
+                  baseQuantity > 0 &&
+                  quantityInDefaultUnit !== null &&
+                  !Number.isNaN(quantityInDefaultUnit)
+                    ? quantityInDefaultUnit / baseQuantity
+                    : 1;
+
+                const unitOptions = line.goods_unit_id
+                  ? [
+                      {
+                        unit_id: line.goods_unit_id,
+                        unit_name: line.goods_unit_name || "",
+                        conversion_ratio: conversionRatio,
+                        is_default: true,
+                      },
+                    ]
+                  : [];
 
                 return {
                 id: line.item_id || index + 1,
                 release_inventory_id: line.item_id || "",
                 goods_id: line.goods_id || "",
-                goods_code: goods?.goods_code || "",
-                goods_name: goods?.goods_name || "",
+                goods_code: line.goods_code || "",
+                goods_name: line.goods_name || "",
                 unit_id: line.goods_unit_id || "",
-                unit: selectedUnit?.unit_name || "",
+                unit: line.goods_unit_name || "",
                 unit_options: unitOptions,
-                conversion_ratio: selectedUnit
-                    ? String(selectedUnit.conversion_ratio)
+                conversion_ratio: line.goods_unit_id
+                    ? String(conversionRatio)
                     : "",
                 requested_quantity: formatViNumber(requestedQuantity, 2),
                 actual_quantity: formatViNumber(actualQuantity, 2),
