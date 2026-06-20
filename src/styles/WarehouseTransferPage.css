@@ -246,3 +246,43 @@
     margin-left: auto;
   }
 }
+
+.delete-row-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.delete-row-btn:hover {
+  background: #fee2e2;
+}
+
+.delete-action-col {
+  width: 50px;
+  text-align: center !important;
+}
+
+.transfer-delete-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  border-radius: 4px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 18px;
+}
+
+.transfer-delete-btn:hover {
+  background: #fee2e2;
+}

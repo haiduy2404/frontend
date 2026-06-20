@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../styles/WarehouseTransferPage.css";
 import { useAuth } from "../../../contexts/AuthContext";
-
+import { RiDeleteBin6Line } from "react-icons/ri";
 import {
   getWarehouseTransfersPageable,
   deleteWarehouseTransfer,
@@ -21,7 +21,7 @@ export default function WarehouseTransferPage() {
   const [timeRange, setTimeRange] = useState("month");
   const [pageSize, setPageSize] = useState(20);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
-
+  const [hoveredRowId, setHoveredRowId] = useState(null);
   const unwrapList = (data) => {
     return Array.isArray(data)
       ? data
@@ -90,6 +90,7 @@ export default function WarehouseTransferPage() {
     }
     try {
       await deleteWarehouseTransfer(transfer.id);
+      setSelectedTransfer(null);
       await loadTransfers();
     } catch (error) {
       console.error(error);
@@ -187,7 +188,11 @@ export default function WarehouseTransferPage() {
                 const code = getTransferCode(item) || "-";
 
                 return (
-                <tr key={item.id || item.code || index}>
+                <tr
+                  key={item.id || item.code || index}
+                  onMouseEnter={() => setHoveredRowId(item.id)}
+                  onMouseLeave={() => setHoveredRowId(null)}
+                >
                 <td>
                     <input
                       type="checkbox"
@@ -239,17 +244,18 @@ export default function WarehouseTransferPage() {
                   <td>
                     <span className="status-badge">{item.status || "-"}</span>
                   </td>
-                    <td>
-                      {canDelete && (
-                        <button
-                          type="button"
-                          className="delete-row-btn"
-                          onClick={() => handleDelete(item)}
-                        >
-                          🗑
-                        </button>
-                      )}
-                    </td>
+                  <td className="delete-action-col">
+                    {canDelete && hoveredRowId === item.id && (
+                      <button
+                        type="button"
+                        className="transfer-delete-btn"
+                        title="Xóa"
+                        onClick={() => handleDelete(item)}
+                      >
+                        <RiDeleteBin6Line />
+                      </button>
+                    )}
+                  </td>
                 </tr>
                 );
               })}

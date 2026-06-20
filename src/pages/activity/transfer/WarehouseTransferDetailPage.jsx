@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "../../../styles/WarehouseTransferDetailPage.css";
 import {
   RiAddLine,
@@ -18,6 +18,9 @@ import { getOpeningStocks } from "../../../services/openingStockService";
 export default function WarehouseTransferDetailPage() {
   const navigate = useNavigate();
   const { code } = useParams();
+
+  const [searchParams] = useSearchParams();
+  const isViewMode = searchParams.get("mode") === "view";
 
   const isEditMode = code && code !== "new";
 
@@ -589,6 +592,7 @@ export default function WarehouseTransferDetailPage() {
               <div className="form-group required">
                 <label>Kho xuất</label>
                 <select
+                  disabled={isViewMode}
                   value={form.from_warehouse_id}
                   onChange={(e) => handleFromWarehouseChange(e.target.value)}
                 >
@@ -611,6 +615,7 @@ export default function WarehouseTransferDetailPage() {
               <div className="form-group required">
                 <label>Kho nhập</label>
                 <select
+                  disabled={isViewMode}
                   value={form.to_warehouse_id}
                   onChange={(e) => handleToWarehouseChange(e.target.value)}
                 >
@@ -639,6 +644,7 @@ export default function WarehouseTransferDetailPage() {
               <div className="form-group full">
                 <label>Lý do điều chuyển</label>
                 <input
+                  disabled={isViewMode}
                   value={form.reason}
                   onChange={(e) => handleFormChange("reason", e.target.value)}
                   placeholder="Nhập lý do điều chuyển"
@@ -648,6 +654,7 @@ export default function WarehouseTransferDetailPage() {
               <div className="form-group full">
                 <label>Tham chiếu</label>
                 <input
+                  disabled={isViewMode}
                   value={form.reference}
                   onChange={(e) =>
                     handleFormChange("reference", e.target.value)
@@ -719,7 +726,7 @@ export default function WarehouseTransferDetailPage() {
           <input
             value={row.goods_code}
             placeholder={form.from_warehouse_id ? "Chọn mã hàng" : "Chọn kho xuất trước"}
-            disabled={!form.from_warehouse_id}
+            disabled={isViewMode || !form.from_warehouse_id}
             onFocus={() => {
               setActiveStockRowId(row.row_id);
               setShowStockDropdown(true);
@@ -736,7 +743,7 @@ export default function WarehouseTransferDetailPage() {
 
           <button
             type="button"
-            disabled={!form.from_warehouse_id}
+            disabled={isViewMode || !form.from_warehouse_id}
             onClick={() => {
               setActiveStockRowId(row.row_id);
               setShowStockDropdown(!showStockDropdown);
@@ -786,6 +793,7 @@ export default function WarehouseTransferDetailPage() {
 
       <td>
         <input
+          disabled={isViewMode}
           value={row.transfer_quantity}
           onChange={(e) => handleRowChange(row.row_id, "transfer_quantity", e.target.value)}
           onBlur={(e) => handleRowChange(row.row_id, "transfer_quantity", formatViNumber(e.target.value, 2))}
@@ -796,6 +804,7 @@ export default function WarehouseTransferDetailPage() {
 
       <td>
         <input
+          disabled={isViewMode}
           value={row.actual_received_quantity}
           onChange={(e) => handleRowChange(row.row_id, "actual_received_quantity", e.target.value)}
           onBlur={(e) => handleRowChange(row.row_id, "actual_received_quantity", formatViNumber(e.target.value, 2))}
@@ -806,6 +815,7 @@ export default function WarehouseTransferDetailPage() {
 
 
         <td className="delete-row-col">
+          {!isViewMode && (
             <div className="detail-action-row add-row-action">
                 <button
                 type="button"
@@ -823,6 +833,7 @@ export default function WarehouseTransferDetailPage() {
                 <RiDeleteBin6Line />
                 </button>
             </div>
+          )}
         </td>
     </tr>
   ))}
@@ -843,23 +854,25 @@ export default function WarehouseTransferDetailPage() {
           </div>
         </div>
       </div>
-
       <div className="bottom-actions">
         <button type="button" onClick={() => navigate("/dashboard/activity/transfer")}>
           Hủy
         </button>
+      {!isViewMode && (
+        <>
+          <button
+            type="button"
+            className="outline"
+            onClick={handleSaveDraftAndAddNew}
+          >
+            Lưu và Thêm
+          </button>
 
-        <button
-          type="button"
-          className="outline"
-          onClick={handleSaveDraftAndAddNew}
-        >
-          Lưu và Thêm
-        </button>
-
-        <button type="button" className="save" onClick={handleSaveDraft}>
-          Lưu
-        </button>
+          <button type="button" className="save" onClick={handleSaveDraft}>
+            Lưu
+          </button>
+        </>
+      )}
       </div>
     </div>
   );
