@@ -259,11 +259,30 @@ function WarehouseReleasePage() {
                         item.id ||
                         "",
 
-                    goods_id: item.goods_id || "",
-                    goods_code: item.goods_code || "",
-                    goods_name: item.goods_name || "",
-                    goods_unit_id: item.goods_unit_id || item.unit_id || "",
-                    unit_name: item.unit_name || "",
+                    goods_id: item.goods_id || item.goods?.id || "",
+                    goods_code:
+                        item.goods_code ||
+                        item.goods?.code ||
+                        item.code ||
+                    "",
+
+                    goods_name:
+                        item.goods_name ||
+                        item.goods?.name ||
+                        item.name ||
+                    "",
+
+                    goods_unit_id:
+                        item.goods_unit_id ||
+                        item.unit_id ||
+                        item.goods_unit?.id ||
+                    "",
+
+                    unit_name:
+                        item.goods_unit_name ||
+                        item.unit_name ||
+                        item.goods_unit?.name ||
+                    "",
                     conversion_ratio: item.conversion_ratio || 1,
                     requested_quantity: formatViNumber(requestedQuantity, 2),
                     actual_quantity: formatViNumber(actualQuantity, 2),
@@ -444,8 +463,14 @@ function WarehouseReleasePage() {
                       fetchReleaseOrderDetail(row.code || row.release_code);
                     }}
                   >
-                    <td className="release-order-link-text">
-                      {row.code || row.release_code || "-"}
+                    <td
+                        className="release-order-link-text"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/dashboard/activity/export/release-print/${row.code || row.release_code}`);
+                        }}
+                        >
+                        {row.code || row.release_code || "-"}
                     </td>
                     <td>{getReleaseStatusText(row.status)}</td>
                     <td>{row.release_date || "-"}</td>
@@ -540,16 +565,20 @@ function WarehouseReleasePage() {
                     detailRows.map((item, index) => (
                       <tr key={item.id}>
                         <td>{index + 1}</td>
-                        <td>{goodsMap[item.goods_id]?.code || "-"}</td>
-
-                        <td>{goodsMap[item.goods_id]?.name || "-"}</td>
+                        <td>
+                            {goodsMap[item.goods_id]?.code || item.goods_code || "-"}
+                        </td>
 
                         <td>
-                        {
+                            {goodsMap[item.goods_id]?.name || item.goods_name || "-"}
+                        </td>
+
+                        <td>
+                        {item.unit_name ||
                             goodsMap[item.goods_id]?.units?.find(
                             (u) => String(u.unit_id) === String(item.goods_unit_id)
-                            )?.unit_name || "-"
-                        }
+                            )?.unit_name ||
+                            "-"}
                         </td>
                         <td className="release-number-col">
                           {formatViNumber(item.conversion_ratio || 1, 3)}

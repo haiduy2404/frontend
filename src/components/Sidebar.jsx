@@ -100,6 +100,32 @@ const Sidebar = () => {
               </div>
             )}
           </>
+          <div
+            className={`sidebar-item ${
+              activeMenu === "transfer" ? "active-parent" : ""
+            }`}
+          >
+            <NavLink
+              to="/dashboard/activity/transfer"
+              className={({ isActive }) =>
+                isActive
+                  ? "sidebar-main-link active-parent"
+                  : "sidebar-main-link"
+              }
+              onClick={() => {
+                setActiveMenu("transfer");
+                setOpenMenu("");
+              }}
+            >
+              <span className="sidebar-icon">🔄</span>
+
+              {!collapsed && (
+                <span className="sidebar-text">
+                  Điều chuyển
+                </span>
+              )}
+            </NavLink>
+          </div>
       </div>
         <div className="sidebar-extra-menu">
         {/* BÁO CÁO */}

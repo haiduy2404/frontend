@@ -1,0 +1,248 @@
+.warehouse-transfer-list-page {
+  min-height: 100vh;
+  background: #eef1f5;
+  padding: 0 16px 16px;
+  box-sizing: border-box;
+  color: #111827;
+  font-size: 14px;
+}
+
+.transfer-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  height: 42px;
+}
+
+.transfer-tabs button {
+  height: 42px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: #374151;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.transfer-tabs button.active {
+  background: #ffffff;
+  color: #2563eb;
+}
+
+.transfer-list-card {
+  background: #ffffff;
+  border-radius: 0 6px 6px 6px;
+  min-height: calc(100vh - 72px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.transfer-toolbar {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  box-sizing: border-box;
+}
+
+.transfer-toolbar .search-input {
+  width: 240px;
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.transfer-toolbar select {
+  height: 34px;
+  min-width: 210px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0 12px;
+  outline: none;
+  background: #ffffff;
+  color: #374151;
+  box-sizing: border-box;
+}
+
+.transfer-toolbar .search-input:focus,
+.transfer-toolbar select:focus {
+  border-color: #2563eb;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: #f9fafb;
+}
+
+.add-btn {
+  height: 34px;
+  padding: 0 18px;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  background: #1d4ed8;
+}
+
+.transfer-table-wrap {
+  flex: 1;
+  overflow: auto;
+}
+
+.transfer-table-wrap table {
+  width: 100%;
+  min-width: 1050px;
+  border-collapse: collapse;
+}
+
+.transfer-table-wrap thead {
+  background: #f3f4f6;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.transfer-table-wrap th,
+.transfer-table-wrap td {
+  height: 38px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 14px;
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.transfer-table-wrap th {
+  font-weight: 700;
+  color: #111827;
+}
+
+.transfer-table-wrap td {
+  color: #111827;
+}
+
+.transfer-table-wrap tbody tr:hover td {
+  background: #f9fafb;
+}
+
+.check-col {
+  width: 40px;
+}
+
+.transfer-table-wrap input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.code-link {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.code-link:hover {
+  text-decoration: underline;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.empty-row {
+  height: 70px !important;
+  text-align: center !important;
+  color: #6b7280 !important;
+  font-style: italic;
+}
+
+.transfer-footer {
+  height: 56px;
+  flex: 0 0 auto;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+}
+
+.footer-right select {
+  height: 34px;
+  min-width: 84px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0 10px;
+  background: #ffffff;
+  color: #111827;
+}
+
+.footer-right b {
+  color: #111827;
+}
+
+@media (max-width: 900px) {
+  .transfer-toolbar {
+    height: auto;
+    flex-wrap: wrap;
+  }
+
+  .toolbar-spacer {
+    display: none;
+  }
+
+  .transfer-toolbar .search-input,
+  .transfer-toolbar select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .add-btn {
+    margin-left: auto;
+  }
+}

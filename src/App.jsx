@@ -33,7 +33,9 @@ import GuestRoute from "./components/GuestRoute";
 import RequireRole from "./components/RequireRole";
 import { AuthProvider } from "./contexts/AuthContext";
 import WarehouseReleasePage from "./pages/activity/release/WarehouseReleasePage";
-
+import WarehouseTransferPage from "./pages/activity/transfer/WarehouseTransferPage";
+import WarehouseTransferDetailPage from "./pages/activity/transfer/WarehouseTransferDetailPage";
+import ReleasePrintPage from "./pages/activity/release/ReleasePrintPage";
 import "./styles/auth.css";
 
 // Bridges global auth events from the axios interceptor to router navigation.
@@ -91,6 +93,15 @@ function App() {
                 }
               />
 
+              <Route
+                path="activity/transfer"
+                element={
+                  <RequireRole roles={["view_warehouse_transfer"]}>
+                    <WarehouseTransferPage />
+                  </RequireRole>
+                }
+              />
+
               <Route path="activity/import" element={<ImportLayout />}>
                 <Route index element={<Navigate to="order" replace />} />
                 <Route
@@ -131,7 +142,7 @@ function App() {
                     }
                   />
                 </Route>
-            </Route>
+              </Route>
 
             <Route
               path="/dashboard/activity/import/order-detail/new"
@@ -160,10 +171,37 @@ function App() {
               />
 
               <Route
+                path="/dashboard/activity/export/release-print/:code"
+                element={
+                  <RequireRole roles={["view_warehouse_release"]}>
+                    <ReleasePrintPage />
+                  </RequireRole>
+               }
+              />
+
+              <Route
                 path="/dashboard/activity/export/order-detail/:id"
                 element={
                   <RequireRole roles={["view_warehouse_release"]}>
                     <ReleaseOrderDetailPage />
+                  </RequireRole>
+                }
+              />
+
+              <Route
+                path="/dashboard/activity/transfer/detail/new"
+                element={
+                  <RequireRole roles={["create_warehouse_transfer"]}>
+                    <WarehouseTransferDetailPage />
+                  </RequireRole>
+                }
+              />
+
+              <Route
+                path="/dashboard/activity/transfer/detail/:code"
+                element={
+                  <RequireRole roles={["view_warehouse_transfer"]}>
+                    <WarehouseTransferDetailPage />
                   </RequireRole>
                 }
               />

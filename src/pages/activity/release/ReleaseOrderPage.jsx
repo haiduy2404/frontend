@@ -294,6 +294,15 @@ function ReleaseOrderPage() {
     }
   };
 
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toLocaleString("vi-VN");
+  };
+
   return (
     <div className="release-order-page">
     <div className="release-order-tabs">
@@ -485,10 +494,16 @@ function ReleaseOrderPage() {
                     <td>{getReleaseStatusText(row.status)}</td>
                     <td>{row.receiver_unit?.name || "-"}</td>
                     <td>{row.release_target?.name || "-"}</td>
-                    <td>{row.created_by_admin_name || row.created_by || "-"}</td>
-                    <td>{row.created_at || "-"}</td>
-                    <td>{row.last_updated_by_admin_name || "-"}</td>
-                    <td>{row.updated_at || "-"}</td>
+                    <td>{row.created_by_admin_name || row.created_by_name || row.created_by || "-"}</td>
+                    <td>{formatDateTime(row.created_at)}</td>
+                    <td>
+                    {row.last_updated_by_admin_name ||
+                        row.updated_by_admin_name ||
+                        row.last_updated_by_name ||
+                        row.updated_by ||
+                        "-"}
+                    </td>
+                    <td>{formatDateTime(row.updated_at)}</td>
                   </tr>
                 ))}
             </tbody>

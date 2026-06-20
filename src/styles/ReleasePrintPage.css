@@ -1,0 +1,289 @@
+.release-print-page {
+  height: 100vh;
+  background: #e5e7eb;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.release-print-toolbar {
+  width: 210mm;
+  margin: 0 auto 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.release-print-toolbar button {
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.release-print-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding-bottom: 24px;
+}
+
+.release-print-paper {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 9mm 8mm 10mm;
+  box-sizing: border-box;
+  color: #000000;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 15px;
+}
+
+.release-print-paper,
+.release-print-paper * {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.release-print-header {
+  display: grid;
+  grid-template-columns: 60mm 78mm 42mm;
+  column-gap: 3mm;
+  align-items: start;
+  min-height: 34mm;
+}
+
+.release-print-left-header {
+  font-size: 12pt;
+  line-height: 1.25;
+  word-break: normal;
+}
+
+.release-print-title-block {
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+  width: auto;
+  text-align: center;
+  padding-top: 0;
+}
+
+.release-print-title-block h1 {
+  margin: 0;
+  font-size: 15pt;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.release-print-date {
+  margin-top: 5mm;
+  font-size: 12pt;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.release-print-right-header {
+  width: auto;
+  margin-left: 0;
+  transform: none;
+  font-size: 11pt;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.release-print-code-lines {
+  margin-top: 2mm;
+  text-align: left;
+  padding-left: 7mm;
+}
+
+.release-print-info {
+  margin-top: 5mm;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.release-print-table {
+  width: 100%;
+  margin-top: 2mm;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
+}
+
+.release-print-table,
+.release-print-table th,
+.release-print-table td {
+  box-sizing: border-box;
+}
+
+.release-print-table th,
+.release-print-table td {
+  border: 1px solid #000000;
+  padding: 1mm 1.2mm;
+  vertical-align: middle;
+}
+
+.release-print-table thead th {
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.release-print-table thead tr:first-child th {
+  height: 12mm;
+}
+
+.release-print-table thead tr:nth-child(2) th {
+  height: 8mm;
+}
+
+.release-print-col-stt {
+  width: 8mm;
+}
+
+.release-print-col-name {
+  width: 58mm;
+}
+
+.release-print-col-code {
+  width: 22mm;
+}
+
+.release-print-col-unit {
+  width: 16mm;
+}
+
+.release-print-col-qty {
+  width: 18mm;
+}
+
+.release-print-col-price {
+  width: 21mm;
+}
+
+.release-print-col-amount {
+  width: 23mm;
+}
+
+.release-print-item-row td {
+  height: 6mm;
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.release-print-center-cell {
+  text-align: center;
+}
+
+.release-print-number-cell {
+  text-align: center;
+}
+
+.release-print-money-cell {
+  text-align: right;
+}
+
+.release-print-name-cell {
+  text-align: left;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.release-print-total-row td {
+  height: 7mm;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.release-print-signature-row {
+  margin-top: 2mm;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  text-align: center;
+}
+
+.release-print-signature-row div {
+  min-height: 32mm;
+}
+
+.release-print-signature-row strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.release-print-signature-row span {
+  display: block;
+  margin-top: 1mm;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.release-print-signer-name-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  text-align: center;
+  font-size: 13px;
+}
+
+.release-print-loading {
+  padding: 24px;
+  font-size: 16px;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    width: 210mm !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .release-print-toolbar {
+    display: none !important;
+  }
+
+  .release-print-page {
+    display: block !important;
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .release-print-scroll {
+    display: block !important;
+    width: 210mm !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  .release-print-paper {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 9mm 8mm 10mm !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+}

@@ -175,12 +175,12 @@ const fetchImportOrders = async (customParams = {}) => {
       return Number(text) || 0;
     };
 
-const formatMoney = (value) => {
-  return parseMoney(value).toLocaleString("vi-VN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
+    const formatMoney = (value) => {
+      return parseMoney(value).toLocaleString("vi-VN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    };
 
     const formatViNumber = (value, fractionDigits = 2) => {
       return parseMoney(value).toLocaleString("vi-VN", {
