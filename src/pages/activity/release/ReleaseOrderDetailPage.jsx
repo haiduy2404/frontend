@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ReleaseOrderDetailPage.css";
@@ -53,6 +53,10 @@ function ReleaseOrderDetailPage() {
   const [goodsKeyword, setGoodsKeyword] = useState("");
   const [debouncedGoodsKeyword, setDebouncedGoodsKeyword] = useState("");
   const [deletedItems, setDeletedItems] = useState([]);
+  const warehouseIdRef = useRef("");
+  const debouncedGoodsKeywordRef = useRef("");
+  const goodsSearchRequestIdRef = useRef(0);
+  const goodsPendingRequestsRef = useRef(0);
   const fetchReleaseReferences = async () => {
     try {
         const [targetResponse, receiverResponse] = await Promise.all([
@@ -279,26 +283,34 @@ function ReleaseOrderDetailPage() {
     }
   };
 
-  const fetchGoodsDropdown = async ({
+  const fetchGoodsDropdown = useCallback(async ({
     keyword = "",
     pageNumber = 1,
     append = false,
+    warehouseId = warehouseIdRef.current,
   } = {}) => {
-    if (!headerData.warehouse_id) {
-        alert("Vui lòng chọn kho xuất trước");
-        return;
-    }
-    if (goodsLoading) return;
+    if (!warehouseId) return;
+
+    const keywordSnapshot = keyword;
+    const requestId = append ? null : ++goodsSearchRequestIdRef.current;
+
+    goodsPendingRequestsRef.current += 1;
+    setGoodsLoading(true);
 
     try {
-      setGoodsLoading(true);
-
-        const data = await getOpeningStocks({
-        search: keyword,
-        warehouse_id: headerData.warehouse_id,
+      const data = await getOpeningStocks({
+        search: keywordSnapshot,
+        warehouse_id: warehouseId,
         page: pageNumber,
         page_size: 30,
-        });
+      });
+
+      if (!append && requestId !== goodsSearchRequestIdRef.current) {
+        return;
+      }
+      if (append && keywordSnapshot !== debouncedGoodsKeywordRef.current) {
+        return;
+      }
 
       const results = Array.isArray(data)
         ? data
@@ -323,8 +335,19 @@ function ReleaseOrderDetailPage() {
       console.error("LOAD GOODS DROPDOWN ERROR:", error.response?.data || error);
       alert("Không tải được danh sách hàng hóa");
     } finally {
-      setGoodsLoading(false);
+      goodsPendingRequestsRef.current -= 1;
+      if (goodsPendingRequestsRef.current === 0) {
+        setGoodsLoading(false);
+      }
     }
+  }, []);
+
+  const openGoodsDropdown = (rowId, keyword = "") => {
+    const normalizedKeyword = keyword || "";
+    setActiveGoodsRowId(rowId);
+    setShowGoodsDropdown(true);
+    setGoodsKeyword(normalizedKeyword);
+    setDebouncedGoodsKeyword(normalizedKeyword);
   };
 
   const handleGoodsDropdownScroll = (e) => {
@@ -335,7 +358,7 @@ function ReleaseOrderDetailPage() {
 
     if (isBottom && !goodsLoading && goodsPage < goodsTotalPages) {
       fetchGoodsDropdown({
-        keyword: goodsKeyword,
+        keyword: debouncedGoodsKeywordRef.current,
         pageNumber: goodsPage + 1,
         append: true,
       });
@@ -689,26 +712,37 @@ function ReleaseOrderDetailPage() {
   }, [id]);
 
   useEffect(() => {
+    warehouseIdRef.current = headerData.warehouse_id;
+  }, [headerData.warehouse_id]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedGoodsKeyword(goodsKeyword);
-    }, 1000);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [goodsKeyword]);
 
   useEffect(() => {
-    if (!showGoodsDropdown) return;
+    debouncedGoodsKeywordRef.current = debouncedGoodsKeyword;
+  }, [debouncedGoodsKeyword]);
+
+  useEffect(() => {
+    if (!showGoodsDropdown || !headerData.warehouse_id) return;
 
     fetchGoodsDropdown({
       keyword: debouncedGoodsKeyword,
       pageNumber: 1,
       append: false,
+      warehouseId: headerData.warehouse_id,
     });
-  }, [debouncedGoodsKeyword, showGoodsDropdown]);
+  }, [debouncedGoodsKeyword, showGoodsDropdown, headerData.warehouse_id, fetchGoodsDropdown]);
 
   if (detailLoading) {
     return <div className="import-order-detail-page">Đang tải dữ liệu...</div>;
   }
+
+  const hasWarehouseSelected = Boolean(headerData.warehouse_id);
 
   return (
     <div className="import-order-detail-page">
@@ -955,6 +989,11 @@ function ReleaseOrderDetailPage() {
 
         <div className="detail-section-title">Chi tiết</div>
 
+        {!hasWarehouseSelected ? (
+          <div className="warehouse-required-placeholder">
+            Vui lòng chọn <strong>Xuất kho</strong> ở phía trên để thêm vật tư xuất kho.
+          </div>
+        ) : (
         <div className="detail-card">
           <div className="detail-search">
             <RiSearchLine />
@@ -1006,21 +1045,8 @@ function ReleaseOrderDetailPage() {
                           placeholder="Chọn mã VT"
                           disabled={isPrintMode}
                           onFocus={() => {
-                                if (!headerData.warehouse_id) {
-                                    alert("Vui lòng chọn kho xuất trước");
-                                    return;
-                                }
-
-                                setActiveGoodsRowId(item.id);
-                                setShowGoodsDropdown(true);
-                                setGoodsKeyword(item.goods_code || "");
-
-                                fetchGoodsDropdown({
-                                    keyword: item.goods_code || "",
-                                    pageNumber: 1,
-                                    append: false,
-                                });
-                            }}
+                            openGoodsDropdown(item.id, item.goods_code || "");
+                          }}
                           onChange={(e) => {
                             const value = e.target.value;
 
@@ -1035,22 +1061,15 @@ function ReleaseOrderDetailPage() {
                         <button
                           type="button"
                           disabled={isPrintMode}
-                            onClick={() => {
-                                if (!headerData.warehouse_id) {
-                                    alert("Vui lòng chọn kho xuất trước");
-                                    return;
-                                }
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            if (showGoodsDropdown && activeGoodsRowId === item.id) {
+                              setShowGoodsDropdown(false);
+                              return;
+                            }
 
-                                setActiveGoodsRowId(item.id);
-                                setShowGoodsDropdown(!showGoodsDropdown);
-                                setGoodsKeyword(item.goods_code || "");
-
-                                fetchGoodsDropdown({
-                                    keyword: item.goods_code || "",
-                                    pageNumber: 1,
-                                    append: false,
-                            });
-                            }}
+                            openGoodsDropdown(item.id, item.goods_code || "");
+                          }}
                         >
                           ▾
                         </button>
@@ -1208,6 +1227,7 @@ function ReleaseOrderDetailPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       <div className="import-order-detail-footer">

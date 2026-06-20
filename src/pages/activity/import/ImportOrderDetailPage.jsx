@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ImportOrderDetailPage.css";
@@ -71,6 +71,9 @@ function ImportOrderDetailPage() {
     const [deletedItems, setDeletedItems] = useState([]);
     const [companyId, setCompanyId] = useState(null);
     const [debouncedGoodsKeyword, setDebouncedGoodsKeyword] = useState("");
+    const goodsSearchRequestIdRef = useRef(0);
+    const goodsPendingRequestsRef = useRef(0);
+    const debouncedGoodsKeywordRef = useRef("");
     const canPrintTransfer = canDo("print_transfer_request");
     const canPrintReceipt = canDo("print_warehouse_receipt");
     const handlePrint = () => {
@@ -80,20 +83,14 @@ function ImportOrderDetailPage() {
     useEffect(() => {
       const timer = setTimeout(() => {
         setDebouncedGoodsKeyword(goodsKeyword);
-      }, 1000);
+      }, 300);
 
       return () => clearTimeout(timer);
     }, [goodsKeyword]);
 
     useEffect(() => {
-      if (!showGoodsDropdown) return;
-
-      fetchGoodsDropdown({
-        keyword: debouncedGoodsKeyword,
-        pageNumber: 1,
-        append: false,
-      });
-    }, [debouncedGoodsKeyword, showGoodsDropdown]);
+      debouncedGoodsKeywordRef.current = debouncedGoodsKeyword;
+    }, [debouncedGoodsKeyword]);
     
 
     const formatISOToViDate = (value) => {
@@ -458,21 +455,30 @@ function ImportOrderDetailPage() {
         return prev.filter((item) => item.id !== rowId);
       });
     };
-    const fetchGoodsDropdown = async ({
+    const fetchGoodsDropdown = useCallback(async ({
         keyword = "",
         pageNumber = 1,
         append = false,
     } = {}) => {
-        if (goodsLoading) return;
+        const keywordSnapshot = keyword;
+        const requestId = append ? null : ++goodsSearchRequestIdRef.current;
+
+        goodsPendingRequestsRef.current += 1;
+        setGoodsLoading(true);
 
         try {
-            setGoodsLoading(true);
-
             const data = await getGoods({
-            search: keyword,
-            page: pageNumber,
-            page_size: 30,
+              search: keywordSnapshot,
+              page: pageNumber,
+              page_size: 30,
             });
+
+            if (!append && requestId !== goodsSearchRequestIdRef.current) {
+              return;
+            }
+            if (append && keywordSnapshot !== debouncedGoodsKeywordRef.current) {
+              return;
+            }
 
             const results = Array.isArray(data)
               ? data
@@ -497,8 +503,29 @@ function ImportOrderDetailPage() {
             console.error("LOAD GOODS DROPDOWN ERROR:", error.response?.data || error);
             alert("Không tải được danh sách hàng hóa");
         } finally {
-            setGoodsLoading(false);
+            goodsPendingRequestsRef.current -= 1;
+            if (goodsPendingRequestsRef.current === 0) {
+              setGoodsLoading(false);
+            }
         }
+    }, []);
+
+    useEffect(() => {
+      if (!showGoodsDropdown) return;
+
+      fetchGoodsDropdown({
+        keyword: debouncedGoodsKeyword,
+        pageNumber: 1,
+        append: false,
+      });
+    }, [debouncedGoodsKeyword, showGoodsDropdown, fetchGoodsDropdown]);
+
+    const openGoodsDropdown = (rowId, keyword = "") => {
+      const normalizedKeyword = keyword || "";
+      setActiveGoodsRowId(rowId);
+      setShowGoodsDropdown(true);
+      setGoodsKeyword(normalizedKeyword);
+      setDebouncedGoodsKeyword(normalizedKeyword);
     };
 
     const handleGoodsDropdownScroll = (e) => {
@@ -509,7 +536,7 @@ function ImportOrderDetailPage() {
 
     if (isBottom && !goodsLoading && goodsPage < goodsTotalPages) {
         fetchGoodsDropdown({
-        keyword: goodsKeyword,
+        keyword: debouncedGoodsKeywordRef.current,
         pageNumber: goodsPage + 1,
         append: true,
         });
@@ -1022,9 +1049,6 @@ const handleComplete = async () => {
         );
       } catch (error) {
         console.error("LOAD RECEIPT DETAIL ERROR:", error.response?.data || error);
-          console.log("STATUS", error?.response?.status);
-  console.log("DATA", error?.response?.data);
-  console.log("FULL", error);
         alert("Không tải được chi tiết phiếu nhập");
       } finally {
         setDetailLoading(false);
@@ -1639,9 +1663,7 @@ const handleOpenTransferPrint = () => {
                         value={item.goods_code}
                         placeholder="Chọn mã hàng"
                         onFocus={() => {
-                            setActiveGoodsRowId(item.id);
-                            setShowGoodsDropdown(true);
-                            setGoodsKeyword(item.goods_code || "");
+                            openGoodsDropdown(item.id, item.goods_code || "");
                         }}
                         onChange={(e) => {
                             const value = e.target.value;
@@ -1657,9 +1679,12 @@ const handleOpenTransferPrint = () => {
                         <button
                         type="button"
                         onClick={() => {
-                            setActiveGoodsRowId(item.id);
-                            setShowGoodsDropdown(!showGoodsDropdown);
-                            setGoodsKeyword(item.goods_code || "");
+                            if (showGoodsDropdown && activeGoodsRowId === item.id) {
+                              setShowGoodsDropdown(false);
+                              return;
+                            }
+
+                            openGoodsDropdown(item.id, item.goods_code || "");
                         }}
                         >
                         ▾
@@ -2110,11 +2135,13 @@ const handleOpenTransferPrint = () => {
               handleSelectGoods(goods);
             }
 
-            fetchGoodsDropdown({
-              keyword: goodsKeyword,
-              pageNumber: 1,
-              append: false,
-            });
+            if (showGoodsDropdown) {
+              fetchGoodsDropdown({
+                keyword: debouncedGoodsKeywordRef.current,
+                pageNumber: 1,
+                append: false,
+              });
+            }
           }}
         />
         )}

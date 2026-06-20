@@ -164,11 +164,6 @@ export const getUserNames = async () => {
   return response.data;
 };
 
-export const getUserById = async () => {
-  const response = await axiosInstance.get(`/auth/me`);
-  return response.data;
-};
-
 export const updateUserById = async (userId, userData) => {
   const response = await axiosInstance.put(`/auth/me`, userData);
   return response.data;

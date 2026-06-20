@@ -8,7 +8,6 @@ function GoodsFormModal({
   onClose,
   onSuccess,
 }) {
-  const editingGoodsId = editingGoods?.id || null;
   const [unitList, setUnitList] = useState([]);
   const [unitLoading, setUnitLoading] = useState(false);
   const [conversionUnits, setConversionUnits] = useState([]);
@@ -23,7 +22,7 @@ function GoodsFormModal({
     unit_id: "",
   });
 
-
+  const editingGoodsId = editingGoods?.id || null;
 
   const getUnitNameById = (unitId) => {
     return unitList.find((unit) => String(unit.id) === String(unitId))?.name || "";
@@ -63,6 +62,14 @@ function GoodsFormModal({
   fetchGoodsUnits();
 }, []);
 
+  useEffect(() => {
+    if (editingGoods) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      code: prev.code,
+    }));
+  }, [editingGoods]);
 
   useEffect(() => {
     if (!editingGoods) return;

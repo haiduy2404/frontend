@@ -64,6 +64,21 @@
   border: 1px solid #e5e7eb;
 }
 
+.warehouse-required-placeholder {
+  background: #fff;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 32px 24px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.warehouse-required-placeholder strong {
+  color: #111827;
+}
+
 .voucher-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

@@ -4,7 +4,7 @@ import "../../styles/account.css";
 import Header from "../../components/Header";
 import {
   changePassword,
-  getUserById,
+  getMe,
   updateUserById,
 } from "../../services/authService";
 
@@ -39,7 +39,7 @@ function AccountPage() {
     if (!userId) return;
 
     try {
-      const res = await getUserById(userId);
+      const res = await getMe();
       const data = res.data || res;
       console.log("Dữ liệu người dùng:", data);
 

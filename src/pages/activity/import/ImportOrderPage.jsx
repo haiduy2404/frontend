@@ -135,14 +135,14 @@ const fetchImportOrders = async (customParams = {}) => {
     if (results.length > 0) {
       const firstRow = results[0];
 
-    if (!selectedId) {
-      setSelectedId(firstRow.id);
-      fetchImportOrderDetail(firstRow.code);
-  }
-} else {
-  setSelectedId(null);
-  setDetailRows([]);
-}
+      if (!selectedId) {
+        setSelectedId(firstRow.id);
+        fetchImportOrderDetail(firstRow.code);
+      }
+    } else {
+      setSelectedId(null);
+      setDetailRows([]);
+    }
   } catch (error) {
     console.error("LOAD IMPORT ORDERS ERROR:", error.response?.data || error);
     alert("Không tải được danh sách phiếu nhập");
