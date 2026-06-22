@@ -2,10 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../styles/WarehouseTransferPage.css";
 import { useAuth } from "../../../contexts/AuthContext";
-import { RiDeleteBin6Line } from "react-icons/ri";
+import {
+  RiAddLine,
+  RiEdit2Line,
+  RiDeleteBin6Line,
+  RiCheckboxCircleLine,
+} from "react-icons/ri";
 import {
   getWarehouseTransfersPageable,
   deleteWarehouseTransfer,
+  updateWarehouseTransferStatus,
 } from "../../../services/warehouseTransferService";
 
 export default function WarehouseTransferPage() {
@@ -21,7 +27,6 @@ export default function WarehouseTransferPage() {
   const [timeRange, setTimeRange] = useState("month");
   const [pageSize, setPageSize] = useState(20);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
-  const [hoveredRowId, setHoveredRowId] = useState(null);
   const unwrapList = (data) => {
     return Array.isArray(data)
       ? data
@@ -37,6 +42,52 @@ export default function WarehouseTransferPage() {
       ? data.data.items
       : [];
   };
+  const selectedRow = transfers.find((item) => item.id === selectedTransfer);
+  const getTransferStatusText = (status) => {
+    switch (status) {
+      case "PENDING":
+        return "Đang điều chuyển";
+      case "COMPLETED":
+        return "Đã hoàn thành";
+      default:
+        return "-";
+    }
+  };
+  const handleComplete = async (transfer) => {
+  if (!transfer?.id) {
+    alert("Vui lòng chọn phiếu điều chuyển");
+    return;
+  }
+
+  if (transfer.status === "COMPLETED") {
+    alert("Phiếu đã hoàn thành");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Bạn có chắc muốn hoàn thành phiếu ${getTransferCode(transfer)} không?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await updateWarehouseTransferStatus(transfer.id, {
+      action: "complete",
+      status: "COMPLETED",
+    });
+
+    setSelectedTransfer(null);
+    await loadTransfers();
+    alert("Hoàn thành phiếu điều chuyển thành công");
+  } catch (error) {
+    console.error("COMPLETE TRANSFER ERROR:", error.response?.data || error);
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Hoàn thành phiếu điều chuyển thất bại"
+    );
+  }
+};
 
   const loadTransfers = async () => {
     try {
@@ -101,7 +152,6 @@ export default function WarehouseTransferPage() {
   return (
     <div className="warehouse-transfer-list-page">
       <div className="transfer-tabs">
-        <button type="button">Yêu cầu điều chuyển</button>
         <button type="button" className="active">
           Điều chuyển
         </button>
@@ -128,42 +178,75 @@ export default function WarehouseTransferPage() {
 
           <select value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">Tình trạng thực hiện: Tất cả</option>
-            <option value="DRAFT">Nháp</option>
-            <option value="WAITING_RECEIVE">Chờ nhập kho</option>
-            <option value="COMPLETED">Hoàn thành</option>
-            <option value="CANCELLED">Đã hủy</option>
+            <option value="PENDING">Đang điều chuyển</option>
+            <option value="COMPLETED">Đã hoàn thành</option>
           </select>
+            <div className="toolbar-spacer" />
+              <button type="button" className="icon-btn" onClick={loadTransfers}>
+                ↻
+              </button>
 
-          <div className="toolbar-spacer" />
+              {canUpdate && (
+                <button
+                  type="button"
+                  className="edit-btn"
+                  disabled={!selectedRow || selectedRow.status === "COMPLETED"}
+                  onClick={() => {
+                    if (!selectedRow) {
+                      alert("Vui lòng chọn phiếu cần chỉnh sửa");
+                      return;
+                    }
 
-          <button type="button" className="icon-btn" onClick={loadTransfers}>
-            ↻
-          </button>
+                    if (selectedRow.status === "COMPLETED") {
+                      alert("Phiếu đã hoàn thành, không được chỉnh sửa.");
+                      return;
+                    }
 
-          {canUpdate && (
-            <button
-              type="button"
-              className="edit-btn"
-              disabled={!selectedTransfer}
-              onClick={() => {
-                const transfer = transfers.find(
-                  (x) => x.id === selectedTransfer
-                );
+                    handleOpenEdit(selectedRow);
+                  }}
+                >
+                  <RiEdit2Line />
+                  <span>Chỉnh sửa</span>
+                </button>
+              )}
 
-                if (transfer) {
-                  handleOpenEdit(transfer);
-                }
-              }}
-            >
-              Sửa
-            </button>
-          )}
+              {canUpdate && (
+                <button
+                  type="button"
+                  className="complete-toolbar-btn"
+                  disabled={!selectedRow || selectedRow.status === "COMPLETED"}
+                  onClick={() => handleComplete(selectedRow)}
+                >
+                  <RiCheckboxCircleLine />
+                  <span>Hoàn thành</span>
+                </button>
+              )}
 
-          {canCreate && (
-            <button type="button" className="add-btn" onClick={handleAdd}>
-              + Thêm
-            </button>
-          )}
+              {canDelete && (
+                <button
+                  type="button"
+                  className="delete-toolbar-btn"
+                  disabled={!selectedRow}
+                  onClick={() => {
+                    if (!selectedRow) {
+                      alert("Vui lòng chọn phiếu cần xóa");
+                      return;
+                    }
+
+                    handleDelete(selectedRow);
+                  }}
+                >
+                  <RiDeleteBin6Line />
+                  <span>Xóa</span>
+                </button>
+              )}
+
+              {canCreate && (
+                <button type="button" className="add-btn" onClick={handleAdd}>
+                  <RiAddLine />
+                  <span>Thêm</span>
+                </button>
+              )}
         </div>
 
         <div className="transfer-table-wrap">
@@ -179,7 +262,6 @@ export default function WarehouseTransferPage() {
                 <th>Kho xuất</th>
                 <th>Kho nhập</th>
                 <th>Tình trạng</th>
-                <th></th>
               </tr>
             </thead>
 
@@ -190,8 +272,6 @@ export default function WarehouseTransferPage() {
                 return (
                 <tr
                   key={item.id || item.code || index}
-                  onMouseEnter={() => setHoveredRowId(item.id)}
-                  onMouseLeave={() => setHoveredRowId(null)}
                 >
                 <td>
                     <input
@@ -242,19 +322,9 @@ export default function WarehouseTransferPage() {
                   </td>
 
                   <td>
-                    <span className="status-badge">{item.status || "-"}</span>
-                  </td>
-                  <td className="delete-action-col">
-                    {canDelete && hoveredRowId === item.id && (
-                      <button
-                        type="button"
-                        className="transfer-delete-btn"
-                        title="Xóa"
-                        onClick={() => handleDelete(item)}
-                      >
-                        <RiDeleteBin6Line />
-                      </button>
-                    )}
+                    <span className="status-badge">
+                      {getTransferStatusText(item.status)}
+                    </span>
                   </td>
                 </tr>
                 );
@@ -262,7 +332,7 @@ export default function WarehouseTransferPage() {
 
               {transfers.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="empty-row">
+                  <td colSpan="7" className="empty-row">
                     Không có phiếu điều chuyển
                   </td>
                 </tr>

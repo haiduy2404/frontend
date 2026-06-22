@@ -382,3 +382,51 @@
 .release-col-check {
   width: 110px;
 }
+
+.release-order-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.release-order-search {
+  min-width: 280px;
+}
+
+.release-order-filters select,
+.release-order-filters input[type="date"] {
+  height: 38px;
+  min-width: 140px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.release-order-filters select:hover,
+.release-order-filters input[type="date"]:hover {
+  border-color: #93c5fd;
+}
+
+.release-order-filters select:focus,
+.release-order-filters input[type="date"]:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.release-order-filters input[type="date"] {
+  min-width: 150px;
+}
+
+.release-order-filters select[name="time_type"] {
+  width: 130px;
+}
+
+.release-order-filters select[name="warehouse_id"] {
+  width: 170px;
+}

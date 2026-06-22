@@ -46,4 +46,4 @@ export const deleteWarehouseTransfer = async (transferId) => {
     `/inventory/warehouse-transfers/${transferId}`
   );
   return response.data;
-};
+}

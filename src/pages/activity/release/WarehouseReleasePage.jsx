@@ -10,6 +10,11 @@ import {
 } from "../../../services/releaseOrderService";
 
 import {
+  getDefaultWarehouseReleaseFilters,
+  buildWarehouseReleaseFilterParams,
+} from "./utils/warehouseReleaseFilterUtils";
+import { getWarehouses  } from "../../../services/warehouseService";
+import {
   RiCheckboxCircleLine,
   RiSave3Line,
 } from "react-icons/ri";
@@ -17,33 +22,30 @@ import {
 function WarehouseReleasePage() {
   const navigate = useNavigate();
   const { canDo } = useAuth();
-
   const canUpdateRelease = canDo("update_warehouse_release");
   const canInputActualQuantity = canDo("update_actual_released_quantity");
   const canUseReleaseActualPage = canUpdateRelease && canInputActualQuantity;
-
   const [releaseOrders, setReleaseOrders] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailRows, setDetailRows] = useState([]);
-
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
   const [total, setTotal] = useState(0);
-
+  const [filters, setFilters] = useState(
+      getDefaultWarehouseReleaseFilters()
+  );
+  const [warehouses, setWarehouses] = useState([]);
   const unwrapData = (response) => response?.data || response;
-
   const handleCompleteRelease = async () => {
   if (!selectedOrder) {
     alert("Vui lòng chọn lệnh xuất kho");
     return;
   }
-
   try {
     // lưu SL thực xuất trước
     const payload = {
@@ -89,6 +91,31 @@ function WarehouseReleasePage() {
     );
   }
 };
+
+  const fetchWarehouses = async () => {
+    try {
+      const response = await getWarehouses();
+
+      const data = unwrapData(response);
+
+      const results = Array.isArray(data?.results)
+        ? data.results
+        : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+        ? data
+        : [];
+
+      setWarehouses(results);
+    } catch (error) {
+      console.error("LOAD WAREHOUSES ERROR:", error.response?.data || error);
+      setWarehouses([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchWarehouses();
+  }, []);
 
   const parseNumber = (value) => {
     if (value === null || value === undefined || value === "") return 0;
@@ -142,16 +169,23 @@ function WarehouseReleasePage() {
     }
   };
 
-  const fetchReleaseOrders = async () => {
+  const fetchReleaseOrders = async (
+    customParams = {},
+    currentFilters = filters
+  ) => {
     try {
       setLoading(true);
 
-      const response = await getReleaseOrdersPageable({
-        search,
-        page,
-        page_size: pageSize,
-      });
+    const filterParams =
+      buildWarehouseReleaseFilterParams(currentFilters);
 
+    const response = await getReleaseOrdersPageable({
+      search,
+      page,
+      page_size: pageSize,
+      ...filterParams,
+      ...customParams,
+    });
       const data = unwrapData(response);
       const results = Array.isArray(data?.results) ? data.results : [];
 
@@ -352,6 +386,55 @@ function WarehouseReleasePage() {
         );
     }
     };
+  
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+
+    const nextFilters = {
+      ...filters,
+      [name]: value,
+    };
+
+    setFilters(nextFilters);
+    setPage(1);
+
+    if (nextFilters.time_type === "custom") {
+      if (!nextFilters.start_date || !nextFilters.end_date) {
+        return;
+      }
+    }
+
+    fetchReleaseOrders(
+      {
+        page: 1,
+        ...buildWarehouseReleaseFilterParams(nextFilters),
+      },
+      nextFilters
+    );
+  };
+
+  const handleTimeTypeChange = (e) => {
+    const value = e.target.value;
+
+    const nextFilters = {
+      ...filters,
+      time_type: value,
+    };
+
+    setFilters(nextFilters);
+
+    if (value === "custom") {
+      return;
+    }
+
+    setPage(1);
+
+    fetchReleaseOrders({
+      page: 1,
+      ...buildWarehouseReleaseFilterParams(nextFilters),
+    });
+    nextFilters
+  };
 
   return (
     <div className="release-order-page">
@@ -389,6 +472,52 @@ function WarehouseReleasePage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <select
+              name="time_type"
+              value={filters.time_type}
+              onChange={handleTimeTypeChange}
+            >
+              <option value="this_month">Tháng này</option>
+              <option value="quarter_1">Quý 1</option>
+              <option value="quarter_2">Quý 2</option>
+              <option value="quarter_3">Quý 3</option>
+              <option value="quarter_4">Quý 4</option>
+              <option value="custom">Tùy chọn</option>
+          </select>
+          <select
+            name="warehouse_id"
+            value={filters.warehouse_id}
+            onChange={handleFilterChange}
+          >
+            <option value="">Tất cả kho</option>
+            {warehouses.map((warehouse) => {
+              const id = warehouse.id || warehouse.warehouse_id;
+              const name = warehouse.name || warehouse.warehouse_name || warehouse.code || id;
+
+              return (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              );
+            })}
+          </select>
+            {filters.time_type === "custom" && (
+              <>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={filters.start_date}
+                  onChange={handleFilterChange}
+                />
+
+                <input
+                  type="date"
+                  name="end_date"
+                  value={filters.end_date}
+                  onChange={handleFilterChange}
+                />
+              </>
+            )}
         </div>
 
         <div className="release-order-actions">

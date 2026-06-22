@@ -18,6 +18,11 @@ import {
   RiCheckboxCircleLine,
 } from "react-icons/ri";
 
+import {
+  getDefaultWarehouseReleaseFilters,
+  buildWarehouseReleaseFilterParams,
+} from "./utils/warehouseReleaseFilterUtils";
+
 function ReleaseOrderPage() {
   const { canDo } = useAuth();
   const navigate = useNavigate();
@@ -38,6 +43,7 @@ function ReleaseOrderPage() {
   const [detailLoading, setDetailLoading] = useState(false);
 
   const unwrapData = (response) => response?.data || response;
+  const [filters, setFilters] = useState(getDefaultWarehouseReleaseFilters());
 
   const selectedRow = releaseOrders.find((item) => item.id === selectedId);
 
@@ -118,16 +124,22 @@ function ReleaseOrderPage() {
     }
   };
 
-  const fetchReleaseOrders = async (customParams = {}) => {
-    try {
-      setLoading(true);
+    const fetchReleaseOrders = async (
+      customParams = {},
+      currentFilters = filters
+    ) => {
+      try {
+        setLoading(true);
 
-      const response = await getReleaseOrdersPageable({
-        search,
-        page,
-        page_size: pageSize,
-        ...customParams,
-      });
+        const filterParams = buildWarehouseReleaseFilterParams(currentFilters);
+
+        const response = await getReleaseOrdersPageable({
+          search,
+          page,
+          page_size: pageSize,
+          ...filterParams,
+          ...customParams,
+        });
 
       const data = unwrapData(response);
       const results = Array.isArray(data?.results) ? data.results : [];
@@ -156,7 +168,54 @@ function ReleaseOrderPage() {
     } finally {
       setLoading(false);
     }
+    };
+    const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+
+    const nextFilters = {
+      ...filters,
+      [name]: value,
+    };
+
+    setFilters(nextFilters);
+    setPage(1);
+
+    if (nextFilters.time_type === "custom") {
+      if (!nextFilters.start_date || !nextFilters.end_date) return;
+    }
+
+    fetchReleaseOrders(
+      {
+        page: 1,
+        ...buildWarehouseReleaseFilterParams(nextFilters),
+      },
+      nextFilters
+    );
   };
+
+const handleTimeTypeChange = (e) => {
+  const value = e.target.value;
+
+  const nextFilters = {
+    ...filters,
+    time_type: value,
+    start_date: value === "custom" ? filters.start_date : "",
+    end_date: value === "custom" ? filters.end_date : "",
+  };
+
+  setFilters(nextFilters);
+  setPage(1);
+
+  if (value === "custom") return;
+
+  fetchReleaseOrders(
+    {
+      page: 1,
+      ...buildWarehouseReleaseFilterParams(nextFilters),
+    },
+    nextFilters
+  );
+};
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -323,6 +382,39 @@ function ReleaseOrderPage() {
               setSelectedIds([]);
             }}
           />
+          <select
+            className="release-filter-select"
+            name="time_type"
+            value={filters.time_type}
+            onChange={handleTimeTypeChange}
+          >
+            <option value="this_month">Tháng này</option>
+            <option value="quarter_1">Quý 1</option>
+            <option value="quarter_2">Quý 2</option>
+            <option value="quarter_3">Quý 3</option>
+            <option value="quarter_4">Quý 4</option>
+            <option value="custom">Tùy chọn</option>
+          </select>
+
+          {filters.time_type === "custom" && (
+            <>
+              <input
+                className="release-filter-date"
+                type="date"
+                name="start_date"
+                value={filters.start_date}
+                onChange={handleFilterChange}
+              />
+
+              <input
+                className="release-filter-date"
+                type="date"
+                name="end_date"
+                value={filters.end_date}
+                onChange={handleFilterChange}
+              />
+            </>
+          )}
         </div>
 
         <div className="release-order-actions">
