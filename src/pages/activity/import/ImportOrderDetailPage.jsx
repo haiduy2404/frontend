@@ -10,7 +10,7 @@ import {
   updateWarehouseReceipt,
   getWarehouseReceiptByCode,
 } from "../../../services/warehouseReceiptService";
-
+import { calculateImportOrderTotals } from "../../../utils/importOrderTotals";
 import { lookupCompanyByTaxCode } from "../../../services/externalService";
 import GoodsFormModal from "../../../components/GoodsFormModal";
 import {
@@ -728,39 +728,15 @@ function ImportOrderDetailPage() {
         })
       );
     };
-      const totalAmount = items.reduce((sum, item) => {
-        return sum + parseNumber(item.amount);
-    }  , 0);
-
-    const roundMoney = (value) =>
-      Math.round((Number(value) || 0) + Number.EPSILON);
-
-    const vatSummary = items.reduce(
-      (acc, item) => {
-        const amount = parseNumber(item.amount);
-        const rate = String(item.vat || "0");
-
-        const vat = roundMoney(amount * (Number(rate) / 100));
-
-        acc[rate] = (acc[rate] || 0) + vat;
-
-        return acc;
-      },
-      {
-        0: 0,
-        5: 0,
-        8: 0,
-        10: 0,
-      }
-    );
-
-    const vatAmount =
-      vatSummary["0"] +
-      vatSummary["5"] +
-      vatSummary["8"] +
-      vatSummary["10"];
-
-    const grandTotal = roundMoney(totalAmount + vatAmount);
+    const {
+      totalAmount,
+      vatSummary,
+      grandTotal,
+    } = calculateImportOrderTotals(items, {
+      getQty:   (item) => parseNumber(item.actual_quantity),
+      getPrice: (item) => parseNumber(item.unit_price),
+      getVat:   (item) => String(item.vat || "0"),
+    });
 
     const convertDateToISO = (value) => {
       if (!value) return null;
@@ -957,7 +933,7 @@ const handleComplete = async () => {
           lines.length > 0
             ? lines.map((line, index) => {
                   const requestedQuantity = parseNumber(
-                    line.request_quantity || line.requested_quantity || line.original_quantity || 0
+                    line.request_quantity || 0
                   );
 
                   const originalQuantity = parseNumber(line.original_quantity || 0);

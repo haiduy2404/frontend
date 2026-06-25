@@ -9,6 +9,7 @@ import {
   updateWarehouseReceiptStatus,
   deleteWarehouseReceipt,
 } from "../../../services/warehouseReceiptService";
+import { calculateImportOrderTotals } from "../../../utils/importOrderTotals";
 
 import {
   RiAddLine,
@@ -189,35 +190,15 @@ const fetchImportOrders = async (customParams = {}) => {
       });
     };
 
-    const detailTotalAmount = detailRows.reduce((sum, item) => {
-      const quantity = parseMoney(item.original_quantity || item.quantity || 0);
-      const unitPrice = parseMoney(item.unit_price || 0);
-      return sum + quantity * unitPrice;
-    }, 0);
-
-    const roundMoney = (value) =>
-      Math.round((Number(value) || 0) + Number.EPSILON);
-
-    const detailVatSummary = detailRows.reduce(
-      (acc, item) => {
-        const quantity = parseMoney(item.original_quantity || 0);
-        const unitPrice = parseMoney(item.unit_price || 0);
-        const amount = quantity * unitPrice;
-        const rate = String(Number(item.vat || 0));
-
-        acc[rate] = (acc[rate] || 0) + roundMoney(amount * (Number(rate) / 100));
-        return acc;
-      },
-      { 0: 0, 5: 0, 8: 0, 10: 0 }
-    );
-
-    const detailVatAmount =
-      detailVatSummary["0"] +
-      detailVatSummary["5"] +
-      detailVatSummary["8"] +
-      detailVatSummary["10"];
-
-    const detailGrandTotal = roundMoney(detailTotalAmount + detailVatAmount);
+    const {
+      totalAmount: detailTotalAmount,
+      vatSummary: detailVatSummary,
+      grandTotal: detailGrandTotal,
+    } = calculateImportOrderTotals(detailRows, {
+      getQty:   (item) => parseMoney(item.original_quantity || item.quantity || 0),
+      getPrice: (item) => parseMoney(item.unit_price || 0),
+      getVat:   (item) => String(Number(item.vat || 0)),
+    });
 
     const handleCompleteReceipt = async (row) => {
     const confirmed = window.confirm(
