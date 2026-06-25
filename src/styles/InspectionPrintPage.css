@@ -45,7 +45,7 @@
   box-sizing: border-box;
   color: #000000;
   font-family: "Times New Roman", Times, serif;
-  font-size: 14pt;
+  font-size: 15px;
 }
 
 .inspection-print-paper,
@@ -62,28 +62,28 @@
 
 .inspection-print-left-header {
   width: 60mm;
-  font-size: 14pt;
+  font-size: 16px;
   line-height: 1.25;
 }
 
 .inspection-print-title-block {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    transform: translateX(-50%);
-    width: 75mm;
-    text-align: center;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 92mm; /* tăng lên */
+  text-align: center;
 }
 
 .inspection-print-title-block h1 {
   margin: 0;
-  font-size: 16pt;
+  font-size: 23px;
   line-height: 1.1;
   font-weight: 700;
 }
 
 .inspection-print-title-block div {
-  font-size: 11pt;
+  font-size: 16px;
   line-height: 1.2;
 }
 
@@ -101,7 +101,7 @@
   width: 41mm;
   min-height: 24mm;
   text-align: center;
-  font-size: 7pt;
+  font-size: 7px;
   line-height: 1.15;
   color: #000000;
   box-sizing: border-box;
@@ -109,27 +109,27 @@
 }
 
 .inspection-template-text strong {
-  font-size: 8pt;
+  font-size: 8px;
   font-weight: 700;
 }
 
 .inspection-template-number {
   margin-top: 1mm;
-  font-size: 14pt;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .inspection-print-info {
   margin-top: 2mm;
-  font-size: 14pt;
-  line-height: 1.22;
+  font-size: 16px;
+  line-height: 1.35;
 }
 
 .inspection-member-row {
   display: grid;
   grid-template-columns: 58mm 68mm 40mm 25mm;
   column-gap: 1.5mm;
-  line-height: 1.22;
+  line-height: 1.35;
 }
 
 .inspection-print-table {
@@ -137,7 +137,7 @@
   margin-top: 1mm;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 14pt;
+  font-size: 13px;
 }
 
 .inspection-print-table,
@@ -149,7 +149,7 @@
 .inspection-print-table th,
 .inspection-print-table td {
   border: 1px solid #000000;
-  padding: 0.6mm 0.7mm;
+  padding: 1mm 1.2mm;
   vertical-align: middle;
 }
 
@@ -174,12 +174,12 @@
 }
 
 .inspection-print-table tbody tr {
-  height: 10mm;
+  height: 6mm;
 }
 
 .inspection-print-table tbody td {
-  font-size: 12pt;
-  line-height: 1.2;
+  font-size: 13px;
+  line-height: 1.15;
 }
 
 .inspection-col-stt {
@@ -243,7 +243,7 @@
   display: flex;
   align-items: center;
   padding: 0 2mm;
-  font-size: 14pt;
+  font-size: 15px;
   font-weight: 700;
   box-sizing: border-box;
 }
@@ -261,14 +261,14 @@
 
 .inspection-signature-title-row strong {
   display: block;
-  font-size: 14pt;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .inspection-signature-title-row span {
   display: block;
   margin-top: 1mm;
-  font-size: 14pt;
+  font-size: 13px;
   font-style: italic;
 }
 
@@ -276,7 +276,7 @@
   display: grid;
   grid-template-columns: 1.3fr 0.7fr 1fr 1fr;
   text-align: center;
-  font-size: 14pt;
+  font-size: 13px;
   margin-top: 5mm;
 }
 

@@ -22,8 +22,8 @@ function InspectionPrintPage() {
   const [loading, setLoading] = useState(false);
 
   const DEFAULT_PRINT_ROWS = 10;
-  const FIRST_PAGE_MAX_ROWS = 12;
-  const NEXT_PAGE_MAX_ROWS = 22;
+  const FIRST_PAGE_MAX_ROWS = 25;
+  const NEXT_PAGE_MAX_ROWS = 32;
 
   const firstPageRows = useMemo(() => {
   if (detailRows.length <= FIRST_PAGE_MAX_ROWS) {

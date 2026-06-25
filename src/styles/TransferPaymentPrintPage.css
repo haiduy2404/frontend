@@ -105,6 +105,7 @@
 .transfer-row {
   display: grid;
   grid-template-columns: 52mm 1fr;
+  column-gap: 4mm; /* thêm dòng này */
   align-items: baseline;
   font-size: 13pt;
   line-height: 1.2;
@@ -119,6 +120,7 @@
 .transfer-row span {
   white-space: normal;
   overflow-wrap: break-word;
+  padding-left: 7mm;
 }
 
 .transfer-value-bold {

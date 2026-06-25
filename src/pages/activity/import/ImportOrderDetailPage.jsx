@@ -587,7 +587,7 @@ function ImportOrderDetailPage() {
           return item;
         }
 
-        const quantity = parseNumber(item.requested_quantity || 0);
+        const quantity = parseNumber(item.actual_quantity || 0);
 
         const unitOptions = Array.isArray(goods.units)
           ? goods.units.map((unitItem) => ({
@@ -646,7 +646,7 @@ function ImportOrderDetailPage() {
             (unitItem) => String(unitItem.unit_id) === String(unitId)
           );
 
-          const quantity = parseNumber(item.requested_quantity);
+          const quantity = parseNumber(item.actual_quantity);
           const unitPrice = parseNumber(selectedUnit?.last_unit_price || 0);
 
           return {
@@ -664,88 +664,70 @@ function ImportOrderDetailPage() {
     };
 
     const handleChangeItemField = (rowId, field, value) => {
-        if (field === "vat") {
-          setItems((prev) => {
-            const firstRowId = prev[0]?.id;
-            const oldVat = prev.find(
-              (x) => x.id === rowId
-            )?.vat;
+      if (field === "vat") {
+        setItems((prev) => {
+          const firstRowId = prev[0]?.id;
+          const oldVat = prev.find((x) => x.id === rowId)?.vat;
 
-            return prev.map((item) => {
-              if (item.id === rowId) {
-                return {
-                  ...item,
-                  vat: value,
-                };
-              }
+          return prev.map((item) => {
+            if (item.id === rowId) {
+              return {
+                ...item,
+                vat: value,
+              };
+            }
 
-              if (
-                rowId === firstRowId &&
-                item.vat === oldVat
-              ) {
-                return {
-                  ...item,
-                  vat: value,
-                };
-              }
+            if (rowId === firstRowId && item.vat === oldVat) {
+              return {
+                ...item,
+                vat: value,
+              };
+            }
 
-              return item;
-            });
+            return item;
           });
+        });
 
-          return;
-        }
+        return;
+      }
 
-        setItems((prev) =>
-          prev.map((item) => {
-            if (item.id !== rowId) {
-              return item;
-            }
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.id !== rowId) {
+            return item;
+          }
 
-            const nextItem = {
-              ...item,
-              [field]: value,
-            };
+          const nextItem = {
+            ...item,
+            [field]: value,
+          };
 
-            if (field === "marked_old") {
-              nextItem.actual_quantity = value
-                ? item.requested_quantity
-                : "0,00";
-            }
+          if (field === "marked_old") {
+            nextItem.actual_quantity = value ? item.requested_quantity : "0,00";
+          }
 
-            const quantity = parseNumber(
-              field === "requested_quantity"
-                ? value
-                : nextItem.requested_quantity
+          const quantity = parseNumber(nextItem.actual_quantity);
+
+          const unitPrice = parseNumber(
+            field === "unit_price" ? value : nextItem.unit_price
+          );
+
+          if (
+            field === "requested_quantity" ||
+            field === "actual_quantity" ||
+            field === "unit_price" ||
+            field === "marked_old"
+          ) {
+            nextItem.amount = formatViNumber(
+              Math.round(quantity * unitPrice),
+              0
             );
+          }
 
-            const unitPrice = parseNumber(
-              field === "unit_price"
-                ? value
-                : nextItem.unit_price
-            );
-
-            if (
-              field === "requested_quantity" ||
-              field === "unit_price"
-            ) {
-              nextItem.amount = formatViNumber(
-                Math.round(quantity * unitPrice),
-                0
-              );
-
-              if (
-                nextItem.marked_old &&
-                field === "requested_quantity"
-              ) {
-                nextItem.actual_quantity = value;
-              }
-            }
-
-            return nextItem;
-          })
-        );
-      };
+          return nextItem;
+        })
+      );
+    };
       const totalAmount = items.reduce((sum, item) => {
         return sum + parseNumber(item.amount);
     }  , 0);
