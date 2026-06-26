@@ -559,7 +559,7 @@ const fetchWarehouses = async (
                 <div className="form-group wide">
                   <label>Địa chỉ <span>*</span> </label>
                   <textarea
-                    name="addres s"
+                    name="address"
                     value={formData.address}
                     onChange={handleChange}
                   />
