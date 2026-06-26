@@ -252,6 +252,10 @@ const numberToVietnameseText = (value) => {
     const receiptDateText = formatReceiptDateText(receipt?.receipt_date);
     
     const warehouseName = receipt?.warehouse?.name || receipt?.warehouse_name || "";
+    const warehouseAddress =
+      receipt?.warehouse?.address ||
+      receipt?.warehouse_address ||
+      "";
     const companyName = toTitleCaseVi(
         receipt?.company?.name || receipt?.company_name || ""
     );
@@ -363,7 +367,7 @@ const numberToVietnameseText = (value) => {
             </span>
 
             <span>
-              Địa điểm: Chi Nhánh Toa Xe Đà Nẵng
+                Địa điểm: <strong>{warehouseAddress}</strong>
             </span>
           </div>
         </div>

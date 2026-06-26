@@ -223,6 +223,10 @@ const numberToVietnameseText = (value) => {
     const invoiceDate = formatViDate(receipt?.invoice_date);
     const receiptDateText = formatReceiptDateText(receipt?.receipt_date);
     const warehouseName = receipt?.warehouse?.name || receipt?.warehouse_name || "";
+    const warehouseAddress =
+        receipt?.warehouse?.address ||
+        receipt?.warehouse_address ||
+        "";
     const companyName = toTitleCaseVi(
         receipt?.company?.name || receipt?.company_name || ""
     );
@@ -302,7 +306,7 @@ const signerGiamDoc = getMetadataValue("GIÁM ĐỐC");
             </span>
 
             <span>
-              Địa điểm: Chi Nhánh Toa Xe Đà Nẵng
+                Địa điểm: <strong>{warehouseAddress}</strong>
             </span>
           </div>
         </div>
