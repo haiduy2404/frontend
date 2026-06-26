@@ -22,7 +22,7 @@ import {
 function WarehouseReleasePage() {
   const navigate = useNavigate();
   const { canDo } = useAuth();
-  const canUpdateRelease = canDo("update_warehouse_release");
+  const canUpdateRelease = canDo("update_warehouse_release1");
   const canInputActualQuantity = canDo("update_actual_released_quantity");
   const canUseReleaseActualPage = canUpdateRelease && canInputActualQuantity;
   const [releaseOrders, setReleaseOrders] = useState([]);
