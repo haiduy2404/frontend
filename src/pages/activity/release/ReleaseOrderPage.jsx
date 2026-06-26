@@ -419,7 +419,7 @@ const handleTimeTypeChange = (e) => {
 
         <div className="release-order-actions">
           {canDo("update_warehouse_release") &&
-            !canDo("update_actual_released_quantity") && (
+            canDo("update_actual_released_quantity") && (
             <button
               className="edit-btn"
               disabled={!selectedRow || selectedRow.status === "COMPLETED"}
