@@ -102,6 +102,33 @@ function ReleaseOrderDetailPage() {
     return `${day}/${month}/${year}`;
   };
 
+  const convertViDateToPickerDate = (value) => {
+    if (!value) return "";
+
+    const text = String(value).trim();
+    if (!text) return "";
+
+    if (text.includes("/")) {
+      const [day, month, year] = text.split("/");
+      if (!day || !month || !year) return "";
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+
+    return text.split("T")[0];
+  };
+
+  const openDatePicker = (event) => {
+    const picker = event.currentTarget.querySelector(".calendar-native-input");
+    if (!picker || picker.disabled) return;
+
+    if (typeof picker.showPicker === "function") {
+      picker.showPicker();
+      return;
+    }
+
+    picker.click();
+  };
+
   const formatISOToViDate = (value) => {
     if (!value) return "";
 
@@ -546,11 +573,14 @@ function ReleaseOrderDetailPage() {
         description: headerData.description || null,
 
         items: releasePayloadItems
-        .filter((item) => item.goods_id && !item.is_delete)
+        .filter((item) => item.goods_id)
         .map((item) => ({
+            item_id: item.release_inventory_id || null,
             goods_id: item.goods_id,
             goods_unit_id: item.unit_id || null,
+            goods_name_display: item.goods_name || null,
             requested_quantity: parseNumber(item.requested_quantity),
+            is_delete: Boolean(item.is_delete),
         })),
     };
     };
@@ -814,6 +844,7 @@ function ReleaseOrderDetailPage() {
 
               <div className="input-with-icon">
                 <input
+                  className="date-text-input"
                   name="release_date"
                   value={headerData.release_date}
                   onChange={handleHeaderChange}
@@ -827,11 +858,16 @@ function ReleaseOrderDetailPage() {
                   disabled={isPrintMode}
                 />
 
-                <button type="button" disabled={isPrintMode}>
+                <button
+                  type="button"
+                  disabled={isPrintMode}
+                  onClick={openDatePicker}
+                >
                   <RiCalendarLine />
                   <input
                     type="date"
                     className="calendar-native-input"
+                    value={convertViDateToPickerDate(headerData.release_date)}
                     disabled={isPrintMode}
                     onChange={(e) =>
                       setHeaderData((prev) => ({
@@ -1126,7 +1162,21 @@ function ReleaseOrderDetailPage() {
                       </div>
                     </td>
 
-                    <td>{item.goods_name}</td>
+                    <td>
+                      <input
+                        className="table-text-input"
+                        value={item.goods_name || ""}
+                        placeholder="Tên hàng"
+                        onChange={(e) =>
+                          handleChangeItemField(
+                            item.id,
+                            "goods_name",
+                            e.target.value
+                          )
+                        }
+                        disabled={isPrintMode || !item.goods_id}
+                      />
+                    </td>
 
                     <td>
                       <select

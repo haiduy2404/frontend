@@ -129,6 +129,33 @@ function ImportOrderDetailPage() {
     return `${day}/${month}/${year}`;
   };
 
+  const convertViDateToPickerDate = (value) => {
+    if (!value) return "";
+
+    const text = String(value).trim();
+    if (!text) return "";
+
+    if (text.includes("/")) {
+      const [day, month, year] = text.split("/");
+      if (!day || !month || !year) return "";
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+
+    return text.split("T")[0];
+  };
+
+  const openDatePicker = (event) => {
+    const picker = event.currentTarget.querySelector(".calendar-native-input");
+    if (!picker || picker.disabled) return;
+
+    if (typeof picker.showPicker === "function") {
+      picker.showPicker();
+      return;
+    }
+
+    picker.click();
+  };
+
       const handleLoadCompanyByTaxCode = async () => {
       const taxCode = headerData.tax_code.trim();
 
@@ -806,6 +833,7 @@ function ImportOrderDetailPage() {
         inventory_id: item.inventory_id || null,
         goods_id: item.goods_id,
         goods_unit_id: item.unit_id || null,
+        goods_name_display: item.goods_name || null,
         requested_quantity: parseNumber(item.requested_quantity),
         original_quantity: parseNumber(item.actual_quantity || item.requested_quantity),
         unit_price: parseNumber(item.unit_price),
@@ -850,11 +878,11 @@ const handleComplete = async () => {
 
     const payload = buildReceiptPayload("RECEIVED");
 
-    console.log("SUBMIT BANK:", {
-      bank_account_id: payload.bank_account_id,
-      bank_account_name: payload.bank_account_name,
-      bank_account_number: payload.bank_account_number,
-}   );
+//     console.log("SUBMIT BANK:", {
+//       bank_account_id: payload.bank_account_id,
+//       bank_account_name: payload.bank_account_name,
+//       bank_account_number: payload.bank_account_number,
+// }   );
 
     if (id && id !== "new" && receiptId) {
       await updateWarehouseReceipt(receiptId, payload);
@@ -1388,6 +1416,7 @@ const handleOpenTransferPrint = () => {
             </label>
               <div className="input-with-icon">
                 <input
+                  className="date-text-input"
                   name="inward_date"
                   value={headerData.inward_date}
                   onChange={handleHeaderChange}
@@ -1401,11 +1430,16 @@ const handleOpenTransferPrint = () => {
                   disabled={isLockedWhenReceived}
                 />
 
-                <button type="button" disabled={isLockedWhenReceived}>
+                <button
+                  type="button"
+                  disabled={isLockedWhenReceived}
+                  onClick={openDatePicker}
+                >
                   <RiCalendarLine />
                   <input
                     type="date"
                     className="calendar-native-input"
+                    value={convertViDateToPickerDate(headerData.inward_date)}
                     disabled={isLockedWhenReceived}
                     onChange={(e) =>
                       setHeaderData((prev) => ({
@@ -1476,6 +1510,7 @@ const handleOpenTransferPrint = () => {
             <label>Ngày, tháng, năm hóa đơn</label>
               <div className="input-with-icon">
                 <input
+                  className="date-text-input"
                   name="invoice_date"
                   value={headerData.invoice_date}
                   onChange={handleHeaderChange}
@@ -1489,11 +1524,16 @@ const handleOpenTransferPrint = () => {
                   disabled={isLockedOnlyPrint}
                 />
 
-                <button type="button" disabled={isLockedOnlyPrint}>
+                <button
+                  type="button"
+                  disabled={isLockedOnlyPrint}
+                  onClick={openDatePicker}
+                >
                   <RiCalendarLine />
                   <input
                     type="date"
                     className="calendar-native-input"
+                    value={convertViDateToPickerDate(headerData.invoice_date)}
                     disabled={isLockedOnlyPrint}
                     onChange={(e) =>
                       setHeaderData((prev) => ({
@@ -1695,7 +1735,17 @@ const handleOpenTransferPrint = () => {
                         )}
                     </div>
                     </td>
-                    <td>{item.goods_name}</td>
+                    <td>
+                      <input
+                        className="table-text-input"
+                        value={item.goods_name || ""}
+                        placeholder="Tên hàng"
+                        onChange={(e) =>
+                          handleChangeItemField(item.id, "goods_name", e.target.value)
+                        }
+                        disabled={isPrintMode || !item.goods_id}
+                      />
+                    </td>
                     <td>
                       <select
                         className="table-unit-select"
