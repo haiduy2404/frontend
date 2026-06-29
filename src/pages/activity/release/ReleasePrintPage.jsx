@@ -100,6 +100,9 @@ function ReleasePrintPage() {
         requested_quantity: requestedQuantity,
         actual_quantity: actualQuantity,
         unit_price: unitPrice,
+        quantity_in_default_unit: line.quantity_in_default_unit,
+        request_quantity_in_default_unit: line.request_quantity_in_default_unit,
+        default_goods_unit_name: line.default_goods_unit_name,
         amount,
       };
     });
@@ -226,29 +229,24 @@ function ReleasePrintPage() {
                     {line?.goods_code || ""}
                   </td>
                   <td className="release-print-center-cell">
-                    {line?.unit_name || ""}
+                    {line?.default_goods_unit_name || ""}
                   </td>
                   <td className="release-print-number-cell">
-                    {line ? formatViNumber(line.requested_quantity, 2) : ""}
+                    {line ? formatViNumber(line.request_quantity_in_default_unit, 2) : ""}
                   </td>
                   <td className="release-print-number-cell">
-                    {line ? formatViNumber(line.actual_quantity, 2) : ""}
+                    {line ? formatViNumber(line.quantity_in_default_unit, 2) : ""}
                   </td>
                   <td className="release-print-money-cell">
-                    {line ? formatViNumber(line.unit_price, 0) : ""}
+                    {/* {line ? formatViNumber(line.unit_price, 0) : ""} */}
+                    {""}
                   </td>
                   <td className="release-print-money-cell">
-                    {line ? formatViNumber(line.amount, 0) : ""}
+                    {/* {line ? formatViNumber(line.amount, 0) : ""} */}
+                    {""}
                   </td>
                 </tr>
               ))}
-
-              <tr className="release-print-total-row">
-                <td colSpan={7}>Tổng số danh mục:</td>
-                <td className="release-print-money-cell">
-                  {formatViNumber(totalAmount, 0)}
-                </td>
-              </tr>
             </tbody>
           </table>
 

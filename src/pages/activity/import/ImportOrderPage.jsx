@@ -201,17 +201,12 @@ const fetchImportOrders = async (customParams = {}) => {
     });
 
     const handleCompleteReceipt = async (row) => {
-    const confirmed = window.confirm(
+      const confirmed = window.confirm(
         `Bạn có chắc muốn hoàn thành phiếu ${row.code || row.invoice_code || ""} không?`
       );
-
       if (!confirmed) return;
-
       try {
-        await updateWarehouseReceiptStatus(row.id, {
-            status: "COMPLETED",
-        });
-
+        await updateWarehouseReceiptStatus(row.id, { status: "COMPLETED" });
         setOpenActionId(null);
         await fetchImportOrders();
         alert("Hoàn thành phiếu nhập thành công");
@@ -221,6 +216,43 @@ const fetchImportOrders = async (customParams = {}) => {
           error.response?.data?.message ||
             error.response?.data?.detail ||
             "Hoàn thành phiếu nhập thất bại"
+        );
+      }
+    };
+
+    const handleCompleteSelectedReceipts = async () => {
+      const completable = filteredImportOrders.filter(
+        (r) => selectedIds.includes(r.id) && r.status !== "COMPLETED"
+      );
+      const skipped = selectedIds.length - completable.length;
+
+      if (completable.length === 0) {
+        alert("Không có phiếu nào có thể hoàn thành (tất cả đã hoàn thành).");
+        return;
+      }
+
+      const msg =
+        skipped > 0
+          ? `Hoàn thành ${completable.length} phiếu (bỏ qua ${skipped} phiếu đã hoàn thành)?`
+          : `Bạn có chắc muốn hoàn thành ${completable.length} phiếu nhập đã chọn không?`;
+      if (!window.confirm(msg)) return;
+
+      const results = await Promise.allSettled(
+        completable.map((r) =>
+          updateWarehouseReceiptStatus(r.id, { status: "COMPLETED" })
+        )
+      );
+      const failed = results.filter((r) => r.status === "rejected");
+
+      setSelectedIds([]);
+      await fetchImportOrders();
+
+      if (failed.length === 0) {
+        alert(`Hoàn thành ${completable.length} phiếu nhập thành công`);
+      } else {
+        alert(
+          `Hoàn thành ${completable.length - failed.length}/${completable.length} thành công. ` +
+          `${failed.length} phiếu thất bại.`
         );
       }
     };
@@ -371,6 +403,17 @@ const fetchImportOrders = async (customParams = {}) => {
               setSelectedIds([]);
             }}
           />
+          <select
+            className="warehouse-import-time-select"
+            name="status"
+            value={filters.status}
+            onChange={handleFilterChange}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="WAITING_DELIVERY">Chờ nhận hàng</option>
+            <option value="RECEIVED">Đã nhận hàng</option>
+            <option value="COMPLETED">Đã hoàn thành</option>
+          </select>
             <select
               className="warehouse-import-time-select"
               name="time_type"
@@ -410,25 +453,23 @@ const fetchImportOrders = async (customParams = {}) => {
           {canDo("update_warehouse_receipt") && (
             <button
               className="edit-btn"
-              disabled={!selectedRow || selectedRow.status === "COMPLETED"}
+              disabled={selectedIds.length > 1 || !selectedRow || selectedRow.status === "COMPLETED"}
+              title={selectedIds.length > 1 ? "Chỉ chỉnh sửa được 1 phiếu tại một thời điểm" : ""}
               onClick={() => {
                 if (!selectedRow) {
                   alert("Vui lòng chọn phiếu cần chỉnh sửa");
                   return;
                 }
-
                 if (selectedRow.status === "COMPLETED") {
                   alert("Phiếu đã hoàn thành, không được chỉnh sửa.");
                   return;
                 }
-
                 if (selectedRow.status === "RECEIVED") {
                   navigate(
                     `/dashboard/activity/import/order-detail/${selectedRow.code || selectedRow.id}?mode=edit-items`
                   );
                   return;
                 }
-
                 navigate(
                   `/dashboard/activity/import/order-detail/${selectedRow.code || selectedRow.id}`
                 );
@@ -442,18 +483,25 @@ const fetchImportOrders = async (customParams = {}) => {
           {canDo("complete_warehouse_receipt") && (
             <button
               className="complete-toolbar-btn"
-              disabled={!selectedRow}
+              disabled={selectedIds.length > 1 ? false : !selectedRow}
               onClick={() => {
+                if (selectedIds.length > 1) {
+                  handleCompleteSelectedReceipts();
+                  return;
+                }
                 if (!selectedRow) {
                   alert("Vui lòng chọn phiếu cần hoàn thành");
                   return;
                 }
-
                 handleCompleteReceipt(selectedRow);
               }}
             >
               <RiCheckboxCircleLine />
-              <span>Hoàn thành</span>
+              <span>
+                {selectedIds.length > 1
+                  ? `Hoàn thành (${selectedIds.length})`
+                  : "Hoàn thành"}
+              </span>
             </button>
           )}
 
@@ -462,21 +510,19 @@ const fetchImportOrders = async (customParams = {}) => {
               className="delete-toolbar-btn"
               disabled={!selectedRow && selectedIds.length === 0}
               onClick={() => {
-                if (selectedIds.length > 0) {
+                if (selectedIds.length > 1) {
                   handleDeleteSelectedReceipts();
                   return;
                 }
-
                 if (!selectedRow) {
                   alert("Vui lòng chọn phiếu cần xóa");
                   return;
                 }
-
                 handleDeleteReceipt(selectedRow);
               }}
             >
               <RiDeleteBin6Line />
-              <span>{selectedIds.length > 0 ? `Xóa (${selectedIds.length})` : "Xóa"}</span>
+              <span>{selectedIds.length > 1 ? `Xóa (${selectedIds.length})` : "Xóa"}</span>
             </button>
           )}
 

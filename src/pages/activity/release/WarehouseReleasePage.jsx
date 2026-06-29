@@ -7,6 +7,7 @@ import {
   getReleaseOrderByCode,
   updateReleaseOrder,
   completeReleaseOrder,
+  deleteReleaseOrder,
 } from "../../../services/releaseOrderService";
 
 import {
@@ -17,6 +18,7 @@ import { getWarehouses  } from "../../../services/warehouseService";
 import {
   RiCheckboxCircleLine,
   RiSave3Line,
+  RiDeleteBin6Line,
 } from "react-icons/ri";
 
 function WarehouseReleasePage() {
@@ -27,6 +29,7 @@ function WarehouseReleasePage() {
   const canUseReleaseActualPage = canUpdateRelease || canInputActualQuantity;
   const [releaseOrders, setReleaseOrders] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailRows, setDetailRows] = useState([]);
   const [search, setSearch] = useState("");
@@ -40,6 +43,42 @@ function WarehouseReleasePage() {
       getDefaultWarehouseReleaseFilters()
   );
   const [warehouses, setWarehouses] = useState([]);
+
+  const canDelete = canDo("delete_warehouse_release");
+
+  const isAllChecked =
+    releaseOrders.length > 0 &&
+    releaseOrders.every((row) => selectedIds.includes(row.id));
+
+  const handleToggleAll = (e) => {
+    setSelectedIds(e.target.checked ? releaseOrders.map((r) => r.id) : []);
+  };
+
+  const handleToggleOne = (e, rowId) => {
+    e.stopPropagation();
+    setSelectedIds((prev) =>
+      prev.includes(rowId) ? prev.filter((id) => id !== rowId) : [...prev, rowId]
+    );
+  };
+
+  const handleDeleteSelectedReleases = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} lệnh xuất kho đã chọn không?`)) return;
+    const results = await Promise.allSettled(
+      selectedIds.map((id) => deleteReleaseOrder(id))
+    );
+    const failed = results.filter((r) => r.status === "rejected");
+    setSelectedIds([]);
+    setSelectedId(null);
+    setSelectedOrder(null);
+    setDetailRows([]);
+    await fetchReleaseOrders();
+    if (failed.length === 0) {
+      alert(`Xóa ${selectedIds.length} lệnh xuất kho thành công`);
+    } else {
+      alert(`Xóa ${selectedIds.length - failed.length}/${selectedIds.length} thành công. ${failed.length} lệnh thất bại (có thể đang ở trạng thái không cho phép xóa).`);
+    }
+  };
   const unwrapData = (response) => response?.data || response;
   const handleCompleteRelease = async () => {
   if (!selectedOrder) {
@@ -190,6 +229,7 @@ function WarehouseReleasePage() {
       const results = Array.isArray(data?.results) ? data.results : [];
 
       setReleaseOrders(results);
+      setSelectedIds([]);
       setTotal(data?.total || data?.count || results.length);
 
       if (results.length > 0 && !selectedId) {
@@ -473,6 +513,17 @@ function WarehouseReleasePage() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <select
+            name="status"
+            value={filters.status}
+            onChange={handleFilterChange}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="PENDING">Nháp</option>
+            <option value="WAIT_TO_APPROVE">Chờ duyệt</option>
+            <option value="COMPLETED">Hoàn thành</option>
+            <option value="CANCELLED">Đã hủy</option>
+          </select>
+          <select
               name="time_type"
               value={filters.time_type}
               onChange={handleTimeTypeChange}
@@ -525,21 +576,56 @@ function WarehouseReleasePage() {
             <>
               <button
                 className="release-edit-btn"
-                disabled={!selectedOrder}
+                disabled={selectedIds.length > 1 || !selectedOrder}
+                title={selectedIds.length > 1 ? "Chỉ lưu được 1 lệnh tại một thời điểm" : ""}
                 onClick={handleSaveActualQuantity}
               >
                 <RiSave3Line />
                 <span>Lưu SL thực xuất</span>
               </button>
-                <button
-                    className="release-complete-btn"
-                    disabled={!selectedOrder}
-                    onClick={handleCompleteRelease}
-                    >
-                    <RiCheckboxCircleLine />
-                    <span>Hoàn thành</span>
-                </button>
+              <button
+                className="release-complete-btn"
+                disabled={selectedIds.length > 1 || !selectedOrder}
+                title={selectedIds.length > 1 ? "Chỉ hoàn thành được 1 lệnh tại một thời điểm" : ""}
+                onClick={handleCompleteRelease}
+              >
+                <RiCheckboxCircleLine />
+                <span>Hoàn thành</span>
+              </button>
             </>
+          )}
+          {canDelete && (
+            <button
+              className="release-delete-btn"
+              disabled={!selectedOrder && selectedIds.length === 0}
+              onClick={() => {
+                if (selectedIds.length > 1) {
+                  handleDeleteSelectedReleases();
+                  return;
+                }
+                if (!selectedOrder) {
+                  alert("Vui lòng chọn lệnh cần xóa");
+                  return;
+                }
+                if (!window.confirm(`Xóa lệnh ${selectedOrder.code || ""}?`)) return;
+                deleteReleaseOrder(selectedOrder.id)
+                  .then(() => {
+                    setSelectedId(null);
+                    setSelectedOrder(null);
+                    setDetailRows([]);
+                    fetchReleaseOrders();
+                    alert("Xóa lệnh xuất kho thành công");
+                  })
+                  .catch((err) => {
+                    alert(err.response?.data?.message || err.response?.data?.detail || "Xóa thất bại");
+                  });
+              }}
+            >
+              <RiDeleteBin6Line />
+              <span>
+                {selectedIds.length > 1 ? `Xóa (${selectedIds.length})` : "Xóa"}
+              </span>
+            </button>
           )}
         </div>
       </div>
@@ -547,8 +633,11 @@ function WarehouseReleasePage() {
       <div className="release-order-main">
         <div className="release-order-table-wrapper">
           <table className="release-order-table">
-            <thead>
+                <thead>
               <tr>
+                <th className="release-order-checkbox-col">
+                  <input type="checkbox" checked={isAllChecked} onChange={handleToggleAll} />
+                </th>
                 <th>Số lệnh XK</th>
                 <th>Tình trạng</th>
                 <th>Ngày xuất kho</th>
@@ -565,13 +654,13 @@ function WarehouseReleasePage() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={10}>Đang tải danh sách lệnh xuất kho...</td>
+                  <td colSpan={11}>Đang tải danh sách lệnh xuất kho...</td>
                 </tr>
               )}
 
               {!loading && releaseOrders.length === 0 && (
                 <tr>
-                  <td colSpan={10}>Không có dữ liệu lệnh xuất kho</td>
+                  <td colSpan={11}>Không có dữ liệu lệnh xuất kho</td>
                 </tr>
               )}
 
@@ -585,6 +674,14 @@ function WarehouseReleasePage() {
                       fetchReleaseOrderDetail(row.code || row.release_code);
                     }}
                   >
+                    <td className="release-order-checkbox-col">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(row.id)}
+                        onChange={(e) => handleToggleOne(e, row.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
                     <td
                         className="release-order-link-text"
                         onClick={(e) => {

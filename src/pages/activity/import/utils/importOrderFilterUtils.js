@@ -2,6 +2,7 @@ export const getDefaultImportOrderFilters = () => ({
   time_type: "this_month",
   start_date: "",
   end_date: "",
+  status: "",
 });
 
 const pad2 = (value) => String(value).padStart(2, "0");
@@ -65,18 +66,20 @@ export const getQuarterDateRange = (
 };
 
 export const buildImportOrderFilterParams = (filters = {}) => {
-  if (filters.time_type === "this_month") {
-    return getMonthDateRange();
-  }
+  const dateParams =
+    filters.time_type === "this_month"
+      ? getMonthDateRange()
+      : filters.time_type === "custom"
+      ? {
+          ...(filters.start_date ? { start_date: filters.start_date } : {}),
+          ...(filters.end_date ? { end_date: filters.end_date } : {}),
+        }
+      : getQuarterDateRange(filters.time_type);
 
-  if (filters.time_type === "custom") {
-    return {
-      ...(filters.start_date ? { start_date: filters.start_date } : {}),
-      ...(filters.end_date ? { end_date: filters.end_date } : {}),
-    };
-  }
-
-  return getQuarterDateRange(filters.time_type);
+  return {
+    ...dateParams,
+    ...(filters.status ? { status: filters.status } : {}),
+  };
 };
 
 export const validateImportOrderDateFilter = (filters = {}) => {

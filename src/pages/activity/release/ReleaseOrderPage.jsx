@@ -9,6 +9,7 @@ import {
   getReleaseOrderByCode,
   deleteReleaseOrder,
   submitReleaseOrder,
+  completeReleaseOrder,
 } from "../../../services/releaseOrderService";
 
 import {
@@ -235,25 +236,87 @@ const handleTimeTypeChange = (e) => {
         row.code || row.release_code || ""
         } không?`
     );
-
     if (!confirmed) return;
-
     try {
         await submitReleaseOrder(row.id);
-
         await fetchReleaseOrders();
-
         alert("Trình duyệt lệnh xuất kho thành công");
     } catch (error) {
-        console.error(
-        "SUBMIT RELEASE ORDER ERROR:",
-        error.response?.data || error
-        );
-
+        console.error("SUBMIT RELEASE ORDER ERROR:", error.response?.data || error);
         alert(
-        error.response?.data?.message ||
+            error.response?.data?.message ||
             error.response?.data?.detail ||
             "Trình duyệt lệnh xuất kho thất bại"
+        );
+    }
+    };
+
+    const handleCompleteSelectedReleases = async () => {
+    const submittable = releaseOrders.filter(
+        (r) => selectedIds.includes(r.id) && r.status === "PENDING"
+    );
+    const skipped = selectedIds.length - submittable.length;
+
+    if (submittable.length === 0) {
+        alert("Không có lệnh nào ở trạng thái Nháp để trình duyệt.");
+        return;
+    }
+
+    const msg =
+        skipped > 0
+        ? `Trình duyệt ${submittable.length} lệnh (bỏ qua ${skipped} lệnh không ở trạng thái Nháp)?`
+        : `Bạn có chắc muốn trình duyệt ${submittable.length} lệnh đã chọn không?`;
+    if (!window.confirm(msg)) return;
+
+    const results = await Promise.allSettled(
+        submittable.map((r) => submitReleaseOrder(r.id))
+    );
+    const failed = results.filter((r) => r.status === "rejected");
+
+    setSelectedIds([]);
+    await fetchReleaseOrders();
+
+    if (failed.length === 0) {
+        alert(`Trình duyệt ${submittable.length} lệnh xuất kho thành công`);
+    } else {
+        alert(
+        `Trình duyệt ${submittable.length - failed.length}/${submittable.length} thành công. ` +
+        `${failed.length} lệnh thất bại.`
+        );
+    }
+    };
+
+    const handleCompleteSelectedAsWarehouseRelease = async () => {
+    const completable = releaseOrders.filter(
+        (r) => selectedIds.includes(r.id) && r.status === "WAIT_TO_APPROVE"
+    );
+    const skipped = selectedIds.length - completable.length;
+
+    if (completable.length === 0) {
+        alert("Không có lệnh nào ở trạng thái Chờ duyệt để hoàn thành xuất kho.");
+        return;
+    }
+
+    const msg =
+        skipped > 0
+        ? `Hoàn thành xuất kho ${completable.length} lệnh (bỏ qua ${skipped} lệnh không ở trạng thái Chờ duyệt)?`
+        : `Bạn có chắc muốn hoàn thành xuất kho ${completable.length} lệnh đã chọn không?`;
+    if (!window.confirm(msg)) return;
+
+    const results = await Promise.allSettled(
+        completable.map((r) => completeReleaseOrder(r.id))
+    );
+    const failed = results.filter((r) => r.status === "rejected");
+
+    setSelectedIds([]);
+    await fetchReleaseOrders();
+
+    if (failed.length === 0) {
+        alert(`Hoàn thành xuất kho ${completable.length} lệnh thành công`);
+    } else {
+        alert(
+        `Hoàn thành ${completable.length - failed.length}/${completable.length} thành công. ` +
+        `${failed.length} lệnh thất bại.`
         );
     }
     };
@@ -384,6 +447,18 @@ const handleTimeTypeChange = (e) => {
           />
           <select
             className="release-filter-select"
+            name="status"
+            value={filters.status}
+            onChange={handleFilterChange}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="PENDING">Nháp</option>
+            <option value="WAIT_TO_APPROVE">Chờ duyệt</option>
+            <option value="COMPLETED">Hoàn thành</option>
+            <option value="CANCELLED">Đã hủy</option>
+          </select>
+          <select
+            className="release-filter-select"
             name="time_type"
             value={filters.time_type}
             onChange={handleTimeTypeChange}
@@ -422,22 +497,21 @@ const handleTimeTypeChange = (e) => {
             canDo("update_actual_released_quantity") && (
             <button
               className="edit-btn"
-              disabled={!selectedRow || selectedRow.status === "COMPLETED"}
+              disabled={selectedIds.length > 1 || !selectedRow || selectedRow.status === "COMPLETED" || selectedRow.status === "CANCELLED"}
+              title={selectedIds.length > 1 ? "Chỉ chỉnh sửa được 1 phiếu tại một thời điểm" : ""}
               onClick={() => {
                 if (!selectedRow) {
                   alert("Vui lòng chọn phiếu cần chỉnh sửa");
                   return;
                 }
-
                 if (selectedRow.status === "COMPLETED") {
                   alert("Phiếu đã hoàn thành, không được chỉnh sửa.");
                   return;
                 }
-
                 navigate(
-                `/dashboard/activity/export/order-detail/${
+                  `/dashboard/activity/export/order-detail/${
                     selectedRow.code || selectedRow.release_code || selectedRow.id
-                }`
+                  }`
                 );
               }}
             >
@@ -447,21 +521,68 @@ const handleTimeTypeChange = (e) => {
           )}
 
           {canDo("complete_warehouse_release") && (
-            <button
-              className="complete-toolbar-btn"
-              disabled={!selectedRow}
-              onClick={() => {
-                if (!selectedRow) {
-                  alert("Vui lòng chọn phiếu cần hoàn thành");
-                  return;
-                }
-
-                handleCompleteRelease(selectedRow);
-              }}
-            >
-              <RiCheckboxCircleLine />
-              <span>Hoàn thành</span>
-            </button>
+            <>
+              <button
+                className="complete-toolbar-btn"
+                disabled={selectedIds.length > 1 ? false : !selectedRow}
+                onClick={() => {
+                  if (selectedIds.length > 1) {
+                    handleCompleteSelectedReleases();
+                    return;
+                  }
+                  if (!selectedRow) {
+                    alert("Vui lòng chọn phiếu cần trình duyệt");
+                    return;
+                  }
+                  handleCompleteRelease(selectedRow);
+                }}
+              >
+                <RiCheckboxCircleLine />
+                <span>
+                  {selectedIds.length > 1
+                    ? `Trình duyệt (${selectedIds.length})`
+                    : "Trình duyệt"}
+                </span>
+              </button>
+              <button
+                className="complete-toolbar-btn"
+                style={{ color: "#0d9488" }}
+                disabled={selectedIds.length > 1 ? false : !selectedRow}
+                onClick={() => {
+                  if (selectedIds.length > 1) {
+                    handleCompleteSelectedAsWarehouseRelease();
+                    return;
+                  }
+                  if (!selectedRow) {
+                    alert("Vui lòng chọn phiếu cần hoàn thành xuất kho");
+                    return;
+                  }
+                  const confirmed = window.confirm(
+                    `Hoàn thành xuất kho lệnh ${selectedRow.code || selectedRow.release_code || ""}?`
+                  );
+                  if (!confirmed) return;
+                  completeReleaseOrder(selectedRow.id)
+                    .then(() => {
+                      fetchReleaseOrders();
+                      alert("Hoàn thành xuất kho thành công");
+                    })
+                    .catch((error) => {
+                      alert(
+                        error.response?.data?.message ||
+                        error.response?.data?.detail ||
+                        "Hoàn thành xuất kho thất bại"
+                      );
+                    });
+                }}
+              >
+                <RiCheckboxCircleLine />
+                <span>
+                  {selectedIds.length > 1
+                    ? `Hoàn thành XK (${selectedIds.length})`
+                    : "Hoàn thành XK"}
+                </span>
+              </button>
+            </>
           )}
 
           {canDo("delete_warehouse_release") && (
@@ -469,22 +590,24 @@ const handleTimeTypeChange = (e) => {
               className="delete-toolbar-btn"
               disabled={!selectedRow && selectedIds.length === 0}
               onClick={() => {
-                if (selectedIds.length > 0) {
+                if (selectedIds.length > 1) {
                   handleDeleteSelectedReleases();
                   return;
                 }
-
+                if (selectedIds.length === 1 && !selectedRow) {
+                  handleDeleteSelectedReleases();
+                  return;
+                }
                 if (!selectedRow) {
                   alert("Vui lòng chọn phiếu cần xóa");
                   return;
                 }
-
                 handleDeleteRelease(selectedRow);
               }}
             >
               <RiDeleteBin6Line />
               <span>
-                {selectedIds.length > 0 ? `Xóa (${selectedIds.length})` : "Xóa"}
+                {selectedIds.length > 1 ? `Xóa (${selectedIds.length})` : "Xóa"}
               </span>
             </button>
           )}
