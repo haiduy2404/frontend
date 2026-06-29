@@ -62,7 +62,7 @@ function WarehouseReleasePage() {
         goods_id: item.goods_id,
         goods_unit_id: item.goods_unit_id || null,
         requested_quantity: parseNumber(item.requested_quantity),
-        quantity_in_default_unit: parseNumber(item.quantity_in_default_unit),
+        actual_quantity: parseNumber(item.actual_quantity),
         is_delete: false,
       })),
     };
@@ -243,7 +243,7 @@ function WarehouseReleasePage() {
               );
 
               const actualQuantity = parseNumber(
-                item.quantity_in_default_unit ||
+                item.actual_quantity ||
                   item.release_quantity ||
                   item.exported_quantity ||
                   0
@@ -302,7 +302,7 @@ function WarehouseReleasePage() {
                     "",
                     conversion_ratio: conversionRatio,
                     requested_quantity: formatViNumber(requestedQuantity, 2),
-                    quantity_in_default_unit: formatViNumber(actualQuantity, 2),
+                    actual_quantity: formatViNumber(actualQuantity, 2),
                 };
             })
           : []
@@ -335,7 +335,7 @@ function WarehouseReleasePage() {
             item.id === rowId
             ? {
                 ...item,
-                quantity_in_default_unit: value,
+                actual_quantity: value,
                 }
             : item
         )
@@ -367,7 +367,7 @@ function WarehouseReleasePage() {
             goods_id: item.goods_id,
             goods_unit_id: item.goods_unit_id || null,
             requested_quantity: parseNumber(item.requested_quantity),
-            quantity_in_default_unit: parseNumber(item.quantity_in_default_unit),
+            actual_quantity: parseNumber(item.actual_quantity),
             is_delete: false,
         })),
         };
@@ -705,7 +705,7 @@ function WarehouseReleasePage() {
                         <td className="release-number-col">
                           <input
                             className="table-number-input"
-                            value={item.quantity_in_default_unit}
+                            value={item.actual_quantity}
                             disabled={!canUseReleaseActualPage}
                             onChange={(e) =>
                               handleChangeActualQuantity(item.id, e.target.value)
@@ -738,7 +738,7 @@ function WarehouseReleasePage() {
                         {formatViNumber(
                           detailRows.reduce(
                             (sum, item) =>
-                              sum + parseNumber(item.quantity_in_default_unit),
+                              sum + parseNumber(item.actual_quantity),
                             0
                           ),
                           2
