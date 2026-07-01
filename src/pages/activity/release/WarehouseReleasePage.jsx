@@ -107,6 +107,10 @@ function WarehouseReleasePage() {
     }
   };
 
+  const canDeleteReleaseByStatus = (status) => {
+    return status === "PENDING" || status === "WAIT_TO_APPROVE";
+  };
+
   const getWarehouseDisplayName = (warehouse) => {
     return (
       warehouse?.name ||
@@ -468,12 +472,30 @@ function WarehouseReleasePage() {
     }
 
     if (selectedIds.length > 0) {
+      const selectedRows = releaseOrders.filter((row) =>
+        selectedIds.includes(row.id)
+      );
+
+      const invalidRows = selectedRows.filter(
+        (row) => !canDeleteReleaseByStatus(row.status)
+      );
+
+      if (invalidRows.length > 0) {
+        alert("Chỉ được xóa lệnh xuất kho ở trạng thái Nháp hoặc Chờ duyệt.");
+        return;
+      }
+
       deleteOrdersByIds(selectedIds);
       return;
     }
 
     if (!selectedOrder) {
       alert("Vui lòng chọn lệnh cần xóa");
+      return;
+    }
+
+    if (!canDeleteReleaseByStatus(selectedOrder.status)) {
+      alert("Phiếu đã hoàn thành, không được xóa.");
       return;
     }
 
@@ -603,7 +625,13 @@ function WarehouseReleasePage() {
           {canDelete && (
             <button
               className="release-delete-btn"
-              disabled={selectedIds.length === 0 && !selectedOrder}
+              disabled={
+                selectedIds.length > 0
+                  ? releaseOrders
+                      .filter((row) => selectedIds.includes(row.id))
+                      .some((row) => !canDeleteReleaseByStatus(row.status))
+                  : !selectedOrder || !canDeleteReleaseByStatus(selectedOrder.status)
+              }
               onClick={handleDeleteRelease}
             >
               <RiDeleteBin6Line />
