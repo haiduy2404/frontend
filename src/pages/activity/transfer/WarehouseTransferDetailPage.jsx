@@ -4,6 +4,7 @@ import "../../../styles/WarehouseTransferDetailPage.css";
 import {
   RiAddLine,
   RiDeleteBin6Line,
+  RiPrinterLine,
 } from "react-icons/ri";
 
 import {
@@ -20,7 +21,8 @@ export default function WarehouseTransferDetailPage() {
   const { code } = useParams();
 
   const [searchParams] = useSearchParams();
-  const isViewMode = searchParams.get("mode") === "view";
+  const isPrintMode = searchParams.get("mode") === "print";
+  const isViewMode = searchParams.get("mode") === "view" || isPrintMode;
 
   const isEditMode = code && code !== "new";
 
@@ -512,6 +514,17 @@ export default function WarehouseTransferDetailPage() {
     }
   };
 
+  const handlePrint = () => {
+    const transferCode = form.transfer_code || code;
+
+    if (!transferCode) {
+      alert("Không tìm thấy số phiếu điều chuyển để in");
+      return;
+    }
+
+    navigate(`/dashboard/activity/transfer/print/${transferCode}`);
+  };
+
   return (
     <div className="warehouse-transfer-page">
       <div className="transfer-title">
@@ -781,26 +794,34 @@ export default function WarehouseTransferDetailPage() {
           </div>
         </div>
       </div>
-      <div className="bottom-actions">
-        <button type="button" onClick={() => navigate("/dashboard/activity/transfer")}>
-          Hủy
-        </button>
-      {!isViewMode && (
-        <>
-          <button
-            type="button"
-            className="outline"
-            onClick={handleSaveDraftAndAddNew}
-          >
-            Lưu và Thêm
+        <div className="bottom-actions">
+          <button type="button" onClick={() => navigate("/dashboard/activity/transfer")}>
+            {isPrintMode ? "Quay lại" : "Hủy"}
           </button>
 
-          <button type="button" className="save" onClick={handleSaveDraft}>
-            Lưu
-          </button>
-        </>
-      )}
-      </div>
+          {isPrintMode && (
+            <button type="button" className="print" onClick={handlePrint}>
+              <RiPrinterLine />
+              In
+            </button>
+          )}
+
+          {!isViewMode && (
+            <>
+              <button
+                type="button"
+                className="outline"
+                onClick={handleSaveDraftAndAddNew}
+              >
+                Lưu và Thêm
+              </button>
+
+              <button type="button" className="save" onClick={handleSaveDraft}>
+                Lưu
+              </button>
+            </>
+          )}
+        </div>
     </div>
   );
 }

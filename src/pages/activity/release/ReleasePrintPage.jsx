@@ -232,10 +232,10 @@ function ReleasePrintPage() {
                     {line?.default_goods_unit_name || ""}
                   </td>
                   <td className="release-print-number-cell">
-                    {line ? formatViNumber(line.request_quantity_in_default_unit, 2) : ""}
+                    {line ? formatViNumber(line.requested_quantity, 2) : ""}
                   </td>
                   <td className="release-print-number-cell">
-                    {line ? formatViNumber(line.quantity_in_default_unit, 2) : ""}
+                    {line ? formatViNumber(line.actual_quantity, 2) : ""}
                   </td>
                   <td className="release-print-money-cell">
                     {/* {line ? formatViNumber(line.unit_price, 0) : ""} */}

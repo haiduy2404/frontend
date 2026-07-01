@@ -1,0 +1,496 @@
+/* =========================================================
+   WarehouseReleasePage.css
+   Page: Danh sách xuất kho + preview chi tiết xuất kho
+   ========================================================= */
+
+.release-order-page {
+  min-height: 100vh;
+  background: #eef1f5;
+  padding: 14px;
+  box-sizing: border-box;
+  color: #111827;
+  font-size: 14px;
+}
+
+/* ================= Tabs ================= */
+
+.release-order-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.release-order-tab {
+  height: 36px;
+  padding: 0 18px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #374151;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.release-order-tab:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.release-order-tab.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.release-order-tab:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ================= Toolbar ================= */
+
+.release-order-toolbar {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.release-order-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.release-order-filters input,
+.release-order-filters select {
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  padding: 0 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.release-order-filters input:focus,
+.release-order-filters select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14);
+}
+
+.release-order-search {
+  width: 300px;
+}
+
+.release-order-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.release-edit-btn,
+.release-delete-btn {
+  height: 34px;
+  min-width: 104px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+.release-edit-btn {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.release-edit-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.release-delete-btn {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+
+.release-delete-btn:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.release-edit-btn:disabled,
+.release-delete-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ================= Main layout ================= */
+
+.release-order-main {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+/* ================= List table ================= */
+
+.release-order-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.release-order-table {
+  width: 100%;
+  min-width: 1280px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
+}
+
+.release-order-table th {
+  height: 38px;
+  padding: 8px 10px;
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid #d1d5db;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.release-order-table td {
+  height: 38px;
+  padding: 7px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #f1f5f9;
+  background: #ffffff;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.release-order-table tbody tr:hover td {
+  background: #f9fafb;
+}
+
+.release-order-table tbody tr.selected td {
+  background: #eff6ff;
+}
+
+.release-order-checkbox-col {
+  width: 46px;
+  text-align: center !important;
+}
+
+.release-order-checkbox-col input {
+  cursor: pointer;
+}
+
+.release-order-link-text {
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.release-order-link-text:hover {
+  text-decoration: underline;
+}
+
+/* ================= Pagination ================= */
+
+.release-order-pagination {
+  height: 42px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.release-pagination-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.release-pagination-right select {
+  height: 30px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: #ffffff;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.release-pagination-right button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.release-pagination-right button:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.release-pagination-right button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ================= Splitter ================= */
+
+.release-detail-splitter {
+  height: 22px;
+  background: #eef1f5;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border-bottom: 1px solid #d1d5db;
+}
+
+/* ================= Detail preview ================= */
+
+.release-order-detail {
+  padding: 12px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.release-order-detail h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.release-detail-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.release-detail-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.release-detail-table {
+  width: 100%;
+  min-width: 780px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.release-detail-table col.release-col-stt {
+  width: 46px;
+}
+
+.release-detail-table col.release-col-code {
+  width: 110px;
+}
+
+.release-detail-table col.release-col-name {
+  width: auto;
+}
+
+.release-detail-table col.release-col-unit {
+  width: 90px;
+}
+
+.release-detail-table col.release-col-ratio {
+  width: 120px;
+}
+
+.release-detail-table col.release-col-requested {
+  width: 110px;
+}
+
+.release-detail-table col.release-col-actual {
+  width: 120px;
+}
+
+.release-detail-table th {
+  height: 36px;
+  padding: 7px 8px;
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid #d1d5db;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.release-detail-table td {
+  height: 36px;
+  padding: 6px 8px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #f1f5f9;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.release-detail-table tbody tr:hover td {
+  background: #f9fafb;
+}
+
+.release-number-col {
+  text-align: right;
+}
+
+.release-total-row td {
+  background: #f9fafb;
+  font-weight: 700;
+  border-top: 1px solid #d1d5db;
+}
+
+.release-table-bottom-bar {
+  height: 36px;
+  padding: 0 12px;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #374151;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+/* Nếu còn input cũ ở preview thì khóa style lại cho gọn */
+.release-detail-table .table-number-input {
+  width: 100%;
+  height: 28px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  background: #f3f4f6;
+  color: #4b5563;
+  text-align: right;
+  font-size: 13px;
+}
+
+/* ================= Responsive ================= */
+
+@media (max-width: 1200px) {
+  .release-order-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .release-order-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .release-order-search {
+    width: 260px;
+  }
+}
+
+@media (max-width: 768px) {
+  .release-order-page {
+    padding: 10px;
+  }
+
+  .release-order-tabs {
+    flex-wrap: wrap;
+  }
+
+  .release-order-tab {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .release-order-filters {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .release-order-filters input,
+  .release-order-filters select,
+  .release-order-search {
+    width: 100%;
+  }
+
+  .release-order-actions {
+    justify-content: stretch;
+  }
+
+  .release-edit-btn,
+  .release-delete-btn {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .release-order-pagination {
+    height: auto;
+    padding: 8px 10px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .release-pagination-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .release-order-detail {
+    padding: 10px;
+  }
+}

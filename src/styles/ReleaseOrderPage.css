@@ -430,3 +430,151 @@
 .release-order-filters select[name="warehouse_id"] {
   width: 170px;
 }
+
+/* ================================
+   Release order detail - fixed scroll
+   ================================ */
+
+/* kéo khối chi tiết lên cao hơn một tí */
+.release-order-detail {
+  height: 310px;
+  padding: 8px 20px 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.release-order-detail h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+/* card chi tiết đúng class trong JSX */
+.release-order-detail .import-list-detail-card {
+  height: calc(100% - 28px);
+  border: 1px solid #d9dee7;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* ô tìm kiếm cố định, không bị cuộn */
+.release-order-detail .detail-search {
+  height: 38px;
+  min-height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 12px;
+  background: #ffffff;
+}
+
+.release-order-detail .detail-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+}
+
+/* đây là chỗ tạo thanh cuộn lên xuống cho bảng chi tiết */
+.release-order-detail .import-list-detail-table-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+/* bảng chi tiết */
+.release-order-detail .import-list-detail-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.release-order-detail .import-list-detail-table th,
+.release-order-detail .import-list-detail-table td {
+  height: 36px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.release-order-detail .import-list-detail-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  color: #111827;
+  font-weight: 700;
+}
+
+.release-order-detail .number-col {
+  text-align: right;
+}
+
+.release-order-detail .table-total-row td {
+  background: #f9fafb;
+  font-weight: 700;
+}
+
+/* thanh dưới cố định, không cuộn theo bảng */
+.release-order-detail .table-bottom-bar {
+  height: 40px;
+  min-height: 40px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  flex-shrink: 0;
+  background: #ffffff;
+}
+
+.release-order-detail .table-pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.release-order-detail .table-pagination select {
+  height: 30px;
+  border: 1px solid #d5dbe5;
+  border-radius: 6px;
+  padding: 0 8px;
+}
+
+.release-order-detail .table-pagination button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+}
+
+/* chỉnh lại colgroup đúng class trong JSX */
+.release-order-detail .col-stt {
+  width: 50px;
+}
+
+.release-order-detail .col-code {
+  width: 140px;
+}
+
+.release-order-detail .col-name {
+  width: 320px;
+}
+
+.release-order-detail .col-unit {
+  width: 90px;
+}
+
+.release-order-detail .col-qty {
+  width: 140px;
+}

@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
-import "../../../styles/ReleaseOrderPage.css";
+import "../../../styles/WarehouseReleasePage.css";
+
 import {
   getReleaseOrdersPageable,
   getReleaseOrderByCode,
-  updateReleaseOrder,
-  completeReleaseOrder,
   deleteReleaseOrder,
 } from "../../../services/releaseOrderService";
 
@@ -14,147 +13,42 @@ import {
   getDefaultWarehouseReleaseFilters,
   buildWarehouseReleaseFilterParams,
 } from "./utils/warehouseReleaseFilterUtils";
-import { getWarehouses  } from "../../../services/warehouseService";
-import {
-  RiCheckboxCircleLine,
-  RiSave3Line,
-  RiDeleteBin6Line,
-} from "react-icons/ri";
+
+import { getWarehouses } from "../../../services/warehouseService";
+
+import { RiEdit2Line, RiDeleteBin6Line } from "react-icons/ri";
 
 function WarehouseReleasePage() {
   const navigate = useNavigate();
   const { canDo } = useAuth();
+
   const canUpdateRelease = canDo("update_warehouse_release");
   const canInputActualQuantity = canDo("update_actual_released_quantity");
   const canUseReleaseActualPage = canUpdateRelease || canInputActualQuantity;
+  const canDelete = canDo("delete_warehouse_release");
+  const [searchParams] = useSearchParams();
+  const isPrintMode = searchParams.get("mode") === "print";
   const [releaseOrders, setReleaseOrders] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailRows, setDetailRows] = useState([]);
+
+  const [warehouses, setWarehouses] = useState([]);
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const [filters, setFilters] = useState(getDefaultWarehouseReleaseFilters());
+
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
   const [total, setTotal] = useState(0);
-  const [filters, setFilters] = useState(
-      getDefaultWarehouseReleaseFilters()
-  );
-  const [warehouses, setWarehouses] = useState([]);
 
-  const canDelete = canDo("delete_warehouse_release");
-
-  const isAllChecked =
-    releaseOrders.length > 0 &&
-    releaseOrders.every((row) => selectedIds.includes(row.id));
-
-  const handleToggleAll = (e) => {
-    setSelectedIds(e.target.checked ? releaseOrders.map((r) => r.id) : []);
-  };
-
-  const handleToggleOne = (e, rowId) => {
-    e.stopPropagation();
-    setSelectedIds((prev) =>
-      prev.includes(rowId) ? prev.filter((id) => id !== rowId) : [...prev, rowId]
-    );
-  };
-
-  const handleDeleteSelectedReleases = async () => {
-    if (selectedIds.length === 0) return;
-    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} lệnh xuất kho đã chọn không?`)) return;
-    const results = await Promise.allSettled(
-      selectedIds.map((id) => deleteReleaseOrder(id))
-    );
-    const failed = results.filter((r) => r.status === "rejected");
-    setSelectedIds([]);
-    setSelectedId(null);
-    setSelectedOrder(null);
-    setDetailRows([]);
-    await fetchReleaseOrders();
-    if (failed.length === 0) {
-      alert(`Xóa ${selectedIds.length} lệnh xuất kho thành công`);
-    } else {
-      alert(`Xóa ${selectedIds.length - failed.length}/${selectedIds.length} thành công. ${failed.length} lệnh thất bại (có thể đang ở trạng thái không cho phép xóa).`);
-    }
-  };
   const unwrapData = (response) => response?.data || response;
-  const handleCompleteRelease = async () => {
-  if (!selectedOrder) {
-    alert("Vui lòng chọn lệnh xuất kho");
-    return;
-  }
-  try {
-    // lưu SL thực xuất trước
-    const payload = {
-      terms: selectedOrder.terms || null,
-      release_date: selectedOrder.release_date,
-      warehouse_id:
-        selectedOrder.warehouse_id || selectedOrder.warehouse?.id,
-      receiver_unit: selectedOrder.receiver_unit?.name || null,
-      release_target: selectedOrder.release_target?.name || null,
-      description: selectedOrder.description || null,
-
-      items: detailRows.map((item) => ({
-        item_id: item.item_id,
-        goods_id: item.goods_id,
-        goods_unit_id: item.goods_unit_id || null,
-        requested_quantity: parseNumber(item.requested_quantity),
-        actual_quantity: parseNumber(item.actual_quantity),
-        is_delete: false,
-      })),
-    };
-
-    await updateReleaseOrder(selectedOrder.id, payload);
-
-    // hoàn thành xuất kho
-    await completeReleaseOrder(selectedOrder.id);
-
-    alert("Hoàn thành xuất kho thành công");
-
-    await fetchReleaseOrders();
-    await fetchReleaseOrderDetail(
-      selectedOrder.code || selectedOrder.release_code
-    );
-  } catch (error) {
-    console.error(
-      "COMPLETE RELEASE ERROR:",
-      error.response?.data || error
-    );
-
-    alert(
-      error.response?.data?.message ||
-      error.response?.data?.detail ||
-      "Hoàn thành xuất kho thất bại"
-    );
-  }
-};
-
-  const fetchWarehouses = async () => {
-    try {
-      const response = await getWarehouses();
-
-      const data = unwrapData(response);
-
-      const results = Array.isArray(data?.results)
-        ? data.results
-        : Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data)
-        ? data
-        : [];
-
-      setWarehouses(results);
-    } catch (error) {
-      console.error("LOAD WAREHOUSES ERROR:", error.response?.data || error);
-      setWarehouses([]);
-    }
-  };
-
-  useEffect(() => {
-    fetchWarehouses();
-  }, []);
 
   const parseNumber = (value) => {
     if (value === null || value === undefined || value === "") return 0;
@@ -194,62 +88,66 @@ function WarehouseReleasePage() {
     return date.toLocaleString("vi-VN");
   };
 
-
   const getReleaseStatusText = (status) => {
     switch (status) {
+      case "PENDING":
+        return "Đang xuất kho";
       case "WAITING_RELEASE":
         return "Chờ xuất kho";
       case "RELEASED":
         return "Đã xuất kho";
       case "COMPLETED":
         return "Đã hoàn thành";
+      case "WAIT_TO_APPROVE":
+        return "Chờ duyệt";
+      case "CANCELLED":
+        return "Đã hủy";
       default:
-        return "-";
+        return status || "-";
     }
   };
 
-  const fetchReleaseOrders = async (
-    customParams = {},
-    currentFilters = filters
-  ) => {
+  const getWarehouseDisplayName = (warehouse) => {
+    return (
+      warehouse?.name ||
+      warehouse?.warehouse_name ||
+      warehouse?.code ||
+      warehouse?.id ||
+      ""
+    );
+  };
+
+  const getRowCode = (row) => row?.code || row?.release_code || "";
+
+  const getActionOrder = () => {
+    if (selectedIds.length === 1) {
+      return releaseOrders.find((row) => row.id === selectedIds[0]) || null;
+    }
+
+    return selectedOrder;
+  };
+
+  const isAllChecked =
+    releaseOrders.length > 0 &&
+    releaseOrders.every((row) => selectedIds.includes(row.id));
+
+  const fetchWarehouses = async () => {
     try {
-      setLoading(true);
-
-    const filterParams =
-      buildWarehouseReleaseFilterParams(currentFilters);
-
-    const response = await getReleaseOrdersPageable({
-      search,
-      page,
-      page_size: pageSize,
-      ...filterParams,
-      ...customParams,
-    });
+      const response = await getWarehouses();
       const data = unwrapData(response);
-      const results = Array.isArray(data?.results) ? data.results : [];
 
-      setReleaseOrders(results);
-      setSelectedIds([]);
-      setTotal(data?.total || data?.count || results.length);
+      const results = Array.isArray(data?.results)
+        ? data.results
+        : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+        ? data
+        : [];
 
-      if (results.length > 0 && !selectedId) {
-        const firstRow = results[0];
-        setSelectedId(firstRow.id);
-        fetchReleaseOrderDetail(firstRow.code || firstRow.release_code);
-      }
-
-      if (results.length === 0) {
-        setSelectedId(null);
-        setSelectedOrder(null);
-        setDetailRows([]);
-      }
+      setWarehouses(results);
     } catch (error) {
-      console.error("LOAD RELEASE ORDERS ERROR:", error.response?.data || error);
-      alert("Không tải được danh sách lệnh xuất kho");
-      setReleaseOrders([]);
-      setTotal(0);
-    } finally {
-      setLoading(false);
+      console.error("LOAD WAREHOUSES ERROR:", error.response?.data || error);
+      setWarehouses([]);
     }
   };
 
@@ -262,94 +160,94 @@ function WarehouseReleasePage() {
       const response = await getReleaseOrderByCode(code);
       const data = unwrapData(response);
 
-    const rows =
-    data?.items ||
-    data?.inventory_lines ||
-    data?.release_inventory_lines ||
-    data?.inventory ||
-    data?.details ||
-    [];
+      const rows = Array.isArray(data?.items)
+        ? data.items
+        : Array.isArray(data?.inventory_lines)
+        ? data.inventory_lines
+        : Array.isArray(data?.release_inventory_lines)
+        ? data.release_inventory_lines
+        : Array.isArray(data?.details)
+        ? data.details
+        : [];
 
       setSelectedOrder(data);
 
       setDetailRows(
-        Array.isArray(rows)
-          ? rows.map((item, index) => {
-              const requestedQuantity = parseNumber(
-                item.request_quantity ||
-                  item.requested_quantity ||
-                  item.original_quantity ||
-                  0
-              );
+        rows.map((item, index) => {
+          const requestedQuantity = parseNumber(
+            item.request_quantity ??
+              item.requested_quantity ??
+              item.original_quantity ??
+              0
+          );
 
-              const actualQuantity = parseNumber(
-                item.actual_quantity ||
-                  item.release_quantity ||
-                  item.exported_quantity ||
-                  0
-              );
-              const quantityInDefaultUnit = parseNumber(
-                item.quantity_in_default_unit
-              );
-              const baseQuantity =
-                actualQuantity > 0 ? actualQuantity : requestedQuantity;
-              const conversionRatio =
-                item.goods_unit_id &&
-                baseQuantity > 0 &&
-                quantityInDefaultUnit !== null &&
-                !Number.isNaN(quantityInDefaultUnit)
-                  ? quantityInDefaultUnit / baseQuantity
-                  : parseNumber(item.conversion_ratio || 1) || 1;
+          const actualQuantity = parseNumber(
+            item.actual_quantity ??
+              item.release_quantity ??
+              item.exported_quantity ??
+              0
+          );
 
-                return {
-                    id:
-                        item.item_id ||
-                        item.release_inventory_id ||
-                        item.inventory_id ||
-                        item.id ||
-                        index + 1,
+          const conversionRatio =
+            parseNumber(
+              item.conversion_ratio ??
+                item.goods_conversion_ratio ??
+                item.unit_conversion_ratio ??
+                1
+            ) || 1;
 
-                    item_id:
-                        item.item_id ||
-                        item.release_inventory_id ||
-                        item.inventory_id ||
-                        item.id ||
-                        "",
+          return {
+            id:
+              item.item_id ||
+              item.release_inventory_id ||
+              item.inventory_id ||
+              item.id ||
+              index + 1,
 
-                    goods_id: item.goods_id || item.goods?.id || "",
-                    goods_code:
-                        item.goods_code ||
-                        item.goods?.code ||
-                        item.code ||
-                    "",
+            item_id:
+              item.item_id ||
+              item.release_inventory_id ||
+              item.inventory_id ||
+              item.id ||
+              "",
 
-                    goods_name:
-                        item.goods_name ||
-                        item.goods?.name ||
-                        item.name ||
-                    "",
+            goods_id: item.goods_id || item.goods?.id || "",
 
-                    goods_unit_id:
-                        item.goods_unit_id ||
-                        item.unit_id ||
-                        item.goods_unit?.id ||
-                    "",
+            goods_code:
+              item.goods_code || item.goods?.code || item.code || "",
 
-                    unit_name:
-                        item.goods_unit_name ||
-                        item.unit_name ||
-                        item.goods_unit?.name ||
-                    "",
-                    conversion_ratio: conversionRatio,
-                    requested_quantity: formatViNumber(requestedQuantity, 2),
-                    actual_quantity: formatViNumber(actualQuantity, 2),
-                };
-            })
-          : []
+            goods_name:
+              item.goods_name || item.goods?.name || item.name || "",
+
+            goods_unit_id:
+              item.goods_unit_id ||
+              item.unit_id ||
+              item.goods_unit?.id ||
+              "",
+
+            unit_name:
+              item.goods_unit_name ||
+              item.unit_name ||
+              item.goods_unit?.name ||
+              "",
+
+            conversion_ratio: conversionRatio,
+            requested_quantity: formatViNumber(requestedQuantity, 2),
+            actual_quantity:
+              item.actual_quantity === null ||
+              item.actual_quantity === undefined
+                ? ""
+                : formatViNumber(actualQuantity, 2),
+          };
+        })
       );
     } catch (error) {
       console.error("LOAD RELEASE DETAIL ERROR:", error.response?.data || error);
-      alert("Không tải được chi tiết lệnh xuất kho");
+      alert(
+        error.response?.data?.message ||
+          error.response?.data?.detail ||
+          "Không tải được chi tiết lệnh xuất kho"
+      );
       setSelectedOrder(null);
       setDetailRows([]);
     } finally {
@@ -357,76 +255,102 @@ function WarehouseReleasePage() {
     }
   };
 
+  const fetchReleaseOrders = async (
+    customParams = {},
+    currentFilters = filters
+  ) => {
+    try {
+      setLoading(true);
+
+      const filterParams = buildWarehouseReleaseFilterParams(currentFilters);
+
+      const response = await getReleaseOrdersPageable({
+        search: debouncedSearch,
+        page,
+        page_size: pageSize,
+        ...filterParams,
+        ...customParams,
+      });
+
+      const data = unwrapData(response);
+      const results = Array.isArray(data?.results) ? data.results : [];
+
+      setReleaseOrders(results);
+      setSelectedIds([]);
+      setTotal(data?.total || data?.count || results.length);
+
+      if (results.length === 0) {
+        setSelectedId(null);
+        setSelectedOrder(null);
+        setDetailRows([]);
+        return;
+      }
+
+      const currentStillExists =
+        selectedId && results.some((row) => row.id === selectedId);
+
+      if (!currentStillExists) {
+        const firstRow = results[0];
+        setSelectedId(firstRow.id);
+        fetchReleaseOrderDetail(getRowCode(firstRow));
+      }
+    } catch (error) {
+      console.error("LOAD RELEASE ORDERS ERROR:", error.response?.data || error);
+      alert(
+        error.response?.data?.message ||
+          error.response?.data?.detail ||
+          "Không tải được danh sách lệnh xuất kho"
+      );
+
+      setReleaseOrders([]);
+      setSelectedIds([]);
+      setSelectedId(null);
+      setSelectedOrder(null);
+      setDetailRows([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWarehouses();
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setPage(1);
       setDebouncedSearch(search);
     }, 300);
+
     return () => clearTimeout(timer);
   }, [search]);
 
   useEffect(() => {
     fetchReleaseOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, debouncedSearch]);
 
-    const handleChangeActualQuantity = (rowId, value) => {
-        setDetailRows((prev) =>
-        prev.map((item) =>
-            item.id === rowId
-            ? {
-                ...item,
-                actual_quantity: value,
-                }
-            : item
-        )
-        );
-    };
+  const handleSelectRow = (row) => {
+    setSelectedId(row.id);
+    fetchReleaseOrderDetail(getRowCode(row));
+  };
 
-    const handleSaveActualQuantity = async () => {
-    if (!canUseReleaseActualPage) {
-        alert("Bạn không có quyền nhập số lượng thực xuất");
-        return;
-    }
+  const handleToggleAll = (e) => {
+    const checked = e.target.checked;
+    setSelectedIds(checked ? releaseOrders.map((row) => row.id) : []);
+  };
 
-    if (!selectedOrder) {
-        alert("Vui lòng chọn lệnh xuất kho");
-        return;
-    }
+  const handleToggleOne = (e, rowId) => {
+    e.stopPropagation();
 
-    try {
-        const payload = {
-        terms: selectedOrder.terms || null,
-        release_date: selectedOrder.release_date,
-        warehouse_id: selectedOrder.warehouse_id || selectedOrder.warehouse?.id,
-        receiver_unit: selectedOrder.receiver_unit?.name || null,
-        release_target: selectedOrder.release_target?.name || null,
-        description: selectedOrder.description || null,
+    setSelectedIds((prev) =>
+      prev.includes(rowId)
+        ? prev.filter((id) => id !== rowId)
+        : [...prev, rowId]
+    );
+  };
 
-        items: detailRows.map((item) => ({
-            item_id: item.item_id,
-            goods_id: item.goods_id,
-            goods_unit_id: item.goods_unit_id || null,
-            requested_quantity: parseNumber(item.requested_quantity),
-            actual_quantity: parseNumber(item.actual_quantity),
-            is_delete: false,
-        })),
-        };
-
-        await updateReleaseOrder(selectedOrder.id, payload);
-
-        alert("Cập nhật số lượng thực xuất thành công");
-        await fetchReleaseOrders();
-        await fetchReleaseOrderDetail(selectedOrder.code || selectedOrder.release_code);
-    } catch (error) {
-        console.error("SAVE ACTUAL RELEASED QUANTITY ERROR:", error.response?.data || error);
-        alert(
-        error.response?.data?.message ||
-            error.response?.data?.detail ||
-            "Cập nhật số lượng thực xuất thất bại"
-        );
-    }
-    };
-  
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
 
@@ -447,7 +371,6 @@ function WarehouseReleasePage() {
     fetchReleaseOrders(
       {
         page: 1,
-        ...buildWarehouseReleaseFilterParams(nextFilters),
       },
       nextFilters
     );
@@ -462,19 +385,102 @@ function WarehouseReleasePage() {
     };
 
     setFilters(nextFilters);
+    setPage(1);
 
     if (value === "custom") {
       return;
     }
 
-    setPage(1);
-
-    fetchReleaseOrders({
-      page: 1,
-      ...buildWarehouseReleaseFilterParams(nextFilters),
-    });
-    nextFilters
+    fetchReleaseOrders(
+      {
+        page: 1,
+      },
+      nextFilters
+    );
   };
+
+  const handleEditRelease = () => {
+    if (selectedIds.length > 1) {
+      alert("Chỉ được chỉnh sửa 1 lệnh xuất kho tại một thời điểm");
+      return;
+    }
+
+    const order = getActionOrder();
+
+    if (!order) {
+      alert("Vui lòng chọn lệnh xuất kho cần chỉnh sửa");
+      return;
+    }
+
+    const code = getRowCode(order);
+
+    if (!code) {
+      alert("Không tìm thấy số lệnh xuất kho");
+      return;
+    }
+
+    navigate(`/dashboard/activity/export/release/edit/${code}`);
+  };
+
+  const deleteOrdersByIds = async (ids) => {
+    if (!ids || ids.length === 0) return;
+
+    const confirmMessage =
+      ids.length === 1
+        ? "Bạn có chắc muốn xóa lệnh xuất kho đã chọn không?"
+        : `Bạn có chắc muốn xóa ${ids.length} lệnh xuất kho đã chọn không?`;
+
+    if (!window.confirm(confirmMessage)) return;
+
+    const results = await Promise.allSettled(
+      ids.map((id) => deleteReleaseOrder(id))
+    );
+
+    const failed = results.filter((result) => result.status === "rejected");
+
+    setSelectedIds([]);
+    setSelectedId(null);
+    setSelectedOrder(null);
+    setDetailRows([]);
+
+    await fetchReleaseOrders({
+      page: 1,
+    });
+
+    if (failed.length === 0) {
+      alert(
+        ids.length === 1
+          ? "Xóa lệnh xuất kho thành công"
+          : `Xóa ${ids.length} lệnh xuất kho thành công`
+      );
+    } else {
+      alert(
+        `Xóa ${ids.length - failed.length}/${ids.length} thành công. ` +
+          `${failed.length} lệnh thất bại.`
+      );
+    }
+  };
+
+  const handleDeleteRelease = () => {
+    if (!canDelete) {
+      alert("Bạn không có quyền xóa lệnh xuất kho");
+      return;
+    }
+
+    if (selectedIds.length > 0) {
+      deleteOrdersByIds(selectedIds);
+      return;
+    }
+
+    if (!selectedOrder) {
+      alert("Vui lòng chọn lệnh cần xóa");
+      return;
+    }
+
+    deleteOrdersByIds([selectedOrder.id]);
+  };
+
+  const actionOrder = getActionOrder();
 
   return (
     <div className="release-order-page">
@@ -512,118 +518,99 @@ function WarehouseReleasePage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+
           <select
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
           >
             <option value="">Tất cả trạng thái</option>
-            <option value="PENDING">Nháp</option>
-            <option value="WAIT_TO_APPROVE">Chờ duyệt</option>
+            <option value="PENDING">Đang xuất kho</option>
+            <option value="WAITING_RELEASE">Chờ xuất kho</option>
+            <option value="RELEASED">Đã xuất kho</option>
             <option value="COMPLETED">Hoàn thành</option>
             <option value="CANCELLED">Đã hủy</option>
           </select>
+
           <select
-              name="time_type"
-              value={filters.time_type}
-              onChange={handleTimeTypeChange}
-            >
-              <option value="this_month">Tháng này</option>
-              <option value="quarter_1">Quý 1</option>
-              <option value="quarter_2">Quý 2</option>
-              <option value="quarter_3">Quý 3</option>
-              <option value="quarter_4">Quý 4</option>
-              <option value="custom">Tùy chọn</option>
+            name="time_type"
+            value={filters.time_type}
+            onChange={handleTimeTypeChange}
+          >
+            <option value="this_month">Tháng này</option>
+            <option value="quarter_1">Quý 1</option>
+            <option value="quarter_2">Quý 2</option>
+            <option value="quarter_3">Quý 3</option>
+            <option value="quarter_4">Quý 4</option>
+            <option value="custom">Tùy chọn</option>
           </select>
+
           <select
             name="warehouse_id"
             value={filters.warehouse_id}
             onChange={handleFilterChange}
           >
             <option value="">Tất cả kho</option>
+
             {warehouses.map((warehouse) => {
-              const id = warehouse.id || warehouse.warehouse_id;
-              const name = warehouse.name || warehouse.warehouse_name || warehouse.code || id;
+              const warehouseId = warehouse.id || warehouse.warehouse_id;
+              const warehouseName = getWarehouseDisplayName(warehouse);
 
               return (
-                <option key={id} value={id}>
-                  {name}
+                <option key={warehouseId} value={warehouseId}>
+                  {warehouseName}
                 </option>
               );
             })}
           </select>
-            {filters.time_type === "custom" && (
-              <>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={filters.start_date}
-                  onChange={handleFilterChange}
-                />
 
-                <input
-                  type="date"
-                  name="end_date"
-                  value={filters.end_date}
-                  onChange={handleFilterChange}
-                />
-              </>
-            )}
+          {filters.time_type === "custom" && (
+            <>
+              <input
+                type="date"
+                name="start_date"
+                value={filters.start_date}
+                onChange={handleFilterChange}
+              />
+
+              <input
+                type="date"
+                name="end_date"
+                value={filters.end_date}
+                onChange={handleFilterChange}
+              />
+            </>
+          )}
         </div>
 
         <div className="release-order-actions">
           {canUseReleaseActualPage && (
-            <>
-              <button
-                className="release-edit-btn"
-                disabled={selectedIds.length > 1 || !selectedOrder}
-                title={selectedIds.length > 1 ? "Chỉ lưu được 1 lệnh tại một thời điểm" : ""}
-                onClick={handleSaveActualQuantity}
-              >
-                <RiSave3Line />
-                <span>Lưu SL thực xuất</span>
-              </button>
-              <button
-                className="release-complete-btn"
-                disabled={selectedIds.length > 1 || !selectedOrder}
-                title={selectedIds.length > 1 ? "Chỉ hoàn thành được 1 lệnh tại một thời điểm" : ""}
-                onClick={handleCompleteRelease}
-              >
-                <RiCheckboxCircleLine />
-                <span>Hoàn thành</span>
-              </button>
-            </>
+            <button
+              className="release-edit-btn"
+              disabled={selectedIds.length > 1 || !actionOrder}
+              onClick={handleEditRelease}
+              title={
+                selectedIds.length > 1
+                  ? "Chỉ chỉnh sửa được 1 lệnh tại một thời điểm"
+                  : ""
+              }
+            >
+              <RiEdit2Line />
+              <span>Chỉnh sửa</span>
+            </button>
           )}
+
           {canDelete && (
             <button
               className="release-delete-btn"
-              disabled={!selectedOrder && selectedIds.length === 0}
-              onClick={() => {
-                if (selectedIds.length > 1) {
-                  handleDeleteSelectedReleases();
-                  return;
-                }
-                if (!selectedOrder) {
-                  alert("Vui lòng chọn lệnh cần xóa");
-                  return;
-                }
-                if (!window.confirm(`Xóa lệnh ${selectedOrder.code || ""}?`)) return;
-                deleteReleaseOrder(selectedOrder.id)
-                  .then(() => {
-                    setSelectedId(null);
-                    setSelectedOrder(null);
-                    setDetailRows([]);
-                    fetchReleaseOrders();
-                    alert("Xóa lệnh xuất kho thành công");
-                  })
-                  .catch((err) => {
-                    alert(err.response?.data?.message || err.response?.data?.detail || "Xóa thất bại");
-                  });
-              }}
+              disabled={selectedIds.length === 0 && !selectedOrder}
+              onClick={handleDeleteRelease}
             >
               <RiDeleteBin6Line />
               <span>
-                {selectedIds.length > 1 ? `Xóa (${selectedIds.length})` : "Xóa"}
+                {selectedIds.length > 0
+                  ? `Xóa (${selectedIds.length})`
+                  : "Xóa"}
               </span>
             </button>
           )}
@@ -633,10 +620,14 @@ function WarehouseReleasePage() {
       <div className="release-order-main">
         <div className="release-order-table-wrapper">
           <table className="release-order-table">
-                <thead>
+            <thead>
               <tr>
                 <th className="release-order-checkbox-col">
-                  <input type="checkbox" checked={isAllChecked} onChange={handleToggleAll} />
+                  <input
+                    type="checkbox"
+                    checked={isAllChecked}
+                    onChange={handleToggleAll}
+                  />
                 </th>
                 <th>Số lệnh XK</th>
                 <th>Tình trạng</th>
@@ -669,10 +660,7 @@ function WarehouseReleasePage() {
                   <tr
                     key={row.id}
                     className={selectedId === row.id ? "selected" : ""}
-                    onClick={() => {
-                      setSelectedId(row.id);
-                      fetchReleaseOrderDetail(row.code || row.release_code);
-                    }}
+                    onClick={() => handleSelectRow(row)}
                   >
                     <td className="release-order-checkbox-col">
                       <input
@@ -682,23 +670,35 @@ function WarehouseReleasePage() {
                         onClick={(e) => e.stopPropagation()}
                       />
                     </td>
+
                     <td
-                        className="release-order-link-text"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/dashboard/activity/export/release-print/${row.code || row.release_code}`);
-                        }}
-                        >
-                        {row.code || row.release_code || "-"}
+                      className="release-order-link-text"
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        navigate(
+                          `/dashboard/activity/export/release/edit/${getRowCode(row)}?mode=print`
+                        );
+                      }}
+                    >
+                      {getRowCode(row) || "-"}
                     </td>
+
                     <td>{getReleaseStatusText(row.status)}</td>
                     <td>{row.release_date || "-"}</td>
-                    <td>{row.warehouse_name || row.warehouse?.name || row.warehouse || "-"}</td>
-                    <td>{row.receiver_unit?.name || "-"}</td>
-                    <td>{row.release_target?.name || "-"}</td>
+                    <td>
+                      {row.warehouse_name ||
+                        row.warehouse?.name ||
+                        row.warehouse ||
+                        "-"}
+                    </td>
+                    <td>{row.receiver_unit?.name || row.receiver_unit || "-"}</td>
+                    <td>{row.release_target?.name || row.release_target || "-"}</td>
                     <td>{row.created_by_admin_name || row.created_by || "-"}</td>
                     <td>{formatDateTime(row.created_at)}</td>
-                    <td>{row.last_updated_by_admin_name || row.updated_by || "-"}</td>
+                    <td>
+                      {row.last_updated_by_admin_name || row.updated_by || "-"}
+                    </td>
                     <td>{formatDateTime(row.updated_at)}</td>
                   </tr>
                 ))}
@@ -726,11 +726,16 @@ function WarehouseReleasePage() {
               <option value={100}>100</option>
             </select>
 
-            <button disabled={page <= 1} onClick={() => setPage((prev) => prev - 1)}>
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((prev) => prev - 1)}
+            >
               ‹
             </button>
 
             <button
+              type="button"
               disabled={page * pageSize >= total}
               onClick={() => setPage((prev) => prev + 1)}
             >
@@ -752,9 +757,9 @@ function WarehouseReleasePage() {
                   <col className="release-col-code" />
                   <col className="release-col-name" />
                   <col className="release-col-unit" />
-                  <col className="release-col-qty" />
-                  <col className="release-col-qty" />
-                  <col className="release-col-qty" />
+                  <col className="release-col-ratio" />
+                  <col className="release-col-requested" />
+                  <col className="release-col-actual" />
                 </colgroup>
 
                 <thead>
@@ -787,10 +792,9 @@ function WarehouseReleasePage() {
                       <tr key={item.id}>
                         <td>{index + 1}</td>
                         <td>{item.goods_code || "-"}</td>
-
                         <td>{item.goods_name || "-"}</td>
-
                         <td>{item.unit_name || "-"}</td>
+
                         <td className="release-number-col">
                           {formatViNumber(item.conversion_ratio || 1, 3)}
                         </td>
@@ -800,14 +804,7 @@ function WarehouseReleasePage() {
                         </td>
 
                         <td className="release-number-col">
-                          <input
-                            className="table-number-input"
-                            value={item.actual_quantity}
-                            disabled={!canUseReleaseActualPage}
-                            onChange={(e) =>
-                              handleChangeActualQuantity(item.id, e.target.value)
-                            }
-                          />
+                          {item.actual_quantity || "-"}
                         </td>
                       </tr>
                     ))}

@@ -36,6 +36,8 @@ import WarehouseReleasePage from "./pages/activity/release/WarehouseReleasePage"
 import WarehouseTransferPage from "./pages/activity/transfer/WarehouseTransferPage";
 import WarehouseTransferDetailPage from "./pages/activity/transfer/WarehouseTransferDetailPage";
 import ReleasePrintPage from "./pages/activity/release/ReleasePrintPage";
+import WarehouseOrderRelease from "./pages/activity/release/WarehouseOrderRelease";
+import WarehouseTransferPrintPage from "./pages/activity/transfer/WarehouseTransferPrintPage";
 import "./styles/auth.css";
 
 // Bridges global auth events from the axios interceptor to router navigation.
@@ -141,6 +143,14 @@ function App() {
                       </RequireRole>
                     }
                   />
+                  <Route
+                    path="release/edit/:id"
+                    element={
+                      <RequireRole roles={["update_actual_released_quantity"]}>
+                        <WarehouseOrderRelease />
+                      </RequireRole>
+                    }
+                  />
                 </Route>
               </Route>
 
@@ -202,6 +212,14 @@ function App() {
                 element={
                   <RequireRole roles={["view_warehouse_transfer"]}>
                     <WarehouseTransferDetailPage />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="/dashboard/activity/transfer/print/:code"
+                element={
+                  <RequireRole roles={["view_warehouse_transfer"]}>
+                    <WarehouseTransferPrintPage />
                   </RequireRole>
                 }
               />

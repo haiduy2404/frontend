@@ -121,11 +121,11 @@ export default function WarehouseTransferPage() {
   "";
 
   const handleOpenView = (transfer) => {
-    const code = getTransferCode(transfer);
+      const code = getTransferCode(transfer);
 
-    if (!code) return;
+      if (!code) return;
 
-    navigate(`/dashboard/activity/transfer/detail/${code}?mode=view`);
+      navigate(`/dashboard/activity/transfer/detail/${code}?mode=print`);
   };
 
   const handleOpenEdit = (transfer) => {
@@ -271,29 +271,31 @@ export default function WarehouseTransferPage() {
 
                 return (
                 <tr
-                  key={item.id || item.code || index}
+                    key={item.id || item.code || index}
+                    className={selectedTransfer === item.id ? "selected" : ""}
+                    onClick={() => setSelectedTransfer(item.id)}
                 >
                 <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedTransfer === item.id}
-                      onChange={() =>
-                        setSelectedTransfer(
-                          selectedTransfer === item.id ? null : item.id
-                        )
-                      }
-                    />
+                  <input
+                    type="checkbox"
+                    checked={selectedTransfer === item.id}
+                    readOnly
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 </td>
 
                   <td>
                     {canView ? (
-                      <button
+                    <button
                         type="button"
                         className="code-link"
-                        onClick={() => handleOpenView(item)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenView(item);
+                        }}
                       >
                         {code}
-                      </button>
+                    </button>
                     ) : (
                       code
                     )}
