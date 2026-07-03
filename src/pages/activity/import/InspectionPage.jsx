@@ -53,7 +53,7 @@ function InspectionPage() {
 
     if (!numbers) return "--";
 
-    return numbers.slice(-3).padStart(3, "0");
+    return numbers;
   };
 
   const filteredInspections = useMemo(() => {

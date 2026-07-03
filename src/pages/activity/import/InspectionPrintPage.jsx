@@ -123,7 +123,7 @@ function InspectionPrintPage() {
 
     if (!numbers) return "";
 
-    return numbers.slice(-3).padStart(3, "0");
+    return numbers;
   };
 
   useEffect(() => {
