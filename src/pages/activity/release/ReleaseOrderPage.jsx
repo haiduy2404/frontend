@@ -16,6 +16,7 @@ import {
   RiEdit2Line,
   RiDeleteBin6Line,
   RiCheckboxCircleLine,
+  RiFileCopyLine,
 } from "react-icons/ri";
 
 import {
@@ -109,11 +110,11 @@ function ReleaseOrderPage() {
     try {
       setDetailLoading(true);
 
-    const response = await getReleaseOrderByCode(code);
-    const data = response.data;
+      const response = await getReleaseOrderByCode(code);
+      const data = response?.data || response;
 
-    setSelectedReleaseDetail(data);
-    setDetailRows(Array.isArray(data.items) ? data.items : []);
+      setSelectedReleaseDetail(data);
+      setDetailRows(Array.isArray(data?.items) ? data.items : []);
     } catch (error) {
       console.error("LOAD RELEASE ORDER DETAIL ERROR:", error.response?.data || error);
       setSelectedReleaseDetail(null);
@@ -318,6 +319,24 @@ const handleTimeTypeChange = (e) => {
         `${failed.length} lệnh thất bại.`
         );
     }
+    };
+
+  const handleCloneReleaseOrder = (row) => {
+      if (!row) {
+        alert("Vui lòng chọn phiếu cần nhân bản");
+        return;
+      }
+
+      const code = row.code || row.release_code;
+
+      if (!code) {
+        alert("Không tìm thấy số phiếu để nhân bản");
+        return;
+      }
+
+      navigate(
+        `/dashboard/activity/export/order-detail/new?clone_from=${encodeURIComponent(code)}`
+      );
     };
 
   const handleDeleteRelease = async (row) => {
@@ -584,33 +603,6 @@ const handleTimeTypeChange = (e) => {
             </>
           )}
 
-          {canDo("delete_warehouse_release") && (
-            <button
-              className="delete-toolbar-btn"
-              disabled={!selectedRow && selectedIds.length === 0}
-              onClick={() => {
-                if (selectedIds.length > 1) {
-                  handleDeleteSelectedReleases();
-                  return;
-                }
-                if (selectedIds.length === 1 && !selectedRow) {
-                  handleDeleteSelectedReleases();
-                  return;
-                }
-                if (!selectedRow) {
-                  alert("Vui lòng chọn phiếu cần xóa");
-                  return;
-                }
-                handleDeleteRelease(selectedRow);
-              }}
-            >
-              <RiDeleteBin6Line />
-              <span>
-                {selectedIds.length > 1 ? `Xóa (${selectedIds.length})` : "Xóa"}
-              </span>
-            </button>
-          )}
-
           {canDo("create_warehouse_release") && (
             <button
               className="add-btn"
@@ -707,7 +699,41 @@ const handleTimeTypeChange = (e) => {
                         row.updated_by ||
                         "-"}
                     </td>
-                    <td>{formatDateTime(row.updated_at)}</td>
+                    <td className="release-order-updated-cell">
+                      <span className="release-order-updated-text">
+                        {formatDateTime(row.updated_at)}
+                      </span>
+
+                      <div className="release-row-actions">
+                        {canDo("create_warehouse_release") && (
+                          <button
+                            type="button"
+                            className="release-row-action-btn clone"
+                            title="Nhân bản"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCloneReleaseOrder(row);
+                            }}
+                          >
+                            <RiFileCopyLine />
+                          </button>
+                        )}
+
+                        {canDo("delete_warehouse_release") && (
+                          <button
+                            type="button"
+                            className="release-row-action-btn delete"
+                            title="Xóa"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteRelease(row);
+                            }}
+                          >
+                            <RiDeleteBin6Line />
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
             </tbody>
@@ -800,16 +826,23 @@ const handleTimeTypeChange = (e) => {
 
                   {!detailLoading &&
                     detailRows.map((item, index) => {
-                    const requestedQuantity = parseNumber(item.requested_quantity);
+                      const requestedQuantity = parseNumber(item.requested_quantity);
+                      const conversionRatio =
+                        item.conversion_ratio ??
+                        item.goods_conversion_ratio ??
+                        item.unit_conversion_ratio ??
+                        item.goods_unit?.conversion_ratio ??
+                        item.conversion_rate ??
+                        1;
 
                       return (
                         <tr key={item.release_inventory_id || item.goods_id || index}>
                           <td>{index + 1}</td>
-                            <td>{item.goods_code || ""}</td>
-                            <td>{item.goods_name || ""}</td>
-                            <td>{item.goods_unit_name || ""}</td>
+                          <td>{item.goods_code || ""}</td>
+                          <td>{item.goods_name || ""}</td>
+                          <td>{item.goods_unit_name || ""}</td>
                           <td className="number-col">
-                            {formatViNumber(item.conversion_ratio || 1, 3)}
+                            {formatViNumber(conversionRatio, 3)}
                           </td>
 
                           <td className="number-col">

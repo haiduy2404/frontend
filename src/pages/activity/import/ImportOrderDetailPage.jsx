@@ -71,6 +71,7 @@ function ImportOrderDetailPage() {
     const [deletedItems, setDeletedItems] = useState([]);
     const [companyId, setCompanyId] = useState(null);
     const [debouncedGoodsKeyword, setDebouncedGoodsKeyword] = useState("");
+    const [vatCalculationMethod, setVatCalculationMethod] = useState("BY_LINE");
     const goodsSearchRequestIdRef = useRef(0);
     const goodsPendingRequestsRef = useRef(0);
     const debouncedGoodsKeywordRef = useRef("");
@@ -760,9 +761,10 @@ function ImportOrderDetailPage() {
       vatSummary,
       grandTotal,
     } = calculateImportOrderTotals(items, {
-      getQty:   (item) => parseNumber(item.actual_quantity),
+      getQty: (item) => parseNumber(item.actual_quantity),
       getPrice: (item) => parseNumber(item.unit_price),
-      getVat:   (item) => String(item.vat || "0"),
+      getVat: (item) => String(item.vat || "0"),
+      method: vatCalculationMethod,
     });
 
     const convertDateToISO = (value) => {
@@ -1892,11 +1894,23 @@ const handleOpenTransferPrint = () => {
             </table>
           </div>
 
-                <div className="money-summary">
-                  <div className="money-row">
-                    <span>Cộng</span>
-                    <strong>{formatViNumber(totalAmount, 0)}</strong>
-                  </div>
+              <div className="money-summary">
+                <div className="money-row">
+                  <span>Cách tính thuế</span>
+                  <select
+                    value={vatCalculationMethod}
+                    onChange={(e) => setVatCalculationMethod(e.target.value)}
+                    disabled={isPrintMode}
+                  >
+                    <option value="BY_LINE">Theo từng dòng</option>
+                    <option value="BY_TOTAL">Theo tổng tiền hàng</option>
+                  </select>
+                </div>
+
+                <div className="money-row">
+                  <span>Cộng</span>
+                  <strong>{formatViNumber(totalAmount, 0)}</strong>
+                </div>
 
                   <div className="money-row">
                     <span>Thuế VAT 0%</span>

@@ -31,6 +31,8 @@ function ReleaseOrderDetailPage() {
   const [releaseTargetMode, setReleaseTargetMode] = useState("select");
   const isCreateMode = !id || id === "new";
   const isPrintMode = searchParams.get("mode") === "print";
+  const cloneFrom = searchParams.get("clone_from");
+  const isCloneMode = isCreateMode && Boolean(cloneFrom);
 
   const canSave = isCreateMode
     ? canDo("create_warehouse_release")
@@ -580,6 +582,7 @@ function ReleaseOrderDetailPage() {
             goods_unit_id: item.unit_id || null,
             goods_name_display: item.goods_name || null,
             requested_quantity: parseNumber(item.requested_quantity),
+            conversion_ratio: parseConversionRatio(item.conversion_ratio || 1),
             is_delete: Boolean(item.is_delete),
         })),
     };
@@ -649,10 +652,11 @@ function ReleaseOrderDetailPage() {
         let targetId = releaseId;
 
         if (isCreateMode) {
-        const created = await createReleaseOrder(payload);
-        targetId = created?.data?.id;
+          const created = await createReleaseOrder(payload);
+          const createdData = created?.data?.data || created?.data || created;
+          targetId = createdData?.id;
         } else {
-        await updateReleaseOrder(releaseId, payload);
+          await updateReleaseOrder(releaseId, payload);
         }
 
         if (targetId) {
@@ -743,16 +747,140 @@ function ReleaseOrderDetailPage() {
     }
     };
 
+    const fetchCloneReleaseDetail = async (releaseCode) => {
+      if (!releaseCode) return;
+
+      try {
+        setDetailLoading(true);
+
+        const response = await getReleaseOrderByCode(releaseCode);
+
+        const data = response?.data?.data || response?.data || response;
+
+        const warehouseId = data.warehouse_id || "";
+
+        const receiverUnitName =
+          data.receiver_unit?.name ||
+          data.receiver_unit_name ||
+          "";
+
+        const releaseTargetName =
+          data.release_target?.name ||
+          data.release_target_name ||
+          "";
+
+        setReleaseId(null);
+
+        setHeaderData({
+          terms: data.terms || getCurrentTerms(),
+          release_date: data.release_date || getTodayViDate(),
+          warehouse_id: warehouseId,
+          receiver_unit: receiverUnitName,
+          release_target: releaseTargetName,
+          description: data.description || "",
+        });
+
+        setReceiverUnitMode("manual");
+        setReleaseTargetMode("manual");
+
+        const lines = Array.isArray(data.items) ? data.items : [];
+
+        const uniqueGoodsIds = [
+          ...new Set(lines.map((line) => line.goods_id).filter(Boolean)),
+        ];
+
+        const unitsByGoodsId = await fetchUnitsByGoodsIds(
+          warehouseId,
+          uniqueGoodsIds
+        );
+
+        setItems(
+          lines.length > 0
+            ? lines.map((line, index) => {
+                const requestedQuantity = parseNumber(line.requested_quantity);
+
+                const lineUnits = unitsByGoodsId[line.goods_id] || [];
+                const unitOptions = mapUnitOptions(lineUnits);
+
+                const selectedUnit = unitOptions.find(
+                  (unitItem) =>
+                    String(unitItem.unit_id) === String(line.goods_unit_id)
+                );
+
+                return {
+                  id: Date.now() + index,
+
+                  // Không giữ item_id cũ khi nhân bản
+                  release_inventory_id: "",
+
+                  goods_id: line.goods_id || "",
+                  goods_code: line.goods_code || "",
+                  goods_name: line.goods_name || "",
+
+                  unit_id: line.goods_unit_id || "",
+                  unit:
+                    selectedUnit?.unit_name ||
+                    line.goods_unit_name ||
+                    line.default_goods_unit_name ||
+                    "",
+
+                  unit_options:
+                    unitOptions.length > 0
+                      ? unitOptions
+                      : [
+                          {
+                            unit_id: line.goods_unit_id || "",
+                            unit_name:
+                              line.goods_unit_name ||
+                              line.default_goods_unit_name ||
+                              "",
+                            conversion_ratio: 1,
+                            is_default: true,
+                          },
+                        ],
+
+                  conversion_ratio:
+                    selectedUnit?.conversion_ratio !== null &&
+                    selectedUnit?.conversion_ratio !== undefined
+                      ? String(selectedUnit.conversion_ratio)
+                      : "1",
+
+                  requested_quantity: formatViNumber(requestedQuantity, 2),
+
+                  // Phiếu mới nên reset thực xuất
+                  actual_quantity: "0,00",
+
+                  marked_old: false,
+                  is_delete: false,
+                };
+              })
+            : [createEmptyRow()]
+        );
+
+        setDeletedItems([]);
+      } catch (error) {
+        console.error("CLONE RELEASE DETAIL ERROR:", error.response?.data || error);
+        alert("Không tải được dữ liệu phiếu cần nhân bản");
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+
     useEffect(() => {
         fetchWarehouseList();
         fetchReleaseReferences();
     }, []);
 
-  useEffect(() => {
-    if (id && id !== "new") {
-      fetchReleaseDetail(id);
-    }
-  }, [id]);
+    useEffect(() => {
+      if (!isCreateMode) {
+        fetchReleaseDetail(id);
+        return;
+      }
+
+      if (cloneFrom) {
+        fetchCloneReleaseDetail(cloneFrom);
+      }
+    }, [id, cloneFrom, isCreateMode]);
 
   useEffect(() => {
     warehouseIdRef.current = headerData.warehouse_id;
@@ -792,7 +920,9 @@ function ReleaseOrderDetailPage() {
       <div className="import-order-detail-header">
         <div className="detail-header-left">
           <h2>
-            {isCreateMode
+            {isCloneMode
+              ? `Nhân bản lệnh xuất kho từ ${cloneFrom}`
+              : isCreateMode
               ? "Lệnh xuất kho vật tư"
               : `Lệnh xuất kho vật tư ${id}`}
           </h2>
@@ -830,11 +960,17 @@ function ReleaseOrderDetailPage() {
 
             <div className="form-group">
               <label>Số phiếu XK</label>
-              <input
-                value={id && id !== "new" ? id : "Tự động tạo khi hoàn thành"}
-                readOnly
-                disabled
-              />
+                <input
+                  value={
+                    id && id !== "new"
+                      ? id
+                      : isCloneMode
+                      ? "Tự động tạo khi lưu phiếu nhân bản"
+                      : "Tự động tạo khi hoàn thành"
+                  }
+                  readOnly
+                  disabled
+                />
             </div>
 
             <div className="form-group">

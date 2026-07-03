@@ -77,7 +77,7 @@ function InspectionDetailPage() {
 
     if (!numbers) return "";
 
-    return numbers.slice(-2).padStart(2, "0");
+    return numbers.slice(-3).padStart(3, "0");
   };
 
   const fetchReceiptOptions = async () => {

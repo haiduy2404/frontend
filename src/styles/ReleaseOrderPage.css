@@ -578,3 +578,60 @@
 .release-order-detail .col-qty {
   width: 140px;
 }
+
+.release-order-updated-cell {
+  position: relative;
+  min-width: 150px;
+  white-space: nowrap;
+}
+
+.release-order-updated-text {
+  display: inline-block;
+  padding-right: 58px;
+}
+
+.release-row-actions {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.release-order-table tbody tr:hover .release-row-actions {
+  display: inline-flex;
+}
+
+.release-row-action-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 4px;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  box-shadow: 0 0 0 1px #d1d5db;
+}
+
+.release-row-action-btn.clone {
+  color: #7c3aed;
+}
+
+.release-row-action-btn.clone:hover {
+  background: #f5f3ff;
+  box-shadow: 0 0 0 1px #7c3aed;
+}
+
+.release-row-action-btn.delete {
+  color: #dc2626;
+}
+
+.release-row-action-btn.delete:hover {
+  background: #fef2f2;
+  box-shadow: 0 0 0 1px #dc2626;
+}

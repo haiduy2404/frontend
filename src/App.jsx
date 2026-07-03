@@ -38,6 +38,7 @@ import WarehouseTransferDetailPage from "./pages/activity/transfer/WarehouseTran
 import ReleasePrintPage from "./pages/activity/release/ReleasePrintPage";
 import WarehouseOrderRelease from "./pages/activity/release/WarehouseOrderRelease";
 import WarehouseTransferPrintPage from "./pages/activity/transfer/WarehouseTransferPrintPage";
+import GoodsUnitPage from "./pages/good_unit/GoodsUnitPage";
 import "./styles/auth.css";
 
 // Bridges global auth events from the axios interceptor to router navigation.
@@ -78,6 +79,10 @@ function App() {
                 element={<OpeningStockPage />}
               />
               <Route path="stock-manager/goods-list" element={<GoodsListPage />} />
+              <Route
+                  path="stock-manager/unit-list"
+                  element={<GoodsUnitPage />}
+              />
               <Route
                 path="stock-manager/company-list"
                 element={<CompanyListPage />}
