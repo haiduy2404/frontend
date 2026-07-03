@@ -1418,3 +1418,40 @@
 .table-vat-select:focus {
   border-color: #2563eb;
 }
+
+.money-summary .money-row select {
+  width: 210px;
+  height: 32px;
+  padding: 0 34px 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.money-summary .money-row select:hover {
+  border-color: #94a3b8;
+}
+
+.money-summary .money-row select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.money-summary .money-row select:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.money-summary .money-row:first-child {
+  align-items: center;
+}
+
+.money-summary .money-row:first-child span {
+  font-weight: 700;
+}
