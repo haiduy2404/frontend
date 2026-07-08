@@ -192,13 +192,49 @@ const fetchImportOrders = async (customParams = {}) => {
 
     const {
       totalAmount: detailTotalAmount,
-      vatSummary: detailVatSummary,
-      grandTotal: detailGrandTotal,
+      vatSummary: detailAutoVatSummary,
     } = calculateImportOrderTotals(detailRows, {
       getQty:   (item) => parseMoney(item.original_quantity || item.quantity || 0),
       getPrice: (item) => parseMoney(item.unit_price || 0),
       getVat:   (item) => String(Number(item.vat || 0)),
     });
+
+    const detailVatAmountSummary =
+  selectedReceiptDetail?.vat_amount_summary || {};
+
+    const detailVat0Amount =
+      detailVatAmountSummary.vat0amount !== null &&
+      detailVatAmountSummary.vat0amount !== undefined
+        ? parseMoney(detailVatAmountSummary.vat0amount)
+        : parseMoney(detailAutoVatSummary["0"] || 0);
+
+    const detailVat5Amount =
+      detailVatAmountSummary.vat5amount !== null &&
+      detailVatAmountSummary.vat5amount !== undefined
+        ? parseMoney(detailVatAmountSummary.vat5amount)
+        : parseMoney(detailAutoVatSummary["5"] || 0);
+
+    const detailVat8Amount =
+      detailVatAmountSummary.vat8amount !== null &&
+      detailVatAmountSummary.vat8amount !== undefined
+        ? parseMoney(detailVatAmountSummary.vat8amount)
+        : parseMoney(detailAutoVatSummary["8"] || 0);
+
+    const detailVat10Amount =
+      detailVatAmountSummary.vat10amount !== null &&
+      detailVatAmountSummary.vat10amount !== undefined
+        ? parseMoney(detailVatAmountSummary.vat10amount)
+        : parseMoney(detailAutoVatSummary["10"] || 0);
+
+    const detailVatTotalAmount =
+      detailVat0Amount +
+      detailVat5Amount +
+      detailVat8Amount +
+      detailVat10Amount;
+
+    const detailGrandTotal = Math.round(
+      detailTotalAmount + detailVatTotalAmount
+    );
 
     const handleCompleteReceipt = async (row) => {
       const confirmed = window.confirm(
@@ -803,22 +839,22 @@ const fetchImportOrders = async (customParams = {}) => {
 
                   <div className="money-row">
                     <span>Thuế VAT 0%</span>
-                    <strong>{formatViNumber(detailVatSummary["0"], 0)}</strong>
+                      <strong>{formatViNumber(detailVat0Amount, 0)}</strong>
                   </div>
 
                   <div className="money-row">
                     <span>Thuế VAT 5%</span>
-                    <strong>{formatViNumber(detailVatSummary["5"], 0)}</strong>
+                    <strong>{formatViNumber(detailVat5Amount, 0)}</strong>
                   </div>
 
                   <div className="money-row">
                     <span>Thuế VAT 8%</span>
-                    <strong>{formatViNumber(detailVatSummary["8"], 0)}</strong>
+                    <strong>{formatViNumber(detailVat8Amount, 0)}</strong>
                   </div>
 
                   <div className="money-row">
                     <span>Thuế VAT 10%</span>
-                    <strong>{formatViNumber(detailVatSummary["10"], 0)}</strong>
+                    <strong>{formatViNumber(detailVat10Amount, 0)}</strong>
                   </div>
 
                   <div className="money-row total">

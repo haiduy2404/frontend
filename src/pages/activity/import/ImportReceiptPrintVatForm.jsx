@@ -179,8 +179,7 @@ function ImportReceiptPrintVatForm() {
 };
 
 const inspectionCodeFromReceiptCode = String(id || "")
-    .replace(/\D/g, "")
-    .slice(-2);
+    .replace(/\D/g, "");
 
 const numberToVietnameseText = (value) => {
   const number = Math.round(Number(value || 0));
@@ -274,7 +273,7 @@ const numberToVietnameseText = (value) => {
     const roundMoney = (value) =>
       Math.round((Number(value) || 0) + Number.EPSILON);
 
-    const vatSummary = inventoryLines.reduce(
+    const autoVatSummary = inventoryLines.reduce(
       (acc, line) => {
         const quantity = Number(
           line?.original_quantity || line?.quantity || 0
@@ -304,15 +303,41 @@ const numberToVietnameseText = (value) => {
       }
     );
 
+    const vatAmountSummary = receipt?.vat_amount_summary || {};
+
+    const vatSummary = {
+      0:
+        vatAmountSummary.vat0amount !== null &&
+        vatAmountSummary.vat0amount !== undefined
+          ? Number(vatAmountSummary.vat0amount || 0)
+          : autoVatSummary["0"],
+
+      5:
+        vatAmountSummary.vat5amount !== null &&
+        vatAmountSummary.vat5amount !== undefined
+          ? Number(vatAmountSummary.vat5amount || 0)
+          : autoVatSummary["5"],
+
+      8:
+        vatAmountSummary.vat8amount !== null &&
+        vatAmountSummary.vat8amount !== undefined
+          ? Number(vatAmountSummary.vat8amount || 0)
+          : autoVatSummary["8"],
+
+      10:
+        vatAmountSummary.vat10amount !== null &&
+        vatAmountSummary.vat10amount !== undefined
+          ? Number(vatAmountSummary.vat10amount || 0)
+          : autoVatSummary["10"],
+    };
+
     const totalVat =
       vatSummary["0"] +
       vatSummary["5"] +
       vatSummary["8"] +
       vatSummary["10"];
 
-    const grandTotal = totalAmount + totalVat;
-
-
+    const grandTotal = Math.round(totalAmount + totalVat);
 
   return (
     <div className="import-receipt-print-page">

@@ -1455,3 +1455,51 @@
 .money-summary .money-row:first-child span {
   font-weight: 700;
 }
+
+.money-vat-edit {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.money-vat-edit input {
+  width: 130px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  text-align: right;
+  font-weight: 600;
+  color: #111827;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.money-vat-edit input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.money-vat-edit button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.money-vat-edit button:hover {
+  background: #f3f4f6;
+}
+
+.manual-vat-label {
+  margin-left: 6px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  color: #dc2626;
+}

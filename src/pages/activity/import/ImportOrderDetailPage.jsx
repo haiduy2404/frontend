@@ -71,7 +71,14 @@ function ImportOrderDetailPage() {
     const [deletedItems, setDeletedItems] = useState([]);
     const [companyId, setCompanyId] = useState(null);
     const [debouncedGoodsKeyword, setDebouncedGoodsKeyword] = useState("");
-    const [vatCalculationMethod, setVatCalculationMethod] = useState("BY_LINE");
+    const VAT_RATES = ["0", "5", "8", "10"];
+
+    const [manualVatSummary, setManualVatSummary] = useState({
+      0: "",
+      5: "",
+      8: "",
+      10: "",
+    });
     const goodsSearchRequestIdRef = useRef(0);
     const goodsPendingRequestsRef = useRef(0);
     const debouncedGoodsKeywordRef = useRef("");
@@ -756,16 +763,72 @@ function ImportOrderDetailPage() {
         })
       );
     };
-    const {
-      totalAmount,
-      vatSummary,
-      grandTotal,
-    } = calculateImportOrderTotals(items, {
-      getQty: (item) => parseNumber(item.actual_quantity),
-      getPrice: (item) => parseNumber(item.unit_price),
-      getVat: (item) => String(item.vat || "0"),
-      method: vatCalculationMethod,
+      const {
+        totalAmount,
+        vatSummary,
+      } = calculateImportOrderTotals(items, {
+        getQty: (item) => parseNumber(item.actual_quantity),
+        getPrice: (item) => parseNumber(item.unit_price),
+        getVat: (item) => String(item.vat || "0"),
+      });
+
+      const finalVat0 = manualVatSummary["0"] !== ""
+        ? parseNumber(manualVatSummary["0"])
+        : parseNumber(vatSummary["0"] || 0);
+
+      const finalVat5 = manualVatSummary["5"] !== ""
+        ? parseNumber(manualVatSummary["5"])
+        : parseNumber(vatSummary["5"] || 0);
+
+      const finalVat8 = manualVatSummary["8"] !== ""
+        ? parseNumber(manualVatSummary["8"])
+        : parseNumber(vatSummary["8"] || 0);
+
+      const finalVat10 = manualVatSummary["10"] !== ""
+        ? parseNumber(manualVatSummary["10"])
+        : parseNumber(vatSummary["10"] || 0);
+
+      const finalVatAmount = finalVat0 + finalVat5 + finalVat8 + finalVat10;
+
+      const finalGrandTotal = Math.round(totalAmount + finalVatAmount);
+
+    const buildVatAmountSummaryPayload = () => ({
+      vat0amount: Math.round(finalVat0),
+      vat5amount: Math.round(finalVat5),
+      vat8amount: Math.round(finalVat8),
+      vat10amount: Math.round(finalVat10),
     });
+
+      const handleChangeManualVat = (rate, value) => {
+        setManualVatSummary((prev) => ({
+          ...prev,
+          [rate]: value,
+        }));
+      };
+
+      const handleBlurManualVat = (rate, value) => {
+        const text = String(value || "").trim();
+
+        if (!text) {
+          setManualVatSummary((prev) => ({
+            ...prev,
+            [rate]: "",
+          }));
+          return;
+        }
+
+        setManualVatSummary((prev) => ({
+          ...prev,
+          [rate]: formatViNumber(text, 0),
+        }));
+      };
+
+      const handleResetManualVat = (rate) => {
+        setManualVatSummary((prev) => ({
+          ...prev,
+          [rate]: "",
+        }));
+      };
 
     const convertDateToISO = (value) => {
       if (!value) return null;
@@ -784,6 +847,82 @@ function ImportOrderDetailPage() {
       // yyyy-mm-dd giữ nguyên
       return text.split("T")[0];
     };
+  const getLineAmountValue = (item) => {
+  const quantity = parseNumber(item.actual_quantity || item.requested_quantity);
+  const unitPrice = parseNumber(item.unit_price);
+
+  return Math.round(quantity * unitPrice);
+};
+
+const getAutoLineVatAmount = (item) => {
+  const lineAmount = getLineAmountValue(item);
+  const vatRate = Number(item.vat || 0);
+
+  return Math.round((lineAmount * vatRate) / 100);
+};
+
+const getItemPayloadKey = (item, index) => {
+  return `${item.inventory_id || item.id || "new"}-${index}`;
+};
+
+const buildVatAmountMap = (payloadItems) => {
+  const vatAmountMap = {};
+
+  VAT_RATES.forEach((rate) => {
+    const rows = payloadItems
+      .map((item, index) => ({
+        item,
+        index,
+        key: getItemPayloadKey(item, index),
+        lineAmount: getLineAmountValue(item),
+      }))
+      .filter(
+        (row) =>
+          row.item.goods_id &&
+          !row.item.is_delete &&
+          String(row.item.vat || "0") === String(rate)
+      );
+
+    if (rows.length === 0) return;
+
+    // Không sửa tay summary VAT => gửi VAT tự tính từng dòng
+    if (manualVatSummary[rate] === "") {
+      rows.forEach((row) => {
+        vatAmountMap[row.key] = getAutoLineVatAmount(row.item);
+      });
+
+      return;
+    }
+
+    // Có sửa tay summary VAT => chia tổng VAT nhập tay về từng dòng cùng thuế suất
+    const manualTotalVat = Math.round(parseNumber(manualVatSummary[rate]));
+    const totalLineAmount = rows.reduce(
+      (sum, row) => sum + row.lineAmount,
+      0
+    );
+
+    let usedVat = 0;
+
+    rows.forEach((row, rowIndex) => {
+      let rowVat = 0;
+
+      if (rowIndex === rows.length - 1) {
+        rowVat = manualTotalVat - usedVat;
+      } else if (totalLineAmount > 0) {
+        rowVat = Math.round(
+          (manualTotalVat * row.lineAmount) / totalLineAmount
+        );
+      } else {
+        rowVat = Math.round(manualTotalVat / rows.length);
+      }
+
+      vatAmountMap[row.key] = rowVat;
+      usedVat += rowVat;
+    });
+  });
+
+  return vatAmountMap;
+  };
 
   const buildReceiptPayload = (status) => {
   const inventoryPayloadItems = [
@@ -849,7 +988,7 @@ function ImportOrderDetailPage() {
     bank_name: headerData.bank_account_name.trim(),
     bank_account_name: headerData.bank_account_name.trim(),
     bank_account_number: headerData.bank_account_number.trim(),
-
+    vat_amount_summary: buildVatAmountSummaryPayload(),
     status, 
   };
 };
@@ -921,6 +1060,31 @@ const handleComplete = async () => {
         const data = response?.data || response;
         setReceiptId(data.id);
         setCompanyId(data.company?.id || null);
+
+        const vatAmountSummary = data.vat_amount_summary || {};
+
+        setManualVatSummary({
+          0:
+            vatAmountSummary.vat0amount !== null &&
+            vatAmountSummary.vat0amount !== undefined
+              ? formatViNumber(vatAmountSummary.vat0amount, 0)
+              : "",
+          5:
+            vatAmountSummary.vat5amount !== null &&
+            vatAmountSummary.vat5amount !== undefined
+              ? formatViNumber(vatAmountSummary.vat5amount, 0)
+              : "",
+          8:
+            vatAmountSummary.vat8amount !== null &&
+            vatAmountSummary.vat8amount !== undefined
+              ? formatViNumber(vatAmountSummary.vat8amount, 0)
+              : "",
+          10:
+            vatAmountSummary.vat10amount !== null &&
+            vatAmountSummary.vat10amount !== undefined
+              ? formatViNumber(vatAmountSummary.vat10amount, 0)
+              : "",
+        });
 
         const companyBankOptions = Array.isArray(data.company?.list_of_bank)
         ? data.company.list_of_bank.map((bank) => ({
@@ -1088,6 +1252,13 @@ const handleComplete = async () => {
           is_delete: false,
         },
       ]);
+
+      setManualVatSummary({
+        0: "",
+        5: "",
+        8: "",
+        10: "",
+      });
     };
 
     useEffect(() => {
@@ -1896,46 +2067,121 @@ const handleOpenTransferPrint = () => {
 
               <div className="money-summary">
                 <div className="money-row">
-                  <span>Cách tính thuế</span>
-                  <select
-                    value={vatCalculationMethod}
-                    onChange={(e) => setVatCalculationMethod(e.target.value)}
-                    disabled={isPrintMode}
-                  >
-                    <option value="BY_LINE">Theo từng dòng</option>
-                    <option value="BY_TOTAL">Theo tổng tiền hàng</option>
-                  </select>
+                  <span>
+                    Thuế VAT 0%
+                    {manualVatSummary["0"] !== "" && (
+                      <em className="manual-vat-label">Nhập tay</em>
+                    )}
+                  </span>
+
+                  <div className="money-vat-edit">
+                    <input
+                      value={
+                        manualVatSummary["0"] !== ""
+                          ? manualVatSummary["0"]
+                          : formatViNumber(vatSummary["0"], 0)
+                      }
+                      onChange={(e) => handleChangeManualVat("0", e.target.value)}
+                      onBlur={(e) => handleBlurManualVat("0", e.target.value)}
+                      disabled={isPrintMode}
+                    />
+
+                    {manualVatSummary["0"] !== "" && !isPrintMode && (
+                      <button type="button" onClick={() => handleResetManualVat("0")}>
+                        ↺
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="money-row">
-                  <span>Cộng</span>
-                  <strong>{formatViNumber(totalAmount, 0)}</strong>
+                  <span>
+                    Thuế VAT 5%
+                    {manualVatSummary["5"] !== "" && (
+                      <em className="manual-vat-label">Nhập tay</em>
+                    )}
+                  </span>
+
+                  <div className="money-vat-edit">
+                    <input
+                      value={
+                        manualVatSummary["5"] !== ""
+                          ? manualVatSummary["5"]
+                          : formatViNumber(vatSummary["5"], 0)
+                      }
+                      onChange={(e) => handleChangeManualVat("5", e.target.value)}
+                      onBlur={(e) => handleBlurManualVat("5", e.target.value)}
+                      disabled={isPrintMode}
+                    />
+
+                    {manualVatSummary["5"] !== "" && !isPrintMode && (
+                      <button type="button" onClick={() => handleResetManualVat("5")}>
+                        ↺
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                  <div className="money-row">
-                    <span>Thuế VAT 0%</span>
-                    <strong>{formatViNumber(vatSummary["0"], 0)}</strong>
-                  </div>
+                <div className="money-row">
+                  <span>
+                    Thuế VAT 8%
+                    {manualVatSummary["8"] !== "" && (
+                      <em className="manual-vat-label">Nhập tay</em>
+                    )}
+                  </span>
 
-                  <div className="money-row">
-                    <span>Thuế VAT 5%</span>
-                    <strong>{formatViNumber(vatSummary["5"], 0)}</strong>
-                  </div>
+                  <div className="money-vat-edit">
+                    <input
+                      value={
+                        manualVatSummary["8"] !== ""
+                          ? manualVatSummary["8"]
+                          : formatViNumber(vatSummary["8"], 0)
+                      }
+                      onChange={(e) => handleChangeManualVat("8", e.target.value)}
+                      onBlur={(e) => handleBlurManualVat("8", e.target.value)}
+                      disabled={isPrintMode}
+                    />
 
-                  <div className="money-row">
-                    <span>Thuế VAT 8%</span>
-                    <strong>{formatViNumber(vatSummary["8"], 0)}</strong>
+                    {manualVatSummary["8"] !== "" && !isPrintMode && (
+                      <button type="button" onClick={() => handleResetManualVat("8")}>
+                        ↺
+                      </button>
+                    )}
                   </div>
+                </div>
 
-                  <div className="money-row">
-                    <span>Thuế VAT 10%</span>
-                    <strong>{formatViNumber(vatSummary["10"], 0)}</strong>
-                  </div>
+                <div className="money-row">
+                  <span>
+                    Thuế VAT 10%
+                    {manualVatSummary["10"] !== "" && (
+                      <em className="manual-vat-label">Nhập tay</em>
+                    )}
+                  </span>
 
-                  <div className="money-row total">
-                    <span>Tổng cộng</span>
-                    <strong>{formatViNumber(grandTotal, 0)}</strong>
+                  <div className="money-vat-edit">
+                    <input
+                      value={
+                        manualVatSummary["10"] !== ""
+                          ? manualVatSummary["10"]
+                          : formatViNumber(vatSummary["10"], 0)
+                      }
+                      onChange={(e) => handleChangeManualVat("10", e.target.value)}
+                      onBlur={(e) => handleBlurManualVat("10", e.target.value)}
+                      disabled={isPrintMode}
+                    />
+
+                    {manualVatSummary["10"] !== "" && !isPrintMode && (
+                      <button type="button" onClick={() => handleResetManualVat("10")}>
+                        ↺
+                      </button>
+                    )}
                   </div>
+                </div>
+
+                <div className="money-row total">
+                  <span>Tổng cộng</span>
+                  <strong>{formatViNumber(finalGrandTotal, 0)}</strong>
+                </div>
                 </div>
 
           <div className="table-bottom-bar">

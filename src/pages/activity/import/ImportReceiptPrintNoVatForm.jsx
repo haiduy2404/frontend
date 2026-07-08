@@ -218,8 +218,8 @@ const numberToVietnameseText = (value) => {
     const inspectionCode = getInspectionCodeFromReceiptCode(receipt?.code || id);
     const invoiceCode = receipt?.invoice_code || "";
     const inspectionCodeFromReceiptCode = String(id || "")
-      .replace(/\D/g, "")
-      .slice(-2);
+      .replace(/\D/g, "");
+      
     const invoiceDate = formatViDate(receipt?.invoice_date);
     const receiptDateText = formatReceiptDateText(receipt?.receipt_date);
     const warehouseName = receipt?.warehouse?.name || receipt?.warehouse_name || "";
