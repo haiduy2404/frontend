@@ -578,7 +578,9 @@ function ImportOrderDetailPage() {
     }
     };
 
-    const parseNumber = (value) => {
+    const parseNumber = (value, options = {}) => {
+      const { viThousands = false } = options;
+
       if (value === null || value === undefined || value === "") return 0;
 
       if (typeof value === "number") {
@@ -592,20 +594,23 @@ function ImportOrderDetailPage() {
       let normalized = text;
 
       if (text.includes(",")) {
-        // Dạng VN hiển thị: 60.000,00 / 100.500,000
+        // Dạng VN: 60.000,00 / 100.500,000
         normalized = text.replace(/\./g, "").replace(",", ".");
+      } else if (viThousands && /^\d{1,3}(\.\d{3})+$/.test(text)) {
+        // Dạng tiền VN không phần thập phân: 300.000 / 1.250.000
+        normalized = text.replace(/\./g, "");
       } else if ((text.match(/\./g) || []).length > 1) {
-        // Dạng VN không phần thập phân: 3.015.000, 11.000.000
+        // Dạng VN nhiều dấu chấm: 3.015.000 / 11.000.000
         normalized = text.replace(/\./g, "");
       } else {
-        // Dạng backend / số thập phân chuẩn: 30.000, 51000.000, 100500.00
+        // Dạng backend decimal chuẩn: 30.000 / 51000.000
         normalized = text;
       }
 
-      const number = Number(normalized);
+  const number = Number(normalized);
 
-      return Number.isNaN(number) ? 0 : number;
-    };
+  return Number.isNaN(number) ? 0 : number;
+};
 
   const formatViNumber = (value, fractionDigits = 2) => {
   const number = parseNumber(value);
@@ -773,19 +778,19 @@ function ImportOrderDetailPage() {
       });
 
       const finalVat0 = manualVatSummary["0"] !== ""
-        ? parseNumber(manualVatSummary["0"])
+        ? parseNumber(manualVatSummary["0"], { viThousands: true })
         : parseNumber(vatSummary["0"] || 0);
 
       const finalVat5 = manualVatSummary["5"] !== ""
-        ? parseNumber(manualVatSummary["5"])
+        ? parseNumber(manualVatSummary["5"], { viThousands: true })
         : parseNumber(vatSummary["5"] || 0);
 
       const finalVat8 = manualVatSummary["8"] !== ""
-        ? parseNumber(manualVatSummary["8"])
+        ? parseNumber(manualVatSummary["8"], { viThousands: true })
         : parseNumber(vatSummary["8"] || 0);
 
       const finalVat10 = manualVatSummary["10"] !== ""
-        ? parseNumber(manualVatSummary["10"])
+        ? parseNumber(manualVatSummary["10"], { viThousands: true })
         : parseNumber(vatSummary["10"] || 0);
 
       const finalVatAmount = finalVat0 + finalVat5 + finalVat8 + finalVat10;
@@ -819,16 +824,21 @@ function ImportOrderDetailPage() {
 
         setManualVatSummary((prev) => ({
           ...prev,
-          [rate]: formatViNumber(text, 0),
+          [rate]: parseNumber(text, { viThousands: true }).toLocaleString("vi-VN", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }),
         }));
       };
 
-      const handleResetManualVat = (rate) => {
-        setManualVatSummary((prev) => ({
-          ...prev,
-          [rate]: "",
-        }));
-      };
+    const handleResetAllManualVat = () => {
+      setManualVatSummary({
+        0: "",
+        5: "",
+        8: "",
+        10: "",
+      });
+    };
 
     const convertDateToISO = (value) => {
       if (!value) return null;
@@ -2065,12 +2075,28 @@ const handleOpenTransferPrint = () => {
             </table>
           </div>
 
+            <div className="money-summary-wrap">
+              {!isPrintMode && (
+                <button
+                  type="button"
+                  className="recalculate-vat-btn"
+                  onClick={handleResetAllManualVat}
+                  disabled={
+                    manualVatSummary["0"] === "" &&
+                    manualVatSummary["5"] === "" &&
+                    manualVatSummary["8"] === "" &&
+                    manualVatSummary["10"] === ""
+                  }
+                >
+                  Tính lại Thuế
+                </button>
+              )}
               <div className="money-summary">
                 <div className="money-row">
                   <span>
                     Thuế VAT 0%
                     {manualVatSummary["0"] !== "" && (
-                      <em className="manual-vat-label">Nhập tay</em>
+                      <em className="manual-vat-label"></em>
                     )}
                   </span>
 
@@ -2085,12 +2111,6 @@ const handleOpenTransferPrint = () => {
                       onBlur={(e) => handleBlurManualVat("0", e.target.value)}
                       disabled={isPrintMode}
                     />
-
-                    {manualVatSummary["0"] !== "" && !isPrintMode && (
-                      <button type="button" onClick={() => handleResetManualVat("0")}>
-                        ↺
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -2098,7 +2118,7 @@ const handleOpenTransferPrint = () => {
                   <span>
                     Thuế VAT 5%
                     {manualVatSummary["5"] !== "" && (
-                      <em className="manual-vat-label">Nhập tay</em>
+                      <em className="manual-vat-label"></em>
                     )}
                   </span>
 
@@ -2113,12 +2133,6 @@ const handleOpenTransferPrint = () => {
                       onBlur={(e) => handleBlurManualVat("5", e.target.value)}
                       disabled={isPrintMode}
                     />
-
-                    {manualVatSummary["5"] !== "" && !isPrintMode && (
-                      <button type="button" onClick={() => handleResetManualVat("5")}>
-                        ↺
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -2126,7 +2140,7 @@ const handleOpenTransferPrint = () => {
                   <span>
                     Thuế VAT 8%
                     {manualVatSummary["8"] !== "" && (
-                      <em className="manual-vat-label">Nhập tay</em>
+                      <em className="manual-vat-label"></em>
                     )}
                   </span>
 
@@ -2141,12 +2155,6 @@ const handleOpenTransferPrint = () => {
                       onBlur={(e) => handleBlurManualVat("8", e.target.value)}
                       disabled={isPrintMode}
                     />
-
-                    {manualVatSummary["8"] !== "" && !isPrintMode && (
-                      <button type="button" onClick={() => handleResetManualVat("8")}>
-                        ↺
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -2154,7 +2162,7 @@ const handleOpenTransferPrint = () => {
                   <span>
                     Thuế VAT 10%
                     {manualVatSummary["10"] !== "" && (
-                      <em className="manual-vat-label">Nhập tay</em>
+                      <em className="manual-vat-label"></em>
                     )}
                   </span>
 
@@ -2169,12 +2177,6 @@ const handleOpenTransferPrint = () => {
                       onBlur={(e) => handleBlurManualVat("10", e.target.value)}
                       disabled={isPrintMode}
                     />
-
-                    {manualVatSummary["10"] !== "" && !isPrintMode && (
-                      <button type="button" onClick={() => handleResetManualVat("10")}>
-                        ↺
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -2182,8 +2184,8 @@ const handleOpenTransferPrint = () => {
                   <span>Tổng cộng</span>
                   <strong>{formatViNumber(finalGrandTotal, 0)}</strong>
                 </div>
-                </div>
-
+              </div>
+            </div>
           <div className="table-bottom-bar">
             <div>
               Tổng số: <strong>{items.length}</strong>

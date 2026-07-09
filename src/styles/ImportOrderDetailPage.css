@@ -1503,3 +1503,35 @@
   font-weight: 600;
   color: #dc2626;
 }
+
+.money-summary-wrap {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.recalculate-vat-btn {
+  height: 34px;
+  padding: 0 14px;
+  margin-top: 0;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.recalculate-vat-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.recalculate-vat-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
