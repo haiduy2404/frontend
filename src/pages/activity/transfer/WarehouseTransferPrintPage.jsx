@@ -12,7 +12,39 @@ function WarehouseTransferPrintPage() {
   const [detailRows, setDetailRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const DEFAULT_PRINT_ROWS = 8;
+  const DEFAULT_PRINT_ROWS = 7;
+  const FIRST_PAGE_MAX_ROWS = 7;
+  const NEXT_PAGE_MAX_ROWS = 15;
+
+  const firstPageRows = useMemo(() => {
+  if (detailRows.length <= FIRST_PAGE_MAX_ROWS) {
+    return Array.from({
+      length: Math.max(DEFAULT_PRINT_ROWS, detailRows.length),
+    }).map((_, index) => detailRows[index] || null);
+  }
+
+  return detailRows.slice(0, FIRST_PAGE_MAX_ROWS);
+}, [detailRows]);
+
+  const remainingRows = useMemo(() => {
+    if (detailRows.length <= FIRST_PAGE_MAX_ROWS) return [];
+
+    return detailRows.slice(FIRST_PAGE_MAX_ROWS);
+  }, [detailRows]);
+
+  const extraPages = useMemo(() => {
+    const pages = [];
+
+    for (let i = 0; i < remainingRows.length; i += NEXT_PAGE_MAX_ROWS) {
+      pages.push(
+        remainingRows.slice(i, i + NEXT_PAGE_MAX_ROWS)
+      );
+    }
+
+    return pages;
+  }, [remainingRows]);
+
+  const hasExtraPages = extraPages.length > 0;
 
   const unwrapData = (response) => response?.data || response;
 
@@ -122,11 +154,6 @@ function WarehouseTransferPrintPage() {
     fetchTransfer();
   }, [code]);
 
-  const displayRows = useMemo(() => {
-    return Array.from({
-      length: Math.max(DEFAULT_PRINT_ROWS, detailRows.length),
-    }).map((_, index) => detailRows[index] || null);
-  }, [detailRows]);
 
   const sourceWarehouse =
     transfer?.source_warehouse_name ||
@@ -152,13 +179,12 @@ function WarehouseTransferPrintPage() {
         <button type="button" onClick={() => navigate(-1)}>
           Quay lại
         </button>
-
         <button
           type="button"
           onClick={() =>
             printWithPageSize(
-              PAGE_SIZE.A4_PORTRAIT.width,
-              PAGE_SIZE.A4_PORTRAIT.height
+              PAGE_SIZE.A5_LANDSCAPE.width,
+              PAGE_SIZE.A5_LANDSCAPE.height
             )
           }
         >
@@ -224,7 +250,7 @@ function WarehouseTransferPrintPage() {
             </thead>
 
             <tbody>
-              {displayRows.map((item, index) => (
+              {firstPageRows.map((item, index) => (
                 <tr key={index}>
                   <td className="transfer-print-center-cell">
                     {item ? index + 1 : ""}
@@ -257,7 +283,7 @@ function WarehouseTransferPrintPage() {
               ))}
             </tbody>
           </table>
-
+        {!hasExtraPages && (
           <div className="transfer-print-signature-row">
             <div>
               <strong>NGƯỜI NHẬN</strong>
@@ -275,7 +301,135 @@ function WarehouseTransferPrintPage() {
               <strong>PHỤ TRÁCH CUNG TIÊU</strong>
             </div>
           </div>
+        )}
         </div>
+        {extraPages.map((pageRows, pageIndex) => {
+          const isLastPage = pageIndex === extraPages.length - 1;
+
+          const startIndex =
+            FIRST_PAGE_MAX_ROWS +
+            pageIndex * NEXT_PAGE_MAX_ROWS;
+
+          return (
+            <div
+              key={pageIndex}
+              className="transfer-print-paper transfer-print-paper-break"
+            >
+              <table className="transfer-print-table">
+                <colgroup>
+                  <col className="transfer-print-col-stt" />
+                  <col className="transfer-print-col-name" />
+                  <col className="transfer-print-col-code" />
+                  <col className="transfer-print-col-unit" />
+                  <col className="transfer-print-col-qty" />
+                  <col className="transfer-print-col-qty" />
+                  <col className="transfer-print-col-note" />
+                </colgroup>
+
+                <thead>
+                  <tr>
+                    <th rowSpan={2}>TT</th>
+
+                    <th rowSpan={2}>
+                      TÊN NHÃN HIỆU
+                      <br />
+                      QUY CÁCH VẬT TƯ
+                    </th>
+
+                    <th rowSpan={2}>
+                      MÃ
+                      <br />
+                      SỐ
+                    </th>
+
+                    <th rowSpan={2}>ĐVT</th>
+
+                    <th colSpan={2}>SỐ LƯỢNG</th>
+
+                    <th rowSpan={2}>
+                      GHI
+                      <br />
+                      CHÚ
+                    </th>
+                  </tr>
+
+                  <tr>
+                    <th>YÊU CẦU</th>
+                    <th>THỰC PHÁT</th>
+                  </tr>
+
+                  <tr className="transfer-print-symbol-row">
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                    <th>4</th>
+                    <th>5</th>
+                    <th>6</th>
+                    <th>7</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {pageRows.map((item, index) => (
+                    <tr key={index}>
+                      <td className="transfer-print-center-cell">
+                        {startIndex + index + 1}
+                      </td>
+
+                      <td className="transfer-print-name-cell">
+                        {item?.goods_name || ""}
+                      </td>
+
+                      <td className="transfer-print-center-cell">
+                        {item?.goods_code || ""}
+                      </td>
+
+                      <td className="transfer-print-center-cell">
+                        {item?.unit_name || ""}
+                      </td>
+
+                      <td className="transfer-print-number-cell">
+                        {formatPrintQuantity(
+                          item?.requested_quantity
+                        )}
+                      </td>
+
+                      <td className="transfer-print-number-cell">
+                        {formatPrintQuantity(
+                          item?.actual_quantity
+                        )}
+                      </td>
+
+                      <td className="transfer-print-note-cell">
+                        {item?.note || ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {isLastPage && (
+                <div className="transfer-print-signature-row">
+                  <div>
+                    <strong>NGƯỜI NHẬN</strong>
+                  </div>
+
+                  <div>
+                    <strong>PT ĐƠN VỊ</strong>
+                  </div>
+
+                  <div>
+                    <strong>NGƯỜI GIAO</strong>
+                  </div>
+
+                  <div>
+                    <strong>PHỤ TRÁCH CUNG TIÊU</strong>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

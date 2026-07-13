@@ -1,16 +1,14 @@
 /* =========================================================
    WarehouseTransferPrintPage.css
    Page: Phiếu chuyển vật tư trong nội bộ
+   A5 ngang: 210mm x 148mm
    ========================================================= */
 
 .transfer-print-page {
-  height: 100vh;
+  min-height: 100vh;
   background: #e5e7eb;
-  padding: 16px;
+  padding: 16px 0;
   box-sizing: border-box;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 .transfer-print-toolbar {
@@ -19,7 +17,6 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  flex: 0 0 auto;
 }
 
 .transfer-print-toolbar button {
@@ -34,22 +31,23 @@
 }
 
 .transfer-print-scroll {
-  flex: 1;
-  overflow-y: auto;
+  width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
   padding-bottom: 24px;
 }
 
 .transfer-print-paper {
   width: 210mm;
-  min-height: 297mm;
+  min-height: 148mm;
   margin: 0 auto;
   background: #ffffff;
-  padding: 12mm 18mm 12mm 14mm;
+  padding: 8mm 12mm 7mm;
   box-sizing: border-box;
   color: #000000;
   font-family: "Times New Roman", Times, serif;
-  font-size: 15px;
+  font-size: 13pt;
+  line-height: 1.18;
 }
 
 .transfer-print-paper,
@@ -61,54 +59,50 @@
 /* ================= Header ================= */
 
 .transfer-print-unit {
-  font-size: 16px;
+  font-size: 11pt;
   font-weight: 700;
-  line-height: 1.25;
-  margin-bottom: 5mm;
+  line-height: 1.15;
+  margin-bottom: 3mm;
 }
 
 .transfer-print-title-block {
   text-align: center;
-  margin-bottom: 6mm;
+  margin-bottom: 3mm;
 }
 
 .transfer-print-title-block h1 {
   margin: 0;
-  font-size: 24px;
-  line-height: 1.2;
+  font-size: 20pt;
+  line-height: 1.05;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .transfer-print-title-block div {
-  margin-top: 3mm;
-  font-size: 17px;
-  line-height: 1.2;
+  margin-top: 2mm;
+  font-size: 13pt;
+  line-height: 1.15;
 }
 
 /* ================= Info ================= */
 
 .transfer-print-info {
-  margin-top: 4mm;
-  margin-bottom: 6mm;
-  font-size: 17px;
-  line-height: 1.5;
+  margin-top: 2mm;
+  margin-bottom: 3mm;
+  font-size: 13pt;
+  line-height: 1.2;
 }
 
 .transfer-print-info div {
   display: flex;
   align-items: baseline;
-  min-height: 8mm;
-}
-
-.transfer-print-info div::first-letter {
-  font-weight: 700;
+  min-height: 6mm;
 }
 
 .transfer-print-info span {
   flex: 1;
   display: inline-block;
-  min-height: 6mm;
+  min-height: 5mm;
   margin-left: 4px;
   padding-left: 4px;
   border-bottom: 1px dotted #000000;
@@ -121,54 +115,54 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 15px;
+  font-size: 11pt;
 }
 
 .transfer-print-table th,
 .transfer-print-table td {
   border: 1px solid #000000;
-  padding: 1mm 1.2mm;
+  padding: 0.7mm 1mm;
   vertical-align: middle;
 }
 
 .transfer-print-table thead th {
   text-align: center;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .transfer-print-table thead tr:first-child th {
-  height: 12mm;
-}
-
-.transfer-print-table thead tr:nth-child(2) th {
   height: 8mm;
 }
 
+.transfer-print-table thead tr:nth-child(2) th {
+  height: 6mm;
+}
+
 .transfer-print-symbol-row th {
-  height: 6mm !important;
-  padding: 0.5mm 1mm;
+  height: 5mm !important;
+  padding: 0.3mm 0.8mm;
   font-weight: 700;
 }
 
 .transfer-print-table tbody td {
-  height: 8mm;
-  font-size: 15px;
-  line-height: 1.15;
+  height: 6mm;
+  font-size: 11pt;
+  line-height: 1.1;
 }
 
 /* ================= Column width ================= */
 
 .transfer-print-col-stt {
-  width: 10mm;
+  width: 9mm;
 }
 
 .transfer-print-col-name {
-  width: 58mm;
+  width: 55mm;
 }
 
 .transfer-print-col-code {
-  width: 18mm;
+  width: 20mm;
 }
 
 .transfer-print-col-unit {
@@ -192,7 +186,7 @@
 .transfer-print-name-cell {
   text-align: left;
   white-space: normal;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .transfer-print-number-cell {
@@ -206,22 +200,23 @@
 /* ================= Signature ================= */
 
 .transfer-print-signature-row {
-  margin-top: 6mm;
+  margin-top: 5mm;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1.4fr;
+  grid-template-columns: repeat(4, 1fr);
   text-align: center;
   column-gap: 4mm;
 }
 
 .transfer-print-signature-row div {
-  min-height: 32mm;
+  min-height: 22mm;
 }
 
 .transfer-print-signature-row strong {
   display: block;
-  font-size: 15px;
+  font-size: 11pt;
   font-weight: 700;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ================= Loading ================= */
@@ -242,7 +237,7 @@
 }
 
 /* ── Print ────────────────────────────────────────────────── */
-/* @page size được inject động qua printUtils.js để tránh bị đè bởi trang khác */
+/* @page size được inject động qua printUtils.js */
 
 @media print {
   html,
@@ -275,18 +270,17 @@
     display: block !important;
     width: 210mm !important;
     height: auto !important;
-    max-height: none !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
-    flex: none !important;
   }
 
   .transfer-print-paper {
     width: 210mm !important;
-    min-height: 297mm !important;
+    height: 148mm !important;
+    min-height: 148mm !important;
     margin: 0 !important;
-    padding: 12mm 14mm 12mm !important;
+    padding: 8mm 12mm 7mm !important;
     box-shadow: none !important;
     box-sizing: border-box !important;
     page-break-after: always;

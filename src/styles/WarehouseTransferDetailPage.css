@@ -211,8 +211,18 @@
   white-space: nowrap;
   vertical-align: middle;
   box-sizing: border-box;
-  overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Chỉ các ô bình thường mới hidden */
+.transfer-detail-table td:not(.goods-code-dropdown-cell),
+.transfer-detail-table th {
+  overflow: hidden;
+}
+
+/* Ô chứa dropdown phải cho phép tràn ra ngoài */
+.transfer-detail-table td.goods-code-dropdown-cell {
+  overflow: visible !important;
 }
 
 .transfer-detail-table th {
@@ -602,4 +612,50 @@
 
 .detail-action-row .delete-row-btn {
   color: #ef4444;
+}
+
+/* ================= FIX DROPDOWN NỔI TRÊN TABLE ================= */
+
+.transfer-detail-table tbody tr {
+  position: relative;
+  z-index: 1;
+}
+
+/* Dòng đang mở dropdown phải nằm trên tất cả các dòng khác */
+.transfer-detail-table tbody tr:has(.goods-code-dropdown-list) {
+  z-index: 99999 !important;
+}
+
+.transfer-detail-table tbody tr:has(.goods-code-dropdown-list) td {
+  position: relative;
+  z-index: 99999 !important;
+}
+
+.goods-code-dropdown-cell {
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 99999 !important;
+}
+
+.goods-code-dropdown-box {
+  position: relative !important;
+  z-index: 99999 !important;
+}
+
+.goods-code-dropdown-list {
+  position: absolute !important;
+  top: calc(100% + 2px);
+  left: 0;
+  width: 520px;
+  max-height: 260px;
+
+  z-index: 1000000 !important;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.24);
 }
