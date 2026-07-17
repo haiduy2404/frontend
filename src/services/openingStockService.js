@@ -21,3 +21,18 @@ export const importOpeningStockExcel = async (formData) => {
 
   return response.data;
 };
+
+export const importStockBalanceExcel = async (formData, onUploadProgress) => {
+  const response = await axiosInstance.post(
+    "/inventory/stock-balance/import",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress,
+    }
+  );
+
+  return response.data;
+};

@@ -8,10 +8,9 @@ import {
 
 import { NavLink } from "react-router-dom";
 
-import {
-  getOpeningStocks,
-  importOpeningStockExcel,
-} from "../../services/openingStockService";
+import { getOpeningStocks } from "../../services/openingStockService";
+import { getWarehouses } from "../../services/warehouseService";
+import StockBalanceImportModal from "../../components/StockBalanceImportModal";
 
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -20,13 +19,19 @@ function OpeningStockPage() {
   const getRowKey = (item) => `${item.goods_id}_${item.warehouse_id}`;
   const [openingStocks, setOpeningStocks] = useState([]);
   const resizingRef = useRef(null);
-  const fileInputRef = useRef(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  const [warehouses, setWarehouses] = useState([]);
+  const [selectedWarehouse, setSelectedWarehouse] = useState(null);
+  const [warehouseSearch, setWarehouseSearch] = useState("");
+  const [warehouseDropdownOpen, setWarehouseDropdownOpen] = useState(false);
+  const warehouseBoxRef = useRef(null);
 
   const defaultColumns = [
     { key: "goods_code", label: "Mã hàng", visible: true, width: 120 },
@@ -58,6 +63,35 @@ function OpeningStockPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
+  useEffect(() => {
+    const fetchWarehouses = async () => {
+      try {
+        const data = await getWarehouses({ page: 1, page_size: 100 });
+        const payload = data?.data || data;
+        const results = Array.isArray(payload?.results)
+          ? payload.results
+          : Array.isArray(payload)
+          ? payload
+          : [];
+        setWarehouses(results);
+      } catch (error) {
+        console.error("GET WAREHOUSES ERROR:", error.response?.data || error);
+        setWarehouses([]);
+      }
+    };
+    fetchWarehouses();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (warehouseBoxRef.current && !warehouseBoxRef.current.contains(e.target)) {
+        setWarehouseDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   if (!canDo("view_opening_stock")) {
     return (
       <div className="no-permission-page">
@@ -68,13 +102,15 @@ function OpeningStockPage() {
     const fetchOpeningStocks = async (
     keyword = search,
     pageNumber = page,
-    size = pageSize
+    size = pageSize,
+    warehouseId = selectedWarehouse?.id
     ) => {
     try {
         const data = await getOpeningStocks({
         search: keyword,
         page: pageNumber,
         page_size: size,
+        warehouse_id: warehouseId || undefined,
         });
 
         const payload = data?.data || data;
@@ -95,36 +131,29 @@ function OpeningStockPage() {
     };
 
     useEffect(() => {
-      fetchOpeningStocks(debouncedSearch, page, pageSize);
-    }, [debouncedSearch, page, pageSize]);
+      fetchOpeningStocks(debouncedSearch, page, pageSize, selectedWarehouse?.id);
+    }, [debouncedSearch, page, pageSize, selectedWarehouse]);
 
-    const handleImportExcelClick = () => {
-      if (!canDo("create_opening_stock")) {
-        alert("Bạn không có quyền thêm tồn kho đầu kỳ");
-        return;
-      }
+    const normalizeVn = (text) =>
+      (text || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d");
 
-      fileInputRef.current.click();
-    };
+    const filteredWarehouses = warehouses.filter((w) => {
+      const term = normalizeVn(warehouseSearch.trim());
+      if (!term) return true;
+      return (
+        normalizeVn(w.name).includes(term) || normalizeVn(w.code).includes(term)
+      );
+    });
 
-    const handleImportExcelChange = async (e) => {
-    const file = e.target.files[0];
-
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-        await importOpeningStockExcel(formData);
-        alert("Import tồn kho đầu kì thành công");
-        await fetchOpeningStocks(search, page, pageSize);
-    } catch (error) {
-        console.error("IMPORT OPENING STOCK ERROR:", error.response?.data || error);
-        alert("Import tồn kho đầu kì thất bại");
-    }
-
-    e.target.value = "";
+    const handleSelectWarehouse = (warehouse) => {
+      setSelectedWarehouse(warehouse);
+      setWarehouseSearch("");
+      setWarehouseDropdownOpen(false);
+      setPage(1);
     };
 
     const parseLocaleNumber = (value) => {
@@ -238,6 +267,66 @@ function OpeningStockPage() {
                   setPage(1);
                 }}
             />
+
+            <div className="warehouse-select" ref={warehouseBoxRef}>
+              <input
+                className="warehouse-select-input"
+                placeholder="Tất cả kho"
+                value={
+                  warehouseDropdownOpen
+                    ? warehouseSearch
+                    : selectedWarehouse
+                    ? `${selectedWarehouse.code} - ${selectedWarehouse.name}`
+                    : ""
+                }
+                onFocus={() => {
+                  setWarehouseDropdownOpen(true);
+                  setWarehouseSearch("");
+                }}
+                onChange={(e) => {
+                  setWarehouseSearch(e.target.value);
+                  setWarehouseDropdownOpen(true);
+                }}
+              />
+
+              {selectedWarehouse && !warehouseDropdownOpen && (
+                <button
+                  className="warehouse-select-clear"
+                  title="Bỏ lọc kho"
+                  onClick={() => handleSelectWarehouse(null)}
+                >
+                  ×
+                </button>
+              )}
+
+              {warehouseDropdownOpen && (
+                <div className="warehouse-select-dropdown">
+                  <div
+                    className="warehouse-select-option warehouse-select-all"
+                    onMouseDown={() => handleSelectWarehouse(null)}
+                  >
+                    Tất cả kho
+                  </div>
+                  {filteredWarehouses.map((w) => (
+                    <div
+                      key={w.id}
+                      className={`warehouse-select-option ${
+                        selectedWarehouse?.id === w.id ? "selected" : ""
+                      }`}
+                      onMouseDown={() => handleSelectWarehouse(w)}
+                    >
+                      <span className="warehouse-option-code">{w.code}</span>
+                      <span className="warehouse-option-name">{w.name}</span>
+                    </div>
+                  ))}
+                  {filteredWarehouses.length === 0 && (
+                    <div className="warehouse-select-empty">
+                      Không tìm thấy kho phù hợp
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             </div>
 
         <div className="opening-stock-actions">
@@ -258,18 +347,10 @@ function OpeningStockPage() {
             <RiSettings3Line />
         </button>
 
-        <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            style={{ display: "none" }}
-            onChange={handleImportExcelChange}
-        />
-
         {canDo("create_opening_stock") && (
           <button
             className="import-excel-btn"
-            onClick={handleImportExcelClick}
+            onClick={() => setShowImportModal(true)}
           >
             <RiFileExcel2Line />
             <span>Nhập từ Excel</span>
@@ -432,6 +513,15 @@ function OpeningStockPage() {
         </div>
       </div>
     </div>
+      {showImportModal && (
+        <StockBalanceImportModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() =>
+            fetchOpeningStocks(debouncedSearch, page, pageSize, selectedWarehouse?.id)
+          }
+        />
+      )}
+
       {showSettingModal && (
         <div className="setting-modal-overlay">
           <div className="setting-modal">

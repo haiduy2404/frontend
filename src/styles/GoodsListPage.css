@@ -65,6 +65,25 @@
   background: #1d4ed8;
 }
 
+.import-excel-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 4px;
+  border: 1px solid #16a34a;
+  background: #16a34a;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.import-excel-btn:hover {
+  background: #15803d;
+}
+
 .goods-table-wrapper {
   flex: 1;
   overflow: auto;

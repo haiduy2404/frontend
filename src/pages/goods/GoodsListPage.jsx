@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import "../../styles/GoodsListPage.css";
-import { RiRefreshLine, RiEdit2Line, RiDeleteBin6Line } from "react-icons/ri";
+import { RiRefreshLine, RiEdit2Line, RiDeleteBin6Line, RiFileExcel2Line } from "react-icons/ri";
 import { getGoods, deleteGoods } from "../../services/goodsService";
 import GoodsFormModal from "../../components/GoodsFormModal";
+import GoodsImportModal from "../../components/GoodsImportModal";
 import { useAuth } from "../../contexts/AuthContext";
 
 function GoodsListPage() {
@@ -17,6 +18,7 @@ function GoodsListPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingGoods, setEditingGoods] = useState(null);
   const { canDo } = useAuth();
 
@@ -219,6 +221,17 @@ function GoodsListPage() {
             <RiRefreshLine />
           </button>
 
+          {canDo("create_goods") && (
+            <button
+              className="import-excel-btn"
+              title="Nhập danh mục vật tư từ file Excel"
+              onClick={() => setShowImportModal(true)}
+            >
+              <RiFileExcel2Line />
+              Nhập Excel
+            </button>
+          )}
+
           <button className="add-btn" onClick={handleOpenAddModal}>
             + Thêm
           </button>
@@ -241,7 +254,7 @@ function GoodsListPage() {
               </th>
               <th>Mã hàng</th>
               <th>Tên hàng</th>
-              <th>ĐVT tính chính</th>
+              <th>ĐVT chính</th>
               <th className="action-col"></th>
             </tr>
           </thead>
@@ -259,7 +272,11 @@ function GoodsListPage() {
 
                 <td>{goods.code || "-"}</td>
                 <td>{goods.name || "-"}</td>
-                <td>{goods.unit_name || "-"}</td>
+                <td>
+                  {goods.units?.find((u) => u.is_default)?.unit_name ||
+                    goods.units?.[0]?.unit_name ||
+                    "-"}
+                </td>
 
                 <td className="goods-row-actions">
                   <button
@@ -338,6 +355,15 @@ function GoodsListPage() {
           editingGoods={editingGoods}
           onClose={handleCloseModal}
           onSuccess={handleSaveSuccess}
+        />
+      )}
+
+      {showImportModal && (
+        <GoodsImportModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() =>
+            fetchGoods(debouncedSearch, page, pageSize, stockStatus)
+          }
         />
       )}
     </div>

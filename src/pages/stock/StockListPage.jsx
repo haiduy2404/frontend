@@ -4,6 +4,7 @@ import "../../styles/StockListPage.css";
 import { createWarehouse, getWarehouses, deleteWarehouse, updateWarehouse, importWarehouseExcel } from "../../services/warehouseService";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { RiEdit2Line } from "react-icons/ri";
+import { RiMore2Fill, RiPauseCircleLine, RiPlayCircleLine } from "react-icons/ri";
 import { useAuth } from "../../contexts/AuthContext";
 
 function StockListPage() {
@@ -54,28 +55,6 @@ const handleExcelChange = async (e) => {
   } else {
     setSelectedIds([]);
   }
-};
-
-  const handleEdit = () => {
-  if (selectedIds.length !== 1) {
-    alert("Vui lòng chọn đúng 1 kho để sửa");
-    return;
-  }
-
-  const warehouse = warehouses.find((item) => item.id === selectedIds[0]);
-
-  if (!warehouse) return;
-
-  setEditingWarehouseId(warehouse.id);
-
-  setFormData({
-    code: warehouse.code || "",
-    name: warehouse.name || "",
-    address: warehouse.address || "",
-    accountant_code: warehouse.accountant_code || "",
-  });
-
-  setShowModal(true);
 };
 
   const handleSelect = (id) => {
@@ -214,6 +193,52 @@ const fetchWarehouses = async (
   }
 };
 
+  const handleToggleStatus = async (warehouse) => {
+    const isActive = warehouse.status === "ACTIVE";
+    const confirmed = window.confirm(
+      isActive
+        ? `Bạn có chắc muốn ngừng hoạt động kho "${warehouse.name}" không?`
+        : `Bạn có chắc muốn kích hoạt lại kho "${warehouse.name}" không?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await updateWarehouse(warehouse.id, {
+        code: warehouse.code,
+        name: warehouse.name,
+        address: warehouse.address,
+        accountant_code: warehouse.accountant_code || "",
+        status: isActive ? "INACTIVE" : "ACTIVE",
+      });
+      await fetchWarehouses(search, page);
+    } catch (error) {
+      console.error("TOGGLE WAREHOUSE STATUS ERROR:", error.response?.data || error);
+      alert(
+        isActive ? "Ngừng hoạt động kho thất bại" : "Kích hoạt lại kho thất bại"
+      );
+    } finally {
+      setOpenMenuId(null);
+    }
+  };
+
+  const handleDeleteRow = async (warehouse) => {
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn xóa kho "${warehouse.name}" không?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteWarehouse(warehouse.id);
+      setSelectedIds((prev) => prev.filter((id) => id !== warehouse.id));
+      await fetchWarehouses(search, page);
+    } catch (error) {
+      console.error("DELETE WAREHOUSE ERROR:", error.response?.data || error);
+      alert("Xóa kho thất bại");
+    } finally {
+      setOpenMenuId(null);
+    }
+  };
+
     const handleDelete = async () => {
         if (selectedIds.length === 0) {
           alert("Vui lòng chọn kho cần xóa");
@@ -311,7 +336,7 @@ const fetchWarehouses = async (
           </tr>
         </thead>
           <tbody>
-           {warehouses.map((warehouse) => (
+           {warehouses.map((warehouse, index) => (
       <tr
         key={warehouse.id}
         className={`warehouse-row ${
@@ -334,14 +359,14 @@ const fetchWarehouses = async (
     <td>{warehouse.address}</td>
     <td>{warehouse.accountant_code || "-"}</td>
 
-    <td
-      className={
-        warehouse.status === "ACTIVE"
-          ? "status-active"
-          : "status-inactive"
-      }
-    >
-      {warehouse.status === "ACTIVE" ? "ĐANG HOẠT ĐỘNG" : "NGỪNG HOẠT ĐỘNG"}
+    <td>
+      <span
+        className={`status-badge ${
+          warehouse.status === "ACTIVE" ? "status-active" : "status-inactive"
+        }`}
+      >
+        {warehouse.status === "ACTIVE" ? "Đang hoạt động" : "Ngừng hoạt động"}
+      </span>
     </td>
 
    <td className="row-actions">
@@ -367,94 +392,66 @@ const fetchWarehouses = async (
       )}
 
       <div className="row-more-wrapper">
-        {canDo("update_warehouse") && (
+        {(canDo("update_warehouse") || canDo("delete_warehouse")) && (
           <button
-            className="row-more-btn"
+            className={`row-more-btn ${openMenuId === warehouse.id ? "open" : ""}`}
+            title="Thao tác khác"
             onClick={(e) => {
               e.stopPropagation();
               setOpenMenuId(openMenuId === warehouse.id ? null : warehouse.id);
             }}
           >
-            ...
+            <RiMore2Fill />
           </button>
         )}
 
-      {openMenuId === warehouse.id && (
-            <div className="row-more-menu">
-              {warehouse.status === "ACTIVE" ? (
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-
-                    const confirmInactive = window.confirm(
-                      `Bạn có chắc muốn ngừng hoạt động kho "${warehouse.name}" không?`
-                    );
-
-                    if (!confirmInactive) return;
-
-                    await updateWarehouse(warehouse.id, {
-                      code: warehouse.code,
-                      name: warehouse.name,
-                      address: warehouse.address,
-                      accountant_code: warehouse.accountant_code || "",
-                      status: "INACTIVE",
-                    });
-
-                    await fetchWarehouses(search, page);
-                    setOpenMenuId(null);
-                  }}
-                >
-                  Ngừng hoạt động
-                </button>
-              ) : (
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-
-                    const confirmActive = window.confirm(
-                      `Bạn có chắc muốn kích hoạt lại kho "${warehouse.name}" không?`
-                    );
-
-                    if (!confirmActive) return;
-
-                    await updateWarehouse(warehouse.id, {
-                      code: warehouse.code,
-                      name: warehouse.name,
-                      address: warehouse.address,
-                      accountant_code: warehouse.accountant_code || "",
-                      status: "ACTIVE",
-                    });
-
-                    await fetchWarehouses(search, page);
-                    setOpenMenuId(null);
-                  }}
-                >
-                  Kích hoạt lại
-                </button>
-              )}
-          {canDo("delete_warehouse") && (
-          <button
-            className="danger"
-            onClick={async (e) => {
-              e.stopPropagation();
-
-              const confirmDelete = window.confirm(
-                "Bạn có chắc muốn xóa kho này?"
-              );
-
-              if (!confirmDelete) return;
-
-              await deleteWarehouse(warehouse.id);
-              await fetchWarehouses(search, page);
-
-              setOpenMenuId(null);
-            }}
+        {openMenuId === warehouse.id && (
+          <div
+            className={`row-more-menu ${
+              warehouses.length > 3 && index >= warehouses.length - 2
+                ? "drop-up"
+                : ""
+            }`}
           >
-            Xóa
-          </button>
-          )}
-        </div>
-      )}
+            {canDo("update_warehouse") && (
+              <button
+                className="menu-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleStatus(warehouse);
+                }}
+              >
+                {warehouse.status === "ACTIVE" ? (
+                  <>
+                    <RiPauseCircleLine className="menu-item-icon" />
+                    <span>Ngừng hoạt động</span>
+                  </>
+                ) : (
+                  <>
+                    <RiPlayCircleLine className="menu-item-icon" />
+                    <span>Kích hoạt lại</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {canDo("delete_warehouse") && (
+              <>
+                <div className="menu-divider" />
+                <button
+                  className="menu-item danger"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteRow(warehouse);
+                  }}
+                >
+                  <RiDeleteBin6Line className="menu-item-icon" />
+                  <span>Xóa kho</span>
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 </td>
   </tr>

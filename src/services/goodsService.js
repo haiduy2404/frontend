@@ -22,3 +22,14 @@ export const deleteGoods = async (id) => {
   const response = await axiosInstance.delete(`/inventory/goods/${id}`);
   return response.data;
 };
+
+export const importGoodsExcel = async (formData, onUploadProgress) => {
+  const response = await axiosInstance.post("/inventory/goods/import", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    onUploadProgress,
+  });
+
+  return response.data;
+};

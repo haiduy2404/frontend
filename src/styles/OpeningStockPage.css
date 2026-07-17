@@ -18,7 +18,10 @@
   justify-content: space-between;
   gap: 12px;
   min-width: 0;
-  overflow: hidden;
+  /* overflow phải visible để dropdown chọn kho không bị cắt ở mép toolbar */
+  overflow: visible;
+  position: relative;
+  z-index: 60;
   flex-shrink: 0;
 }
 
@@ -35,6 +38,98 @@
   border-radius: 4px;
   padding: 0 10px;
   font-size: 14px;
+}
+
+.warehouse-select {
+  position: relative;
+}
+
+.warehouse-select-input {
+  width: 220px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0 28px 0 10px;
+  font-size: 14px;
+}
+
+.warehouse-select-input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.warehouse-select-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px;
+}
+
+.warehouse-select-clear:hover {
+  color: #111827;
+}
+
+.warehouse-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 300px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+  z-index: 50;
+}
+
+.warehouse-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.warehouse-select-option:hover {
+  background: #eff6ff;
+}
+
+.warehouse-select-option.selected {
+  background: #dbeafe;
+}
+
+.warehouse-select-all {
+  color: #2563eb;
+  font-weight: 500;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.warehouse-option-code {
+  font-weight: 500;
+  color: #1d4ed8;
+  min-width: 52px;
+}
+
+.warehouse-option-name {
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-select-empty {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #9ca3af;
 }
 
 .opening-stock-actions {
