@@ -93,14 +93,39 @@ function ImportOrderPage() {
     const response = await getWarehouseReceiptByCode(code);
     const data = unwrapData(response);
 
-    const rows =
+    const rawRows =
         data?.inventory_lines ||
         data?.inventory ||
         data?.items ||
         data?.details ||
       [];
+
+    const mappedRows = Array.isArray(rawRows)
+      ? rawRows.map((line) => {
+          const selectedUnit = Array.isArray(line.units)
+            ? line.units.find(
+                (unitItem) =>
+                  String(unitItem.unit_id) === String(line.goods_unit_id)
+              )
+            : null;
+
+          return {
+            ...line,
+            unit_name: selectedUnit?.unit_name || line.unit_name || "",
+            conversion_ratio:
+              selectedUnit?.conversion_ratio !== null &&
+              selectedUnit?.conversion_ratio !== undefined
+                ? String(selectedUnit.conversion_ratio)
+                : line.conversion_ratio !== null &&
+                  line.conversion_ratio !== undefined
+                ? String(line.conversion_ratio)
+                : "",
+          };
+        })
+      : [];
+
     setSelectedReceiptDetail(data);
-    setDetailRows(Array.isArray(rows) ? rows : []);
+    setDetailRows(mappedRows);
   } catch (error) {
     console.error("LOAD IMPORT ORDER DETAIL ERROR:", error.response?.data || error);
     setSelectedReceiptDetail(null);
