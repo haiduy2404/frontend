@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ReleaseOrderDetailPage.css";
 import { getWarehouses } from "../../../services/warehouseService";
+import { getGoods } from "../../../services/goodsService";
 import { getOpeningStocks } from "../../../services/openingStockService";
 import {
   createReleaseOrder,
@@ -59,6 +60,7 @@ function ReleaseOrderDetailPage() {
   const debouncedGoodsKeywordRef = useRef("");
   const goodsSearchRequestIdRef = useRef(0);
   const goodsPendingRequestsRef = useRef(0);
+  const goodsRequestControllerRef = useRef(null);
   const fetchReleaseReferences = async () => {
     try {
         const [targetResponse, receiverResponse] = await Promise.all([
@@ -231,36 +233,10 @@ function ReleaseOrderDetailPage() {
         }))
       : [];
 
-  const fetchUnitsByGoodsIds = async (warehouseId, goodsIds) => {
-    if (!warehouseId || !goodsIds.length) return {};
+  const fetchUnitsByGoodsIds = async (_warehouseId, goodsIds) => {
+    if (!goodsIds.length) return {};
 
-    const entries = await Promise.all(
-      goodsIds.map(async (goodsId) => {
-        try {
-          const data = await getOpeningStocks({
-            warehouse_id: warehouseId,
-            goods_id: goodsId,
-            page: 1,
-            page_size: 1,
-          });
-
-          const results = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.data?.results)
-            ? data.data.results
-            : Array.isArray(data?.results)
-            ? data.results
-            : Array.isArray(data?.data)
-            ? data.data
-            : [];
-
-          return [goodsId, results[0]?.units || []];
-        } catch {
-          return [goodsId, []];
-        }
-      })
-    );
-
+    const entries = goodsIds.map((goodsId) => [goodsId, []]);
     return Object.fromEntries(entries);
   };
 
@@ -366,16 +342,29 @@ function ReleaseOrderDetailPage() {
     const keywordSnapshot = keyword;
     const requestId = append ? null : ++goodsSearchRequestIdRef.current;
 
+    if (goodsRequestControllerRef.current) {
+      goodsRequestControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    goodsRequestControllerRef.current = controller;
+
     goodsPendingRequestsRef.current += 1;
     setGoodsLoading(true);
 
     try {
-      const data = await getOpeningStocks({
-        search: keywordSnapshot,
-        warehouse_id: warehouseId,
-        page: pageNumber,
-        page_size: 30,
-      });
+      const data = await getGoods(
+        {
+          search: keywordSnapshot,
+          page: pageNumber,
+          page_size: 30,
+        },
+        { signal: controller.signal }
+      );
+
+      if (controller.signal.aborted) {
+        return;
+      }
 
       if (!append && requestId !== goodsSearchRequestIdRef.current) {
         return;
@@ -404,9 +393,16 @@ function ReleaseOrderDetailPage() {
       setGoodsPage(pageNumber);
       setGoodsTotalPages(totalPages);
     } catch (error) {
+      if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") {
+        return;
+      }
+
       console.error("LOAD GOODS DROPDOWN ERROR:", error.response?.data || error);
       alert("Không tải được danh sách hàng hóa");
     } finally {
+      if (goodsRequestControllerRef.current === controller) {
+        goodsRequestControllerRef.current = null;
+      }
       goodsPendingRequestsRef.current -= 1;
       if (goodsPendingRequestsRef.current === 0) {
         setGoodsLoading(false);
