@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createGoods, updateGoods} from "../services/goodsService";
+import { createGoods, updateGoods, getGoodsDetail } from "../services/goodsService";
 import { getGoodsUnits } from "../services/goodsUnitService";
 import "../styles/GoodsListPage.css";
 
@@ -72,34 +72,54 @@ function GoodsFormModal({
   }, [editingGoods]);
 
   useEffect(() => {
-    if (!editingGoods) return;
+    if (!editingGoodsId) return;
 
-    const defaultUnit = Array.isArray(editingGoods.units)
-      ? editingGoods.units.find((unit) => unit.is_default)
-      : null;
+    let cancelled = false;
 
-    const conversionUnitList = Array.isArray(editingGoods.units)
-      ? editingGoods.units
-          .filter((unit) => !unit.is_default)
-          .map((unit) => ({
-            temp_id: unit.id || Date.now() + Math.random(),
-            unit_id: unit.unit_id || "",
-            ratio: unit.conversion_ratio || "",
-          }))
-      : [];
+    const fetchGoodsDetail = async () => {
+      try {
+        const response = await getGoodsDetail(editingGoodsId);
+        const goods = response?.data || response;
 
-    setFormData({
-      code: editingGoods.code || "",
-      name: editingGoods.name || "",
-      description: editingGoods.description || null,
-      selling_description: editingGoods.selling_description || null,
-      buying_description: editingGoods.buying_description || null,
-      goods_group_id: editingGoods.goods_group_id || "",
-      unit_id: defaultUnit?.unit_id || editingGoods.unit_id || "",
-    });
+        if (cancelled || !goods) return;
 
-    setConversionUnits(conversionUnitList);
-  }, [editingGoods]);
+        const defaultUnit = Array.isArray(goods.units)
+          ? goods.units.find((unit) => unit.is_default)
+          : null;
+
+        const conversionUnitList = Array.isArray(goods.units)
+          ? goods.units
+              .filter((unit) => !unit.is_default)
+              .map((unit) => ({
+                temp_id: unit.id || Date.now() + Math.random(),
+                unit_id: unit.unit_id || "",
+                ratio: unit.conversion_ratio || "",
+              }))
+          : [];
+
+        setFormData({
+          code: goods.code || "",
+          name: goods.name || "",
+          description: goods.description || null,
+          selling_description: goods.selling_description || null,
+          buying_description: goods.buying_description || null,
+          goods_group_id: goods.goods_group_id || "",
+          unit_id: defaultUnit?.unit_id || goods.unit_id || "",
+        });
+
+        setConversionUnits(conversionUnitList);
+      } catch (error) {
+        console.error("GET GOODS DETAIL ERROR:", error.response?.data || error);
+        alert("Không tải được thông tin hàng hóa");
+      }
+    };
+
+    fetchGoodsDetail();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editingGoodsId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

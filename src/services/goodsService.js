@@ -8,6 +8,11 @@ export const getGoods = async (params = {}) => {
   return response.data;
 };
 
+export const getGoodsDetail = async (id) => {
+  const response = await axiosInstance.get(`/inventory/goods/${id}`);
+  return response.data;
+};
+
 export const createGoods = async (payload) => {
   const response = await axiosInstance.post("/inventory/goods", payload);
   return response.data;
