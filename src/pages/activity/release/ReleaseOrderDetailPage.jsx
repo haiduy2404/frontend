@@ -61,13 +61,17 @@ function ReleaseOrderDetailPage() {
   const goodsSearchRequestIdRef = useRef(0);
   const goodsPendingRequestsRef = useRef(0);
   const goodsRequestControllerRef = useRef(null);
-  const fetchReleaseReferences = async () => {
+  const fetchReleaseReferences = async (warehouseId) => {
     try {
+        const baseParams = warehouseId ? { warehouse_id: warehouseId } : {};
+
         const [targetResponse, receiverResponse] = await Promise.all([
         getReleaseReferencesPageable({
+            ...baseParams,
             type: "RELEASE_TARGET",
         }),
         getReleaseReferencesPageable({
+            ...baseParams,
             type: "RECEIVER_UNIT",
         }),
         ]);
@@ -864,8 +868,13 @@ function ReleaseOrderDetailPage() {
 
     useEffect(() => {
         fetchWarehouseList();
-        fetchReleaseReferences();
     }, []);
+
+    // Danh sách đối tượng xuất kho / đơn vị lĩnh được cache theo kho —
+    // tải lại mỗi khi người dùng đổi kho xuất
+    useEffect(() => {
+        fetchReleaseReferences(headerData.warehouse_id);
+    }, [headerData.warehouse_id]);
 
     useEffect(() => {
       if (!isCreateMode) {
@@ -1085,6 +1094,15 @@ function ReleaseOrderDetailPage() {
                 <option value="">Chọn đơn vị lĩnh vật tư</option>
                 <option value="__manual__">Không chọn / Nhập tay</option>
 
+                {headerData.receiver_unit &&
+                    !receiverUnitOptions.some(
+                    (item) => item.name === headerData.receiver_unit
+                    ) && (
+                    <option value={headerData.receiver_unit}>
+                        {headerData.receiver_unit}
+                    </option>
+                )}
+
                 {receiverUnitOptions.map((item) => (
                     <option key={item.id || item.name} value={item.name}>
                     {item.name}
@@ -1146,6 +1164,15 @@ function ReleaseOrderDetailPage() {
                 >
                 <option value="">Chọn đối tượng xuất kho</option>
                 <option value="__manual__">Không chọn / Nhập tay</option>
+
+                {headerData.release_target &&
+                    !releaseTargetOptions.some(
+                    (item) => item.name === headerData.release_target
+                    ) && (
+                    <option value={headerData.release_target}>
+                        {headerData.release_target}
+                    </option>
+                )}
 
                 {releaseTargetOptions.map((item) => (
                     <option key={item.id || item.name} value={item.name}>

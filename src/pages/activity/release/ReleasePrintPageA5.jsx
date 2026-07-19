@@ -96,6 +96,9 @@ function ReleasePrintPageA5() {
           "",
         requested_quantity: quantity,
         actual_quantity: actualQuantity,
+        request_quantity_in_default_unit: line.request_quantity_in_default_unit,
+        actual_quantity_in_default_unit: line.actual_quantity_in_default_unit,
+        default_goods_unit_name: line.default_goods_unit_name,
       };
     });
   }, [releaseLines]);
@@ -176,9 +179,9 @@ function ReleasePrintPageA5() {
           <td className="release-print-center-cell-a5">{line ? startIndex + idx + 1 : ""}</td>
           <td className="release-print-name-cell-a5">{line?.goods_name || ""}</td>
           <td className="release-print-center-cell-a5">{line?.goods_code || ""}</td>
-          <td className="release-print-center-cell-a5">{line?.unit_name || ""}</td>
-          <td className="release-print-number-cell-a5">{line ? formatViNumber(line.requested_quantity, 2) : ""}</td>
-          <td className="release-print-number-cell-a5">{line ? formatViNumber(line.actual_quantity, 2) : ""}</td>
+          <td className="release-print-center-cell-a5">{line?.default_goods_unit_name || line?.unit_name || ""}</td>
+          <td className="release-print-number-cell-a5">{line ? formatViNumber(line.request_quantity_in_default_unit, 3) : ""}</td>
+          <td className="release-print-number-cell-a5">{line ? formatViNumber(line.actual_quantity_in_default_unit, 3) : ""}</td>
           <td className="release-print-number-cell-a5"></td>
           <td className="release-print-number-cell-a5"></td>
         </tr>
@@ -296,9 +299,9 @@ function ReleasePrintPageA5() {
                 <td className="release-print-center-cell-a5">{line ? index + 1 : ""}</td>
                 <td className="release-print-name-cell-a5">{line?.goods_name || ""}</td>
                 <td className="release-print-center-cell-a5">{line?.goods_code || ""}</td>
-                <td className="release-print-center-cell-a5">{line?.unit_name || ""}</td>
-                <td className="release-print-number-cell-a5">{line ? formatViNumber(line.requested_quantity, 2) : ""}</td>
-                <td className="release-print-number-cell-a5">{line ? formatViNumber(line.actual_quantity, 2) : ""}</td>
+                <td className="release-print-center-cell-a5">{line?.default_goods_unit_name || line?.unit_name || ""}</td>
+                <td className="release-print-number-cell-a5">{line ? formatViNumber(line.request_quantity_in_default_unit, 3) : ""}</td>
+                <td className="release-print-number-cell-a5">{line ? formatViNumber(line.actual_quantity_in_default_unit, 3) : ""}</td>
                 <td className="release-print-number-cell-a5"></td>
                 <td className="release-print-number-cell-a5"></td>
               </tr>

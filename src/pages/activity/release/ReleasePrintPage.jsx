@@ -102,6 +102,7 @@ function ReleasePrintPage() {
         unit_price: unitPrice,
         quantity_in_default_unit: line.quantity_in_default_unit,
         request_quantity_in_default_unit: line.request_quantity_in_default_unit,
+        actual_quantity_in_default_unit: line.actual_quantity_in_default_unit,
         default_goods_unit_name: line.default_goods_unit_name,
         amount,
       };
@@ -232,10 +233,10 @@ function ReleasePrintPage() {
                     {line?.default_goods_unit_name || ""}
                   </td>
                   <td className="release-print-number-cell">
-                    {line ? formatViNumber(line.requested_quantity, 2) : ""}
+                    {line ? formatViNumber(line.request_quantity_in_default_unit, 3) : ""}
                   </td>
                   <td className="release-print-number-cell">
-                    {line ? formatViNumber(line.actual_quantity, 2) : ""}
+                    {line ? formatViNumber(line.actual_quantity_in_default_unit, 3) : ""}
                   </td>
                   <td className="release-print-money-cell">
                     {/* {line ? formatViNumber(line.unit_price, 0) : ""} */}
