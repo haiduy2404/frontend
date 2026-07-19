@@ -274,6 +274,8 @@ function WarehouseReleasePage() {
         page_size: pageSize,
         ...filterParams,
         ...customParams,
+
+        in_final_release_tab: 1,
       });
 
       const data = unwrapData(response);
