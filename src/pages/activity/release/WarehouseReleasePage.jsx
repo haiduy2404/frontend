@@ -506,32 +506,6 @@ function WarehouseReleasePage() {
 
   return (
     <div className="release-order-page">
-      <div className="release-order-tabs">
-        <button
-          type="button"
-          className="release-order-tab"
-          onClick={() => navigate("/dashboard/activity/export/order")}
-        >
-          Lệnh xuất kho
-        </button>
-
-        <button
-          type="button"
-          className="release-order-tab active"
-          disabled={!canUseReleaseActualPage}
-          onClick={() => {
-            if (!canUseReleaseActualPage) {
-              alert("Bạn không có quyền xuất kho");
-              return;
-            }
-
-            navigate("/dashboard/activity/export/release");
-          }}
-        >
-          Xuất kho
-        </button>
-      </div>
-
       <div className="release-order-toolbar">
         <div className="release-order-filters">
           <input

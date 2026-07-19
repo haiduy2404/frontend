@@ -5,6 +5,7 @@ import { NavLink } from "react-router-dom";
 const Sidebar = () => {
   const [activeMenu, setActiveMenu] = useState("category");
   const [openMenu, setOpenMenu] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
   const toggleMenu = (menu) => {
@@ -78,25 +79,51 @@ const Sidebar = () => {
 
             {!collapsed && openMenu === "activity" && (
               <div className="sidebar-submenu activity-submenu">
-                  <NavLink
-                    to="/dashboard/activity/import"
-                    className={({ isActive }) =>
-                      isActive ? "sidebar-subitem active" : "sidebar-subitem"
-                    }
-                    onClick={() => setActiveMenu("activity")}
-                  >
-                    Nhập kho
-                  </NavLink>
-
                 <NavLink
-                  to="/dashboard/activity/export"
+                  to="/dashboard/activity/import"
                   className={({ isActive }) =>
                     isActive ? "sidebar-subitem active" : "sidebar-subitem"
                   }
                   onClick={() => setActiveMenu("activity")}
                 >
-                  Xuất kho
+                  Nhập kho
                 </NavLink>
+
+                <div
+                  className={`sidebar-subitem sidebar-subitem-header ${
+                    activeMenu === "activity" ? "active" : ""
+                  }`}
+                  onClick={() => setExportOpen((prev) => !prev)}
+                >
+                  <span>Xuất kho</span>
+                  <span className="sidebar-arrow">
+                    {exportOpen ? "⌄" : "›"}
+                  </span>
+                </div>
+
+                {exportOpen && (
+                  <div className="sidebar-submenu-group">
+                    <NavLink
+                      to="/dashboard/activity/export/order"
+                      className={({ isActive }) =>
+                        isActive ? "sidebar-subitem active" : "sidebar-subitem"
+                      }
+                      onClick={() => setActiveMenu("activity")}
+                    >
+                      Lệnh xuất kho
+                    </NavLink>
+
+                    <NavLink
+                      to="/dashboard/activity/export/release"
+                      className={({ isActive }) =>
+                        isActive ? "sidebar-subitem active" : "sidebar-subitem"
+                      }
+                      onClick={() => setActiveMenu("activity")}
+                    >
+                      Xuất kho
+                    </NavLink>
+                  </div>
+                )}
               </div>
             )}
           </>
