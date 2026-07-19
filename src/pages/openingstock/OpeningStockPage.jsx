@@ -15,7 +15,7 @@ import StockBalanceImportModal from "../../components/StockBalanceImportModal";
 import { useAuth } from "../../contexts/AuthContext";
 
 function OpeningStockPage() {
-  const { canDo } = useAuth();
+  const { canDo, isWarehouseRestricted } = useAuth();
   const getRowKey = (item) => `${item.goods_id}_${item.warehouse_id}`;
   const [openingStocks, setOpeningStocks] = useState([]);
   const resizingRef = useRef(null);
@@ -347,7 +347,8 @@ function OpeningStockPage() {
             <RiSettings3Line />
         </button>
 
-        {canDo("create_opening_stock") && (
+        {/* Import tự tạo kho theo tên nên chỉ dành cho tài khoản quản lý tất cả kho */}
+        {canDo("create_opening_stock") && !isWarehouseRestricted && (
           <button
             className="import-excel-btn"
             onClick={() => setShowImportModal(true)}

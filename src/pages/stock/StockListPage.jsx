@@ -20,7 +20,7 @@ function StockListPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
-  const { canDo } = useAuth();
+  const { canDo, isWarehouseRestricted } = useAuth();
 
 
   const handleExcelClick = () => {
@@ -302,7 +302,8 @@ const fetchWarehouses = async (
           )}
         </div>
         <div className="stock-actions">
-          {canDo("update_warehouse") && (
+          {/* Tài khoản bị giới hạn kho không được tạo kho mới (BE cũng chặn 403) */}
+          {canDo("update_warehouse") && !isWarehouseRestricted && (
             <button
               className="add-btn"
               onClick={() => {

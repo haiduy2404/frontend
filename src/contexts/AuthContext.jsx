@@ -54,6 +54,10 @@ export function AuthProvider({ children }) {
 
   const roles = user?.roles ?? [];
 
+  // warehouse_ids: null => tài khoản quản lý TẤT CẢ kho; mảng => chỉ các kho đó
+  const warehouseIds = user?.warehouse_ids ?? null;
+  const isWarehouseRestricted = Array.isArray(warehouseIds);
+
   const value = {
     user,
     roles,
@@ -61,6 +65,8 @@ export function AuthProvider({ children }) {
     isLoading: status === "loading",
     isAuthenticated: status === "authenticated",
     canDo: buildCanDo(roles),
+    warehouseIds,
+    isWarehouseRestricted,
     refreshUser: loadUser,
     logout,
   };
