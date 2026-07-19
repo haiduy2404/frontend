@@ -35,7 +35,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import WarehouseReleasePage from "./pages/activity/release/WarehouseReleasePage";
 import WarehouseTransferPage from "./pages/activity/transfer/WarehouseTransferPage";
 import WarehouseTransferDetailPage from "./pages/activity/transfer/WarehouseTransferDetailPage";
-import ReleasePrintPage from "./pages/activity/release/ReleasePrintPage";
+import ReleasePrintPageA4 from "./pages/activity/release/ReleasePrintPageA4";
+import ReleasePrintPageA5 from "./pages/activity/release/ReleasePrintPageA5";
 import WarehouseOrderRelease from "./pages/activity/release/WarehouseOrderRelease";
 import WarehouseTransferPrintPage from "./pages/activity/transfer/WarehouseTransferPrintPage";
 import GoodsUnitPage from "./pages/good_unit/GoodsUnitPage";
@@ -189,7 +190,16 @@ function App() {
                 path="/dashboard/activity/export/release-print/:code"
                 element={
                   <RequireRole roles={["view_warehouse_release"]}>
-                    <ReleasePrintPage />
+                    <ReleasePrintPageA4 />
+                  </RequireRole>
+               }
+              />
+
+              <Route
+                path="/dashboard/activity/export/release-print-a5/:code"
+                element={
+                  <RequireRole roles={["view_warehouse_release"]}>
+                    <ReleasePrintPageA5 />
                   </RequireRole>
                }
               />

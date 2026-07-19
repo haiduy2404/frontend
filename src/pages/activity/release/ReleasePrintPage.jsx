@@ -278,11 +278,11 @@ function ReleasePrintPage() {
           </div>
 
           <div className="release-print-signer-name-row">
-            <div>Hoàng.V Hùng</div>
             <div></div>
             <div></div>
             <div></div>
-            <div>Ngô Sỹ Trung</div>
+            <div></div>
+            <div></div>
             <div></div>
           </div>
         </div>

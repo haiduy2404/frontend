@@ -21,8 +21,14 @@ function WarehouseOrderRelease() {
 
   const [searchParams] = useSearchParams();
   const isPrintMode = searchParams.get("mode") === "print";
+  const [printPaperSize, setPrintPaperSize] = useState("A4");
   const handlePrint = () => {
-    navigate(`/dashboard/activity/export/release-print/${headerData.code || id}`);
+    const targetPath =
+      printPaperSize === "A5"
+        ? `/dashboard/activity/export/release-print-a5/${headerData.code || id}`
+        : `/dashboard/activity/export/release-print/${headerData.code || id}`;
+
+    navigate(targetPath);
   };
   const canSaveActual =
     canDo("update_actual_released_quantity") ||
@@ -492,10 +498,20 @@ function WarehouseOrderRelease() {
             </button>
 
             {isPrintMode && (
+                <>
+                <select
+                    className="header-select"
+                    value={printPaperSize}
+                    onChange={(e) => setPrintPaperSize(e.target.value)}
+                >
+                    <option value="A4">In giấy A4</option>
+                    <option value="A5">In giấy A5</option>
+                </select>
                 <button className="print-footer-btn" onClick={handlePrint}>
-                <RiPrinterLine />
-                In
+                    <RiPrinterLine />
+                    In
                 </button>
+                </>
             )}
 
             {!isPrintMode && canSaveActual && (

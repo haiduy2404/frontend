@@ -1,0 +1,508 @@
+/* =========================================================
+   RELEASE PRINT PAGE - A5 LANDSCAPE
+   Khổ giấy: 210mm x 148mm
+   ========================================================= */
+
+.release-print-page-a5 {
+  width: 100%;
+  height: 100vh;
+  background: #e5e7eb;
+  padding: 16px 0;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.release-print-toolbar-a5 {
+  width: 210mm;
+  margin: 0 auto 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+
+  flex: 0 0 auto;
+}
+
+.release-print-toolbar-a5 button {
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.release-print-toolbar-a5 button:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* =========================================================
+   VÙNG CUỘN
+   ========================================================= */
+
+.release-print-scroll-a5 {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+
+  overflow-x: auto;
+  overflow-y: auto;
+
+  padding-bottom: 24px;
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   GIẤY A5 NGANG
+   210mm - 7mm trái - 7mm phải = 196mm nội dung
+   ========================================================= */
+
+.release-print-paper-a5 {
+  width: 210mm;
+  min-height: 148mm;
+  margin: 0 auto;
+  padding: 5mm 7mm 4mm;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  background: #ffffff;
+  color: #000000;
+
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11pt;
+  line-height: 1.1;
+
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+}
+
+.release-print-paper-a5,
+.release-print-paper-a5 * {
+  box-sizing: border-box;
+  font-family: "Times New Roman", Times, serif;
+}
+
+.release-print-paper-break-a5 {
+  margin-top: 12px;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.release-print-header-a5 {
+  display: grid;
+  grid-template-columns: 48mm minmax(0, 1fr) 60mm;
+  column-gap: 2mm;
+  align-items: start;
+  margin-bottom: 1.5mm;
+}
+
+.release-print-left-header-a5 {
+  min-width: 0;
+  font-size: 9.7pt;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.release-print-left-header-a5 > div {
+  margin-bottom: 0.5mm;
+}
+
+.release-print-left-header-a5 strong {
+  font-weight: 700;
+}
+
+.release-print-title-block-a5 {
+  min-width: 0;
+  text-align: center;
+
+  position: relative;
+  left: -4mm;
+  top:   5mm;
+}
+
+.release-print-title-block-a5 h1 {
+  margin: 0;
+  padding: 0;
+
+  font-size: 13.5pt;
+  font-weight: 700;
+  line-height: 1.05;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.release-print-date-a5 {
+  margin-top: 1.5mm;
+  font-size: 9.8pt;
+  line-height: 1.1;
+}
+
+.release-print-right-header-a5 {
+  min-width: 0;
+  text-align: center;
+  font-size: 9.5pt;
+  line-height: 1.08;
+}
+
+.release-print-right-header-a5 > strong {
+  display: block;
+  margin-bottom: 0.5mm;
+  font-size: 9.8pt;
+}
+
+.release-print-code-lines-a5 {
+  margin-top: 1.2mm;
+  padding-left: 20mm;
+  text-align: left;
+  font-size: 9.6pt;
+  line-height: 1.15;
+}
+
+.release-print-code-lines-a5 > div {
+  min-height: 3.7mm;
+}
+
+/* =========================================================
+   THÔNG TIN PHIẾU
+   ========================================================= */
+
+.release-print-info-a5 {
+  margin-top: 0.8mm;
+  margin-bottom: 1.5mm;
+  font-size: 10pt;
+  line-height: 1.1;
+}
+
+.release-print-info-a5 > div {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  min-height: 4.7mm;
+}
+
+.release-print-info-a5 strong {
+  min-width: 0;
+  margin-left: 2mm;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   BẢNG PHIẾU XUẤT
+   Nội dung rộng 196mm
+
+   7 + 74 + 19 + 16 + 22 + 22 + 17 + 19 = 196mm
+   ========================================================= */
+
+.release-print-table-a5 {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: fixed;
+
+  font-size: 9.4pt;
+  line-height: 1.05;
+}
+
+.release-print-table-a5 th,
+.release-print-table-a5 td {
+  border: 1px solid #000000;
+  padding: 0.35mm 0.7mm;
+  vertical-align: middle;
+  overflow: hidden;
+}
+
+.release-print-table-a5 thead th {
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.05;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* Hàng tiêu đề lớn */
+.release-print-table-a5 thead tr:first-child th {
+  height: 8.5mm;
+}
+
+/* Hàng Yêu cầu - Thực xuất */
+.release-print-table-a5 thead tr:nth-child(2) th {
+  height: 5mm;
+}
+
+/* Hàng ký hiệu A B C D 1 2 3 4 */
+.release-print-symbol-row-a5 th {
+  height: 4mm;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 8.8pt;
+  line-height: 1;
+}
+
+/* Các dòng vật tư */
+.release-print-table-a5 tbody tr,
+.release-print-item-row {
+  height: 5.7mm;
+}
+
+.release-print-table-a5 tbody td {
+  height: 5.7mm;
+  font-size: 9.3pt;
+  line-height: 1.05;
+}
+
+/* =========================================================
+   ĐỘ RỘNG TỪNG CỘT
+   ========================================================= */
+
+/* TT */
+.release-print-col-stt-a5 {
+  width: 7mm;
+}
+
+/* Tên vật tư */
+.release-print-col-name-a5 {
+  width: 74mm;
+}
+
+/* Mã số */
+.release-print-col-code-a5 {
+  width: 19mm;
+}
+
+/* Đơn vị tính */
+.release-print-col-unit-a5 {
+  width: 16mm;
+}
+
+/* Yêu cầu và Thực xuất: mỗi cột 22mm */
+.release-print-col-qty-a5 {
+  width: 22mm;
+}
+
+/* Đơn giá */
+.release-print-col-price-a5 {
+  width: 17mm;
+}
+
+/* Thành tiền */
+.release-print-col-amount-a5 {
+  width: 19mm;
+}
+
+/* =========================================================
+   CĂN NỘI DUNG CÁC Ô
+   ========================================================= */
+
+.release-print-center-cell-a5 {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.release-print-name-cell-a5 {
+  padding-left: 1.2mm !important;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.05;
+}
+
+.release-print-number-cell-a5 {
+  padding-right: 1.2mm !important;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   KHỐI CHỮ KÝ
+   6 chức danh nằm trên cùng một hàng
+   ========================================================= */
+
+.release-print-signature-row-a5 {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  column-gap: 1mm;
+
+  margin-top: 3mm;
+  text-align: center;
+
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.release-print-signature-row-a5 > div {
+  min-width: 0;
+  min-height: 20mm;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.release-print-signature-row-a5 strong {
+  display: block;
+  font-size: 9.4pt;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.release-print-signature-row-a5 span {
+  display: block;
+  margin-top: 0.8mm;
+
+  font-size: 8.5pt;
+  font-style: italic;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   TÊN NGƯỜI KÝ
+   Phải chia đúng 6 cột giống khối chức danh
+   ========================================================= */
+
+.release-print-signer-name-row-a5 {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  column-gap: 1mm;
+
+  margin-top: 5mm;
+  text-align: center;
+
+  font-size: 9.2pt;
+  line-height: 1.05;
+
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.release-print-signer-name-row-a5 > div {
+  min-width: 0;
+  min-height: 4.5mm;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   LOADING
+   JSX hiện tại dùng class release-print-loading
+   ========================================================= */
+
+.release-print-loading,
+.release-print-loading-a5 {
+  min-height: 100vh;
+  padding: 16px;
+  box-sizing: border-box;
+
+  background: #eef1f5;
+  color: #111827;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+/* =========================================================
+   PRINT A5 LANDSCAPE
+   ========================================================= */
+
+@media print {
+  @page {
+    size: A5 landscape;
+    margin: 0;
+  }
+
+  html,
+  body,
+  #root {
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .release-print-toolbar-a5 {
+    display: none !important;
+  }
+
+  .release-print-page-a5 {
+    display: block !important;
+
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .release-print-scroll-a5 {
+    display: block !important;
+
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  .release-print-paper-a5 {
+    width: 210mm !important;
+    height: 148mm !important;
+    min-height: 148mm !important;
+
+    margin: 0 !important;
+    padding: 5mm 7mm 4mm !important;
+
+    overflow: hidden !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .release-print-paper-a5:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .release-print-paper-break-a5 {
+    margin-top: 0 !important;
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .release-print-header-a5,
+  .release-print-info-a5,
+  .release-print-table-a5,
+  .release-print-signature-row-a5,
+  .release-print-signer-name-row-a5 {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
