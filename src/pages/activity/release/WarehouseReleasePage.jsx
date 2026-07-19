@@ -7,6 +7,7 @@ import {
   getReleaseOrdersPageable,
   getReleaseOrderByCode,
   deleteReleaseOrder,
+  updateWarehouseReleaseStatus,
 } from "../../../services/releaseOrderService";
 
 import {
@@ -16,7 +17,7 @@ import {
 
 import { getWarehouses } from "../../../services/warehouseService";
 
-import { RiEdit2Line, RiDeleteBin6Line } from "react-icons/ri";
+import { RiEdit2Line, RiDeleteBin6Line,RiCloseCircleLine, } from "react-icons/ri";
 
 function WarehouseReleasePage() {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ function WarehouseReleasePage() {
 
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
@@ -109,6 +111,10 @@ function WarehouseReleasePage() {
 
   const canDeleteReleaseByStatus = (status) => {
     return status === "PENDING" || status === "WAIT_TO_APPROVE";
+  };
+
+  const canRejectReleaseByStatus = (status) => {
+    return status === "WAIT_TO_APPROVE";
   };
 
   const getWarehouseDisplayName = (warehouse) => {
@@ -406,26 +412,101 @@ function WarehouseReleasePage() {
   };
 
   const handleEditRelease = () => {
+      if (selectedIds.length > 1) {
+        alert("Chỉ được chỉnh sửa 1 lệnh xuất kho tại một thời điểm");
+        return;
+      }
+
+      const order = getActionOrder();
+
+      if (!order) {
+        alert("Vui lòng chọn lệnh xuất kho cần chỉnh sửa");
+        return;
+      }
+
+      const code = getRowCode(order);
+
+      if (!code) {
+        alert("Không tìm thấy số lệnh xuất kho");
+        return;
+      }
+
+      navigate(`/dashboard/activity/export/release/edit/${code}`);
+    };
+
+    const handleRejectRelease = async () => {
+    if (!canUpdateRelease) {
+      alert("Bạn không có quyền từ chối lệnh xuất kho");
+      return;
+    }
+
     if (selectedIds.length > 1) {
-      alert("Chỉ được chỉnh sửa 1 lệnh xuất kho tại một thời điểm");
+      alert("Chỉ được từ chối 1 lệnh xuất kho tại một thời điểm");
       return;
     }
 
     const order = getActionOrder();
 
     if (!order) {
-      alert("Vui lòng chọn lệnh xuất kho cần chỉnh sửa");
+      alert("Vui lòng chọn lệnh xuất kho cần từ chối");
       return;
     }
 
-    const code = getRowCode(order);
-
-    if (!code) {
-      alert("Không tìm thấy số lệnh xuất kho");
+    if (!canRejectReleaseByStatus(order.status)) {
+      alert("Chỉ được từ chối lệnh xuất kho ở trạng thái Chờ duyệt");
       return;
     }
 
-    navigate(`/dashboard/activity/export/release/edit/${code}`);
+    const warehouseReleaseId =
+      order.warehouse_release_id ||
+      order.release_id ||
+      order.id;
+
+    if (!warehouseReleaseId) {
+      alert("Không tìm thấy ID lệnh xuất kho");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Bạn có chắc muốn từ chối lệnh xuất kho này không?\n"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setRejecting(true);
+
+      await updateWarehouseReleaseStatus(
+        warehouseReleaseId,
+        "cancel"
+      );
+
+      setSelectedIds([]);
+      setSelectedId(null);
+      setSelectedOrder(null);
+      setDetailRows([]);
+
+      await fetchReleaseOrders({
+        page: 1,
+      });
+
+      alert(
+        "Từ chối lệnh xuất kho thành công. "
+      );
+    } catch (error) {
+      console.error(
+        "REJECT WAREHOUSE RELEASE ERROR:",
+        error.response?.data || error
+      );
+
+      alert(
+        error.response?.data?.message ||
+          error.response?.data?.detail ||
+          "Không thể từ chối lệnh xuất kho"
+      );
+    } finally {
+      setRejecting(false);
+    }
   };
 
   const deleteOrdersByIds = async (ids) => {
@@ -595,6 +676,31 @@ function WarehouseReleasePage() {
             >
               <RiEdit2Line />
               <span>Chỉnh sửa</span>
+            </button>
+          )}
+        {canUpdateRelease && (
+            <button
+              type="button"
+              className="release-reject-btn"
+              disabled={
+                rejecting ||
+                selectedIds.length > 1 ||
+                !actionOrder ||
+                !canRejectReleaseByStatus(actionOrder.status)
+              }
+              onClick={handleRejectRelease}
+              title={
+                actionOrder &&
+                !canRejectReleaseByStatus(actionOrder.status)
+                  ? "Chỉ được từ chối lệnh đang ở trạng thái Chờ duyệt"
+                  : ""
+              }
+            >
+              <RiCloseCircleLine />
+
+              <span>
+                {rejecting ? "Đang từ chối..." : "Từ chối"}
+              </span>
             </button>
           )}
 

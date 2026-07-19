@@ -494,3 +494,38 @@
     padding: 10px;
   }
 }
+
+.release-reject-btn {
+  height: 38px;
+  padding: 0 16px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+
+  background: #ffffff;
+  color: #dc2626;
+
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.release-reject-btn:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+.release-reject-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.release-reject-btn svg {
+  font-size: 18px;
+}

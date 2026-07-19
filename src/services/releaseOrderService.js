@@ -70,6 +70,13 @@ export const cancelReleaseOrder = async (id) => {
   return response.data;
 };
 
+export const updateWarehouseReleaseStatus = (releaseId, action) => {
+  return axiosInstance.put(
+    `/inventory/warehouse-releases/${releaseId}/status`,
+    { action }
+  );
+};
+
 export default {
   getReleaseOrdersPageable,
   getReleaseOrderByCode,
@@ -80,4 +87,5 @@ export default {
   updateReleaseOrder,
   completeReleaseOrder,
   cancelReleaseOrder,
+  updateWarehouseReleaseStatus,
 };
