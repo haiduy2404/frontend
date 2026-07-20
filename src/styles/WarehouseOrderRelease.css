@@ -106,9 +106,39 @@
   color: #111827;
 }
 
-.warehouse-order-release-page .detail-section-title {
+.warehouse-order-release-page .detail-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
   margin-top: 10px;
   margin-bottom: 6px;
+}
+
+.warehouse-order-release-page .detail-section-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.warehouse-order-release-page .fill-actual-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  user-select: none;
+}
+
+.warehouse-order-release-page .fill-actual-toggle input {
+  width: 14px;
+  height: 14px;
+  accent-color: #2563eb;
+  cursor: pointer;
 }
 
 /* ================= Info card ================= */

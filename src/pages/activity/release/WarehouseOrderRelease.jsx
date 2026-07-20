@@ -38,6 +38,7 @@ function WarehouseOrderRelease() {
 
   const [releaseId, setReleaseId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [fillActualQuantity, setFillActualQuantity] = useState(false);
 
   const [headerData, setHeaderData] = useState({
     code: "",
@@ -153,6 +154,7 @@ function WarehouseOrderRelease() {
               : formatViNumber(line.actual_quantity, 2),
         }))
       );
+      setFillActualQuantity(false);
     } catch (error) {
       console.error("LOAD RELEASE ACTUAL DETAIL ERROR:", error.response?.data || error);
       alert(
@@ -170,6 +172,7 @@ function WarehouseOrderRelease() {
   }, [id]);
 
   const handleChangeActualQuantity = (rowId, value) => {
+    setFillActualQuantity(false);
     setItems((prev) =>
       prev.map((item) =>
         item.id === rowId
@@ -179,6 +182,15 @@ function WarehouseOrderRelease() {
             }
           : item
       )
+    );
+  };
+
+  const handleFillActualQuantity = () => {
+    setItems((prev) =>
+      prev.map((item) => ({
+        ...item,
+        actual_quantity: item.requested_quantity,
+      }))
     );
   };
 
@@ -365,7 +377,27 @@ function WarehouseOrderRelease() {
           </div>
         </div>
 
-        <div className="detail-section-title">Chi tiết xuất kho</div>
+        <div className="detail-section-title-row">
+          <div className="detail-section-title">Chi tiết xuất kho</div>
+
+          {!isPrintMode && canSaveActual && (
+            <label className="fill-actual-toggle">
+              <input
+                type="checkbox"
+                checked={fillActualQuantity}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setFillActualQuantity(checked);
+
+                  if (checked) {
+                    handleFillActualQuantity();
+                  }
+                }}
+              />
+              <span>Nhập đầy đủ số lượng thực xuất</span>
+            </label>
+          )}
+        </div>
 
         <div className="detail-card">
           <div className="order-detail-table-wrapper">
