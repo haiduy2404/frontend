@@ -158,11 +158,9 @@ function ReleasePrintPage() {
             </div>
 
             <div className="release-print-right-header">
-              <strong>Mẫu số 02-VT</strong>
-              <div>(Ban hành theo TT</div>
-              <div>Số 99/2025/TT-BTC</div>
-              <div>Ngày 27/10/2025 của</div>
-              <div>Bộ trưởng BTC</div>
+              <strong>Mẫu số 02 - VT</strong>
+              <div>(Ban hành theo TT số 99/2025/TT-BTC</div>
+              <div>ngày 27/10/2025 của Bộ trưởng BTC)</div>
               <div className="release-print-code-lines">
                 <div>Số: {code || "............."}</div>
                 <div>Nợ:.............</div>

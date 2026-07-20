@@ -54,7 +54,7 @@
 
 .release-print-header {
   display: grid;
-  grid-template-columns: 60mm 78mm 42mm;
+  grid-template-columns: 60mm 66mm 60mm;
   column-gap: 3mm;
   align-items: start;
   min-height: 34mm;
@@ -94,15 +94,14 @@
   width: auto;
   margin-left: 0;
   transform: none;
-  font-size: 11pt;
-  line-height: 1.15;
+  font-size: 9.5pt;
+  line-height: 1.2;
   text-align: center;
 }
 
 .release-print-code-lines {
   margin-top: 2mm;
-  text-align: left;
-  padding-left: 7mm;
+  text-align: center;
 }
 
 .release-print-info {
