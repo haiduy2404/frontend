@@ -267,8 +267,8 @@ function ReleasePrintPageA5() {
 
             <div className="release-print-right-header-a5">
               <strong>Mẫu số 02 - VT</strong>
-              <div>(Ban hành theo TT số 200/2014/TT-BTC</div>
-              <div>ngày 22/12/2014 của Bộ trưởng BTC)</div>
+              <div>(Ban hành theo TT số 99/2025/TT-BTC</div>
+              <div>ngày 27/10/2025 của Bộ trưởng BTC)</div>
               <div className="release-print-code-lines-a5">
                 <div>Số: {code || "............."}</div>
                 <div>Nợ:.............</div>

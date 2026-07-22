@@ -277,7 +277,7 @@ function InspectionPrintPage() {
                 </div>
 
                 <div>
-                  (Ban hành theo TT số: 99/2025/TT-BTC
+                  (Ban hành theo TT số 99/2025/TT-BTC
                 </div>
 
                 <div>
