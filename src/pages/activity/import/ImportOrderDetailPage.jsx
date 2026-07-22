@@ -354,8 +354,8 @@ function ImportOrderDetailPage() {
           unit: "",
           unit_options: [],
           conversion_ratio: "",
-          requested_quantity: "1,00",
-          actual_quantity: "0,00",
+          requested_quantity: "1,00000",
+          actual_quantity: "0,00000",
           marked_old: false,
           unit_price: "0,00",
           amount: "0,00",
@@ -416,8 +416,8 @@ function ImportOrderDetailPage() {
       goods_code: "",
       goods_name: "",
       unit: "",
-      requested_quantity: "1,00",
-      actual_quantity: "0,00",
+      requested_quantity: "1,00000",
+      actual_quantity: "0,00000",
       marked_old: false,
       unit_price: "0,00",
       amount: "0",
@@ -620,6 +620,16 @@ function ImportOrderDetailPage() {
     maximumFractionDigits: fractionDigits,
   });
 };
+
+  const formatViQuantity = (value) => {
+    const number = parseNumber(value);
+
+    return number.toLocaleString("vi-VN", {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 5,
+    });
+  };
+
   const handleSelectGoods = (goods) => {
     setItems((prev) =>
       prev.map((item) => {
@@ -743,7 +753,7 @@ function ImportOrderDetailPage() {
           };
 
           if (field === "marked_old") {
-            nextItem.actual_quantity = value ? item.requested_quantity : "0,00";
+            nextItem.actual_quantity = value ? item.requested_quantity : "0,00000";
           }
 
           const quantity = parseNumber(nextItem.actual_quantity);
@@ -1176,8 +1186,8 @@ const handleComplete = async () => {
                         ? String(selectedUnit.conversion_ratio)
                         : "",
 
-                    requested_quantity: formatViNumber(requestedQuantity, 2),
-                    actual_quantity: formatViNumber(originalQuantity, 2),
+                    requested_quantity: formatViQuantity(requestedQuantity),
+                    actual_quantity: formatViQuantity(originalQuantity),
                     marked_old: requestedQuantity === originalQuantity,
                     unit_price: formatViNumber(unitPrice, 3),
                     amount: formatViNumber(
@@ -1199,8 +1209,8 @@ const handleComplete = async () => {
                     unit: "",
                     unit_options: [],
                     conversion_ratio: "",
-                    requested_quantity: "1,00",
-                    actual_quantity: "0,00",
+                    requested_quantity: "1,00000",
+                    actual_quantity: "0,00000",
                     marked_old: false,
                     unit_price: "0,00",
                     amount: "0,00",
@@ -1253,8 +1263,8 @@ const handleComplete = async () => {
           unit: "",
           unit_options: [],
           conversion_ratio: "",
-          requested_quantity: "1,00",
-          actual_quantity: "0,00",
+          requested_quantity: "1,00000",
+          actual_quantity: "0,00000",
           marked_old: false,
           unit_price: "0,00",
           amount: "0,00",
@@ -1964,6 +1974,13 @@ const handleOpenTransferPrint = () => {
                         onChange={(e) =>
                           handleChangeItemField(item.id, "requested_quantity", e.target.value)
                         }
+                        onBlur={(e) =>
+                          handleChangeItemField(
+                            item.id,
+                            "requested_quantity",
+                            formatViQuantity(e.target.value)
+                          )
+                        }
                         disabled={isPrintMode}
                       />
                     </td>
@@ -1973,6 +1990,13 @@ const handleOpenTransferPrint = () => {
                         value={item.actual_quantity}
                         onChange={(e) =>
                         handleChangeItemField(item.id, "actual_quantity", e.target.value)
+                        }
+                        onBlur={(e) =>
+                          handleChangeItemField(
+                            item.id,
+                            "actual_quantity",
+                            formatViQuantity(e.target.value)
+                          )
                         }
                         disabled={isPrintMode}
                     />
@@ -2050,16 +2074,14 @@ const handleOpenTransferPrint = () => {
                   <td></td>
 
                   <td className="number-col">
-                    {formatViNumber(
-                      items.reduce((sum, item) => sum + parseNumber(item.requested_quantity), 0),
-                      2
+                    {formatViQuantity(
+                      items.reduce((sum, item) => sum + parseNumber(item.requested_quantity), 0)
                     )}
                   </td>
 
                   <td className="number-col">
-                    {formatViNumber(
-                      items.reduce((sum, item) => sum + parseNumber(item.actual_quantity), 0),
-                      2
+                    {formatViQuantity(
+                      items.reduce((sum, item) => sum + parseNumber(item.actual_quantity), 0)
                     )}
                   </td>
 

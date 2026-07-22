@@ -144,6 +144,15 @@ function ImportReceiptPrintVatForm() {
     });
   };
 
+  const formatViQuantity = (value) => {
+    const number = Number(value || 0);
+
+    return number.toLocaleString("vi-VN", {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 5,
+    });
+  };
+
   const readThreeDigits = (number, hasHundredsBefore = false) => {
   const units = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
 
@@ -461,11 +470,11 @@ const numberToVietnameseText = (value) => {
                     </td>
 
                     <td className="receipt-quantity-cell">
-                        {line ? formatViNumber(quantity, 2) : ""}
+                        {line ? formatViQuantity(quantity) : ""}
                     </td>
 
                     <td className="receipt-quantity-cell">
-                        {line ? formatViNumber(quantity, 2) : ""}
+                        {line ? formatViQuantity(quantity) : ""}
                     </td>
 
                     <td className="receipt-money-cell">
@@ -636,11 +645,11 @@ const numberToVietnameseText = (value) => {
                         </td>
 
                         <td className="receipt-quantity-cell">
-                            {line ? formatViNumber(quantity, 2) : ""}
+                            {line ? formatViQuantity(quantity) : ""}
                         </td>
 
                         <td className="receipt-quantity-cell">
-                            {line ? formatViNumber(quantity, 2) : ""}
+                            {line ? formatViQuantity(quantity) : ""}
                         </td>
 
                         <td className="receipt-money-cell">

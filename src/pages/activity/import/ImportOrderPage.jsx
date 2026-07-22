@@ -215,6 +215,15 @@ const fetchImportOrders = async (customParams = {}) => {
       });
     };
 
+    const formatViQuantity = (value) => {
+      const number = parseMoney(value);
+
+      return number.toLocaleString("vi-VN", {
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 5,
+      });
+    };
+
     const {
       totalAmount: detailTotalAmount,
       vatSummary: detailAutoVatSummary,
@@ -778,11 +787,11 @@ const fetchImportOrders = async (customParams = {}) => {
                             </td>
 
                             <td className="number-col">
-                              {formatViNumber(requestedQuantity, 2)}
+                              {formatViQuantity(requestedQuantity)}
                             </td>
 
                             <td className="number-col">
-                              {formatViNumber(originalQuantity, 2)}
+                              {formatViQuantity(originalQuantity)}
                             </td>
 
                             <td className="center-col">
@@ -818,7 +827,7 @@ const fetchImportOrders = async (customParams = {}) => {
                         <td></td>
 
                         <td className="number-col">
-                          {formatViNumber(
+                          {formatViQuantity(
                             detailRows.reduce(
                               (sum, item) =>
                                 sum +
@@ -826,18 +835,16 @@ const fetchImportOrders = async (customParams = {}) => {
                                   item.request_quantity || item.requested_quantity || 0
                                 ),
                               0
-                            ),
-                            2
+                            )
                           )}
                         </td>
 
                         <td className="number-col">
-                          {formatViNumber(
+                          {formatViQuantity(
                             detailRows.reduce(
                               (sum, item) => sum + parseMoney(item.original_quantity || 0),
                               0
-                            ),
-                            2
+                            )
                           )}
                         </td>
 
