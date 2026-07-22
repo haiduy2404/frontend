@@ -1,15 +1,23 @@
+/* =========================================================
+   PAGE
+   ========================================================= */
+
 .import-order-detail-page {
   min-height: 100vh;
-  background: #f5f7fb;
   padding-bottom: 80px;
+  background: #f5f7fb;
 }
+
+/* =========================================================
+   HEADER
+   ========================================================= */
 
 .import-order-detail-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 16px 24px;
-  background: #fff;
+  background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -21,9 +29,9 @@
 
 .detail-header-left h2 {
   margin: 0;
+  color: #111827;
   font-size: 20px;
   font-weight: 700;
-  color: #111827;
 }
 
 .header-select,
@@ -31,19 +39,25 @@
 .form-group select,
 .table-pagination select {
   height: 38px;
+  padding: 0 10px;
+  background: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  padding: 0 10px;
-  background: #fff;
   outline: none;
+  box-sizing: border-box;
 }
 
 .header-icon-btn {
-  border: none;
+  padding: 0;
   background: transparent;
+  border: none;
   font-size: 24px;
   cursor: pointer;
 }
+
+/* =========================================================
+   BODY
+   ========================================================= */
 
 .import-order-detail-body {
   padding: 20px 24px;
@@ -51,51 +65,63 @@
 
 .info-section-title,
 .detail-section-title {
-  font-weight: 700;
   margin: 12px 0;
   color: #111827;
+  font-weight: 700;
 }
 
 .import-voucher-card,
 .detail-card {
-  background: #fff;
-  border-radius: 10px;
+  position: relative;
   padding: 18px;
+  overflow: visible;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
+  border-radius: 10px;
 }
 
+/* =========================================================
+   PLACEHOLDER KHI CHƯA CHỌN KHO
+   ========================================================= */
+
 .warehouse-required-placeholder {
-  background: #fff;
+  padding: 32px 24px;
+  background: #ffffff;
   border: 1px dashed #d1d5db;
   border-radius: 10px;
-  padding: 32px 24px;
-  text-align: center;
   color: #6b7280;
   font-size: 14px;
   line-height: 1.6;
+  text-align: center;
 }
 
 .warehouse-required-placeholder strong {
   color: #111827;
 }
 
+/* =========================================================
+   FORM THÔNG TIN PHIẾU
+   ========================================================= */
+
 .voucher-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: start;
+  gap: 16px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  align-self: start;
   gap: 6px;
+  min-width: 0;
 }
 
 .form-group label {
+  color: #374151;
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
 }
 
 .form-group label span {
@@ -106,330 +132,75 @@
   grid-column: span 2;
 }
 
+/* =========================================================
+   DATE INPUT
+   ========================================================= */
+
 .input-with-icon {
-  display: flex;
   position: relative;
+  display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .input-with-icon > .date-text-input,
-.input-with-icon > input.date-text-input {
-  flex: 1;
-  min-width: 0;
-}
-
+.input-with-icon > input.date-text-input,
 .input-with-icon > input:not(.date-text-input):not(.calendar-native-input) {
   flex: 1;
   min-width: 0;
 }
 
 .input-with-icon button {
-  width: 42px;
-  flex-shrink: 0;
-  margin-left: 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
   position: relative;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  width: 42px;
+  height: 38px;
+  margin-left: 6px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .calendar-native-input {
   position: absolute;
   inset: 0;
-  opacity: 0;
-  cursor: pointer;
   width: 100%;
   height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 
-.table-text-input {
+/* =========================================================
+   CHỌN TỪ DANH SÁCH / NHẬP TAY
+   ========================================================= */
+
+.manual-select-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.manual-select-row input {
   width: 100%;
-  height: 30px;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  padding: 0 8px;
-  font-size: 14px;
-  outline: none;
-  box-sizing: border-box;
+}
+
+.switch-select-btn {
+  position: static;
+  width: 100%;
+  height: 38px;
   background: #ffffff;
-}
-
-.table-text-input:focus {
-  border-color: #2563eb;
-}
-
-.table-text-input:disabled {
-  background: #f8fafc;
-  color: #64748b;
-}
-
-.detail-search {
-  width: 280px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 0 10px;
-  margin-bottom: 14px;
-}
-
-.detail-search input {
-  border: none;
-  outline: none;
-  width: 100%;
-}
-
-.order-detail-table-wrapper {
-  overflow-x: auto;
-}
-
-.order-detail-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.order-detail-table th,
-.order-detail-table td {
-  border: 1px solid #e5e7eb;
-  padding: 8px;
-  font-size: 14px;
-  vertical-align: middle;
-}
-
-.order-detail-table th {
-  background: #f3f4f6;
-  font-weight: 700;
-  text-align: center;
-}
-
-.col-stt {
-  width: 55px;
-}
-
-.col-code {
-  width: 170px;
-}
-
-.col-name {
-  width: 280px;
-}
-
-.col-unit {
-  width: 120px;
-}
-
-.col-qty {
-  width: 140px;
-}
-
-.col-action {
-  width: 90px;
-}
-
-.order-detail-table input,
-.order-detail-table select {
-  width: 100%;
-  height: 34px;
-  border: 1px solid #d1d5db;
-  border-radius: 5px;
-  padding: 0 8px;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.number-col {
-  text-align: right;
-}
-
-.table-number-input {
-  text-align: right;
-}
-
-.goods-code-dropdown-cell {
-  position: relative;
-}
-
-.goods-code-dropdown-box {
-  display: flex;
-  position: relative;
-}
-
-.goods-code-dropdown-box input {
-  border-radius: 5px 0 0 5px;
-}
-
-.goods-code-dropdown-box button {
-  width: 34px;
-  border: 1px solid #d1d5db;
-  border-left: none;
-  border-radius: 0 5px 5px 0;
-  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.goods-code-dropdown-list {
-  position: absolute;
-  top: 38px;
-  left: 0;
-  width: 520px;
-  max-height: 260px;
-  overflow-y: auto;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  z-index: 50;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.goods-code-dropdown-header,
-.goods-code-dropdown-item {
-  display: grid;
-  grid-template-columns: 150px 1fr 20px;
-  gap: 8px;
-  padding: 8px 10px;
-  font-size: 14px;
-}
-
-.goods-code-dropdown-header {
-  background: #f3f4f6;
-  font-weight: 700;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.goods-code-dropdown-item {
-  cursor: pointer;
-}
-
-.goods-code-dropdown-item:hover {
-  background: #eef2ff;
-}
-
-.goods-code-dropdown-status {
-  padding: 12px;
-  text-align: center;
-  color: #6b7280;
-}
-
-.detail-action-row {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-}
-
-.goods-code-add-btn,
-.delete-row-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 18px;
-}
-
-.goods-code-add-btn {
-  background: #2563eb;
-  color: #fff;
-}
-
-.delete-row-btn {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.table-total-row {
-  font-weight: 700;
-  background: #f9fafb;
-}
-
-.table-bottom-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 14px;
-  color: #374151;
-}
-
-.table-pagination {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.table-pagination button {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  border-radius: 5px;
-}
-
-.import-order-detail-footer {
-  position: fixed;
-  right: 0;
-  left: 0;
-  bottom: 0;
-  height: 64px;
-  background: #fff;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-  padding: 0 24px;
-  z-index: 20;
-}
-
-.cancel-footer-btn,
-.save-draft-btn,
-.complete-btn {
-  height: 38px;
-  min-width: 100px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.cancel-footer-btn {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.save-draft-btn {
-  background: #e0f2fe;
-  color: #0369a1;
-}
-
-.complete-btn {
-  background: #2563eb;
-  color: #fff;
-}
-
-button:disabled,
-input:disabled,
-select:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-@media (max-width: 1200px) {
-  .voucher-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .description-group {
-    grid-column: span 2;
-  }
-}
+/* =========================================================
+   REACT SELECT
+   ========================================================= */
 
 .release-select__control {
   min-height: 38px !important;
@@ -456,29 +227,463 @@ select:disabled {
   line-height: 38px !important;
 }
 
-.form-group {
+/* =========================================================
+   Ô TÌM KIẾM CHI TIẾT
+   ========================================================= */
+
+.detail-search {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-self: start;
+  align-items: center;
+  width: 280px;
+  height: 38px;
+  gap: 8px;
+  padding: 0 10px;
+  margin-bottom: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-sizing: border-box;
 }
 
-.manual-select-row {
+.detail-search input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+/* =========================================================
+   TABLE WRAPPER
+   ========================================================= */
+
+.order-detail-table-wrapper {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.order-detail-table {
+  position: relative;
+  width: 100%;
+  table-layout: fixed;
+
+  /*
+   * Không dùng collapse vì z-index trên hàng và ô bảng
+   * hoạt động không ổn định khi dropdown mở.
+   */
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.order-detail-table thead,
+.order-detail-table tbody {
+  position: relative;
+}
+
+.order-detail-table th,
+.order-detail-table td {
+  padding: 8px;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  color: #111827;
+  font-size: 14px;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.order-detail-table th:first-child,
+.order-detail-table td:first-child {
+  border-left: 1px solid #e5e7eb;
+}
+
+.order-detail-table thead tr:first-child th {
+  border-top: 1px solid #e5e7eb;
+}
+
+.order-detail-table th {
+  background: #f3f4f6;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* =========================================================
+   ĐỘ RỘNG CỘT
+   ========================================================= */
+
+.col-stt {
+  width: 55px;
+}
+
+.col-code {
+  width: 170px;
+}
+
+.col-name {
+  width: 280px;
+}
+
+.col-unit {
+  width: 120px;
+}
+
+.col-qty {
+  width: 140px;
+}
+
+.col-action {
+  width: 90px;
+}
+
+/* =========================================================
+   INPUT TRONG TABLE
+   ========================================================= */
+
+.order-detail-table input,
+.order-detail-table select {
+  width: 100%;
+  height: 34px;
+  padding: 0 8px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.order-detail-table input:focus,
+.order-detail-table select:focus {
+  border-color: #2563eb;
+}
+
+.table-text-input {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.table-text-input:focus {
+  border-color: #2563eb;
+}
+
+.table-text-input:disabled {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.number-col {
+  text-align: right;
+}
+
+.table-number-input {
+  text-align: right;
+}
+
+/* =========================================================
+   GOODS ROW STACKING
+   ========================================================= */
+
+/*
+ * Mỗi dòng tạo tầng riêng.
+ * Dòng bình thường luôn nằm thấp.
+ */
+.order-detail-table tbody tr.goods-row {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * Dòng đang mở dropdown nằm trên mọi dòng phía sau.
+ */
+.order-detail-table tbody tr.goods-dropdown-active-row {
+  position: relative;
+  z-index: 1000;
+}
+
+/*
+ * Các ô trong dòng active cũng phải được nâng lên.
+ */
+.order-detail-table tbody tr.goods-dropdown-active-row > td {
+  position: relative;
+  z-index: 1001;
+}
+
+/*
+ * Riêng ô mã vật tư là tầng cao nhất trong dòng.
+ */
+.order-detail-table
+  tbody
+  tr.goods-dropdown-active-row
+  > td.goods-code-dropdown-cell {
+  z-index: 1100;
+}
+
+/* =========================================================
+   GOODS CODE DROPDOWN
+   ========================================================= */
+
+.goods-code-dropdown-cell {
+  position: relative;
+  overflow: visible;
+}
+
+.goods-code-dropdown-box {
+  position: relative;
   display: flex;
-  flex-direction: column;
+  width: 100%;
+  overflow: visible;
+}
+
+.goods-dropdown-active-row .goods-code-dropdown-box {
+  z-index: 1200;
+}
+
+.goods-code-dropdown-box input {
+  min-width: 0;
+  border-radius: 5px 0 0 5px;
+}
+
+.goods-code-dropdown-box button {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-left: none;
+  border-radius: 0 5px 5px 0;
+  cursor: pointer;
+}
+
+.goods-code-dropdown-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 9999;
+
+  width: 520px;
+  max-width: calc(100vw - 80px);
+  max-height: 260px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.goods-code-dropdown-header,
+.goods-code-dropdown-item {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.goods-code-dropdown-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 700;
+}
+
+.goods-code-dropdown-item {
+  position: relative;
+  z-index: 1;
+  background: #ffffff;
+  border-bottom: 1px solid #eef2f7;
+  cursor: pointer;
+}
+
+.goods-code-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.goods-code-dropdown-item:hover {
+  background: #eef2ff;
+}
+
+.goods-code-dropdown-header span,
+.goods-code-dropdown-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goods-code-dropdown-status {
+  padding: 12px;
+  background: #ffffff;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* =========================================================
+   DÒNG BỊ XÓA
+   ========================================================= */
+
+.deleted-goods-row {
+  opacity: 0.55;
+}
+
+/* =========================================================
+   NÚT THÊM / XÓA DÒNG
+   ========================================================= */
+
+.detail-action-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.goods-code-add-btn,
+.delete-row-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.goods-code-add-btn {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.delete-row-btn {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* =========================================================
+   TOTAL ROW
+   ========================================================= */
+
+.table-total-row {
+  position: relative;
+  z-index: 0;
+  background: #f9fafb;
+  font-weight: 700;
+}
+
+/* =========================================================
+   TABLE BOTTOM BAR
+   ========================================================= */
+
+.table-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  color: #374151;
+}
+
+.table-pagination {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.manual-select-row input {
-  width: 100%;
+.table-pagination button {
+  width: 32px;
+  height: 32px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
 }
 
-.switch-select-btn {
-  position: static;
-  width: 100%;
-  height: 38px;
-  border: 1px solid #d0d7de;
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.import-order-detail-footer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 200;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 64px;
+  gap: 12px;
+  padding: 0 24px;
+
   background: #ffffff;
-  border-radius: 4px;
+  border-top: 1px solid #e5e7eb;
+  box-sizing: border-box;
+}
+
+.cancel-footer-btn,
+.save-draft-btn,
+.complete-btn {
+  min-width: 100px;
+  height: 38px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
   cursor: pointer;
+}
+
+.cancel-footer-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.save-draft-btn {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.complete-btn {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+/* =========================================================
+   DISABLED
+   ========================================================= */
+
+button:disabled,
+input:disabled,
+select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  .voucher-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .description-group {
+    grid-column: span 2;
+  }
 }
