@@ -282,7 +282,8 @@ function ReleasePrintPageA5() {
               Tên đơn vị lĩnh: <strong>{release?.receiver_unit?.name || release?.receiver_unit || ""}</strong>
             </div>
             <div>
-              Lý do xuất kho: <strong>{release?.reason || release?.purpose || release?.description || ""}</strong>
+              Đối tượng xuất kho:{" "}
+              <strong>{release?.release_target?.name || ""}</strong>
             </div>
             <div>
               Xuất tại kho: <strong>{release?.warehouse?.name || release?.warehouse_name || ""}</strong>
