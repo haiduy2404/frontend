@@ -103,32 +103,42 @@ function ReleasePrintPageA5() {
     });
   }, [releaseLines]);
 
-  const DEFAULT_ROWS = 6;
-  const FIRST_PAGE_MAX_ROWS = 6;
-  const NEXT_PAGE_MAX_ROWS = 12;
+  const ROWS_PER_PAGE = 6;
 
-  const firstPageRows = useMemo(() => {
-    if (rows.length <= FIRST_PAGE_MAX_ROWS) {
-      return Array.from({ length: Math.max(DEFAULT_ROWS, rows.length) }).map((_, index) => rows[index] || null);
+  const pages = useMemo(() => {
+    const result = [];
+
+    if (rows.length === 0) {
+      result.push(
+        Array.from({ length: ROWS_PER_PAGE }, () => null)
+      );
+
+      return result;
     }
 
-    return rows.slice(0, FIRST_PAGE_MAX_ROWS);
-  }, [rows]);
+    for (
+      let startIndex = 0;
+      startIndex < rows.length;
+      startIndex += ROWS_PER_PAGE
+    ) {
+      const pageRows = rows.slice(
+        startIndex,
+        startIndex + ROWS_PER_PAGE
+      );
 
-  const remainingRows = useMemo(() => {
-    if (rows.length <= FIRST_PAGE_MAX_ROWS) return [];
-    return rows.slice(FIRST_PAGE_MAX_ROWS);
-  }, [rows]);
-
-  const extraPages = useMemo(() => {
-    const pages = [];
-    for (let i = 0; i < remainingRows.length; i += NEXT_PAGE_MAX_ROWS) {
-      pages.push(remainingRows.slice(i, i + NEXT_PAGE_MAX_ROWS));
+      result.push([
+        ...pageRows,
+        ...Array.from(
+          {
+            length: ROWS_PER_PAGE - pageRows.length,
+          },
+          () => null
+        ),
+      ]);
     }
-    return pages;
-  }, [remainingRows]);
 
-  const hasExtraPages = extraPages.length > 0;
+    return result;
+  }, [rows]);
 
   // Internal components to avoid repeating JSX
   const ReleaseTableHeader = () => (
@@ -172,11 +182,16 @@ function ReleasePrintPageA5() {
     </>
   );
 
-  const ReleaseRows = ({ rowsToRender, startIndex = 0 }) => (
-    <>
-      {rowsToRender.map((line, idx) => (
-        <tr key={idx} className="release-print-item-row">
-          <td className="release-print-center-cell-a5">{line ? startIndex + idx + 1 : ""}</td>
+          const ReleaseRows = ({ rowsToRender, pageIndex }) => (
+            <>
+              {rowsToRender.map((line, index) => (
+                <tr
+                  key={line?.id || `empty-${pageIndex}-${index}`}
+                  className="release-print-item-row"
+                >
+                  <td className="release-print-center-cell-a5">
+                    {line ? index + 1 : ""}
+                  </td>
           <td className="release-print-name-cell-a5">{line?.goods_name || ""}</td>
           <td className="release-print-center-cell-a5">{line?.goods_code || ""}</td>
           <td className="release-print-center-cell-a5">{line?.default_goods_unit_name || line?.unit_name || ""}</td>
@@ -248,99 +263,95 @@ function ReleasePrintPageA5() {
           In {paperSize}
         </button>
       </div>
-
-      <div className="release-print-scroll-a5">
-        <div className="release-print-paper-a5">
-          <div className="release-print-header-a5">
-            <div className="release-print-left-header-a5">
-              <div>
-                Đơn vị: <strong>CN TOA XE ĐÀ NẴNG</strong>
-              </div>
-            </div>
-
-            <div className="release-print-title-block-a5">
-              <h1>PHIẾU XUẤT KHO VẬT TƯ, PHỤ TÙNG</h1>
-              <div className="release-print-date-a5">
-                {formatDateText(release?.release_date)}
-              </div>
-            </div>
-
-            <div className="release-print-right-header-a5">
-              <strong>Mẫu số 02 - VT</strong>
-              <div>(Ban hành theo TT số 99/2025/TT-BTC</div>
-              <div>ngày 27/10/2025 của Bộ trưởng BTC)</div>
-              <div className="release-print-code-lines-a5">
-                <div>Số: {code || "............."}</div>
-                <div>Nợ:.............</div>
-                <div>Có:.............</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="release-print-info-a5">
-            <div>
-              Tên đơn vị lĩnh: <strong>{release?.receiver_unit?.name || release?.receiver_unit || ""}</strong>
-            </div>
-            <div>
-              Đối tượng xuất kho:{" "}
-              <strong>{release?.release_target?.name || ""}</strong>
-            </div>
-            <div>
-              Xuất tại kho: <strong>{release?.warehouse?.name || release?.warehouse_name || ""}</strong>
-            </div>
-          </div>
-
-          {/* Table header component */}
-          <table className="release-print-table-a5">
-            <ReleaseTableHeader />
-
-            <tbody>
-            {firstPageRows.map((line, index) => (
-              <tr key={index} className="release-print-item-row">
-                <td className="release-print-center-cell-a5">{line ? index + 1 : ""}</td>
-                <td className="release-print-name-cell-a5">{line?.goods_name || ""}</td>
-                <td className="release-print-center-cell-a5">{line?.goods_code || ""}</td>
-                <td className="release-print-center-cell-a5">{line?.default_goods_unit_name || line?.unit_name || ""}</td>
-                <td className="release-print-number-cell-a5">{line ? formatViNumber(line.request_quantity_in_default_unit, 3) : ""}</td>
-                <td className="release-print-number-cell-a5">{line ? formatViNumber(line.actual_quantity_in_default_unit, 3) : ""}</td>
-                <td className="release-print-number-cell-a5"></td>
-                <td className="release-print-number-cell-a5"></td>
-              </tr>
-            ))}
-            </tbody>
-          </table>
-                {!hasExtraPages && <ReleaseSignature />}
-        </div>
-            {extraPages.map((pageRows, pageIndex) => {
-            const isLastPage = pageIndex === extraPages.length - 1;
-
-            const startIndex =
-                FIRST_PAGE_MAX_ROWS +
-                pageIndex * NEXT_PAGE_MAX_ROWS;
-
-            return (
-                <div
-                key={pageIndex}
-                className="release-print-paper-a5 release-print-paper-break-a5"
-                >
-                <table className="release-print-table-a5">
-                    <ReleaseTableHeader />
-
-                    <tbody>
-                    <ReleaseRows
-                        rowsToRender={pageRows}
-                        startIndex={startIndex}
-                    />
-                    </tbody>
-                </table>
-
-                {isLastPage && <ReleaseSignature />}
+        <div className="release-print-scroll-a5">
+          {pages.map((pageRows, pageIndex) => (
+            <div
+              key={`release-page-a5-${pageIndex}`}
+              className={`release-print-paper-a5 ${
+                pageIndex > 0
+                  ? "release-print-paper-break-a5"
+                  : ""
+              }`}
+            >
+              <div className="release-print-header-a5">
+                <div className="release-print-left-header-a5">
+                  <div>
+                    Đơn vị: <strong>CN TOA XE ĐÀ NẴNG</strong>
+                  </div>
                 </div>
-            );
-            })}
 
+                <div className="release-print-title-block-a5">
+                  <h1>PHIẾU XUẤT KHO VẬT TƯ, PHỤ TÙNG</h1>
+
+                  <div className="release-print-date-a5">
+                    {formatDateText(release?.release_date)}
+                  </div>
+                </div>
+
+                <div className="release-print-right-header-a5">
+                  <strong>Mẫu số 02 - VT</strong>
+
+                  <div>
+                    (Ban hành theo TT số 99/2025/TT-BTC
+                  </div>
+
+                  <div>
+                    ngày 27/10/2025 của Bộ trưởng BTC)
+                  </div>
+
+                  <div className="release-print-code-lines-a5">
+                    <div>Số: {code || "............."}</div>
+                    <div>Nợ:.............</div>
+                    <div>Có:.............</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="release-print-info-a5">
+                <div>
+                  Tên đơn vị lĩnh:{" "}
+                  <strong>
+                    {release?.receiver_unit?.name ||
+                      release?.receiver_unit ||
+                      ""}
+                  </strong>
+                </div>
+
+                <div>
+                  Đối tượng xuất kho:{" "}
+                  <strong>
+                    {release?.release_target?.name ||
+                      release?.release_target ||
+                      ""}
+                  </strong>
+                </div>
+
+                <div>
+                  Xuất tại kho:{" "}
+                  <strong>
+                    {release?.warehouse?.name ||
+                      release?.warehouse_name ||
+                      ""}
+                  </strong>
+                </div>
+              </div>
+
+              <table className="release-print-table-a5">
+                <ReleaseTableHeader />
+
+                <tbody>
+                  <ReleaseRows
+                    rowsToRender={pageRows}
+                    pageIndex={pageIndex}
+                  />
+                </tbody>
+              </table>
+
+              <ReleaseSignature />
             </div>
-    </div>
+          ))}
+        </div>
+        </div>
   );
 }
 

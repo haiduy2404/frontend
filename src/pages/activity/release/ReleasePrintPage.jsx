@@ -125,106 +125,88 @@ function ReleasePrintPage() {
   // PHÂN TRANG
   // ============================================================
 
-  const DEFAULT_ROWS = 15;
-  const FIRST_PAGE_MAX_ROWS = 25;
-  const NEXT_PAGE_MAX_ROWS = 32;
+  const ROWS_PER_PAGE = 25;
+  const MIN_DISPLAY_ROWS = 15;
 
-  /*
-   * Trang đầu:
-   * - Ít hơn 15 dòng: thêm dòng trống cho đủ 15.
-   * - Từ 15 đến 25 dòng: hiển thị đúng số lượng.
-   * - Trên 25 dòng: lấy 25 dòng đầu.
-   */
-  const firstPageRows = useMemo(() => {
-    const pageRows = rows.slice(0, FIRST_PAGE_MAX_ROWS);
+  const pages = useMemo(() => {
+    const result = [];
 
-    if (pageRows.length < DEFAULT_ROWS) {
-      return Array.from({ length: DEFAULT_ROWS }).map(
-        (_, index) => pageRows[index] || null
+    if (rows.length === 0) {
+      result.push(
+        Array.from({ length: MIN_DISPLAY_ROWS }, () => null)
       );
+
+      return result;
     }
-
-    return pageRows;
-  }, [rows]);
-
-  /*
-   * Các dòng còn lại sau 25 dòng đầu.
-   */
-  const remainingRows = useMemo(() => {
-    return rows.slice(FIRST_PAGE_MAX_ROWS);
-  }, [rows]);
-
-  /*
-   * Trang thứ hai trở đi:
-   * Mỗi trang tối đa 32 dòng.
-   */
-  const extraPages = useMemo(() => {
-    const pages = [];
 
     for (
       let startIndex = 0;
-      startIndex < remainingRows.length;
-      startIndex += NEXT_PAGE_MAX_ROWS
+      startIndex < rows.length;
+      startIndex += ROWS_PER_PAGE
     ) {
-      pages.push(
-        remainingRows.slice(
-          startIndex,
-          startIndex + NEXT_PAGE_MAX_ROWS
-        )
+      const pageRows = rows.slice(
+        startIndex,
+        startIndex + ROWS_PER_PAGE
       );
+
+      // Trang nào dưới 15 dòng thì thêm dòng trống cho đủ 15.
+      if (pageRows.length < MIN_DISPLAY_ROWS) {
+        result.push([
+          ...pageRows,
+          ...Array.from(
+            { length: MIN_DISPLAY_ROWS - pageRows.length },
+            () => null
+          ),
+        ]);
+      } else {
+        result.push(pageRows);
+      }
     }
 
-    return pages;
-  }, [remainingRows]);
-
-  const hasExtraPages = extraPages.length > 0;
-
-  // ============================================================
-  // TIÊU ĐỀ BẢNG DÙNG CHUNG CHO MỌI TRANG
-  // ============================================================
-
-  const ReleaseTableHeader = () => (
-    <>
-      <colgroup>
-        <col className="release-print-col-stt" />
-        <col className="release-print-col-name" />
-        <col className="release-print-col-code" />
-        <col className="release-print-col-unit" />
-        <col className="release-print-col-qty" />
-        <col className="release-print-col-qty" />
-        <col className="release-print-col-price" />
-        <col className="release-print-col-amount" />
-      </colgroup>
-
-      <thead>
-        <tr>
-          <th rowSpan={2}>TT</th>
-
-          <th rowSpan={2}>
-            Tên, nhãn hiệu quy cách, phẩm chất vật tư, dụng cụ sản
-            phẩm, hàng hóa
-          </th>
-
-          <th rowSpan={2}>Mã số</th>
-          <th rowSpan={2}>Đơn vị tính</th>
-
-          <th colSpan={2}>Số lượng</th>
-
-          <th rowSpan={2}>Đơn giá</th>
-          <th rowSpan={2}>Thành tiền</th>
-        </tr>
-
-        <tr>
-          <th>Yêu cầu</th>
-          <th>Thực xuất</th>
-        </tr>
-      </thead>
-    </>
-  );
-
+    return result;
+  }, [rows]);
   // ============================================================
   // CÁC DÒNG VẬT TƯ DÙNG CHUNG CHO MỌI TRANG
   // ============================================================
+
+    const ReleaseTableHeader = () => (
+      <>
+        <colgroup>
+          <col className="release-print-col-stt" />
+          <col className="release-print-col-name" />
+          <col className="release-print-col-code" />
+          <col className="release-print-col-unit" />
+          <col className="release-print-col-qty" />
+          <col className="release-print-col-qty" />
+          <col className="release-print-col-price" />
+          <col className="release-print-col-amount" />
+        </colgroup>
+
+        <thead>
+          <tr>
+            <th rowSpan={2}>TT</th>
+
+            <th rowSpan={2}>
+              Tên, nhãn hiệu quy cách, phẩm chất vật tư, dụng cụ sản
+              phẩm, hàng hóa
+            </th>
+
+            <th rowSpan={2}>Mã số</th>
+            <th rowSpan={2}>Đơn vị tính</th>
+
+            <th colSpan={2}>Số lượng</th>
+
+            <th rowSpan={2}>Đơn giá</th>
+            <th rowSpan={2}>Thành tiền</th>
+          </tr>
+
+          <tr>
+            <th>Yêu cầu</th>
+            <th>Thực xuất</th>
+          </tr>
+        </thead>
+      </>
+    );
 
   const ReleaseTableRows = ({ pageRows, startIndex = 0 }) => (
     <>
@@ -234,7 +216,7 @@ function ReleasePrintPage() {
           className="release-print-item-row"
         >
           <td className="release-print-center-cell">
-            {line ? startIndex + index + 1 : ""}
+              {line ? index + 1 : ""}
           </td>
 
           <td className="release-print-name-cell">
@@ -353,130 +335,98 @@ function ReleasePrintPage() {
         </button>
       </div>
 
-      <div className="release-print-scroll">
-        {/* ======================================================
-            TRANG ĐẦU TIÊN
-        ====================================================== */}
-
-        <div className="release-print-paper">
-          <div className="release-print-header">
-            <div className="release-print-left-header">
-              <div>
-                Đơn vị: <strong>CN TOA XE ĐÀ NẴNG</strong>
-              </div>
-
-              <div>
-                Bộ phận: <strong>Kế hoạch-Vật Tư</strong>
-              </div>
-            </div>
-
-            <div className="release-print-title-block">
-              <h1>PHIẾU XUẤT KHO VẬT TƯ, PHỤ TÙNG</h1>
-
-              <div className="release-print-date">
-                {formatDateText(release?.release_date)}
-              </div>
-            </div>
-
-            <div className="release-print-right-header">
-              <strong>Mẫu số 02 - VT</strong>
-
-              <div>
-                (Ban hành theo TT số 99/2025/TT-BTC
-              </div>
-
-              <div>
-                ngày 27/10/2025 của Bộ trưởng BTC)
-              </div>
-
-              <div className="release-print-code-lines">
-                <div>Số: {code || "............."}</div>
-                <div>Nợ:.............</div>
-                <div>Có:.............</div>
-              </div>
-            </div>
+     <div className="release-print-scroll">
+      {pages.map((pageRows, pageIndex) => (
+        <div
+          key={`release-page-${pageIndex}`}
+          className={`release-print-paper ${
+            pageIndex > 0 ? "release-print-paper-break" : ""
+          }`}
+        >
+      <div className="release-print-header">
+        <div className="release-print-left-header">
+          <div>
+            Đơn vị: <strong>CN TOA XE ĐÀ NẴNG</strong>
           </div>
 
-          <div className="release-print-info">
-            <div>
-              Tên đơn vị lĩnh:{" "}
-              <strong>
-                {release?.receiver_unit?.name ||
-                  release?.receiver_unit ||
-                  ""}
-              </strong>
-            </div>
-
-            <div>
-              Đối tượng xuất kho:{" "}
-              <strong>
-                {release?.release_target?.name ||
-                  release?.release_target ||
-                  ""}
-              </strong>
-            </div>
-
-            <div>
-              Xuất tại kho:{" "}
-              <strong>
-                {release?.warehouse?.name ||
-                  release?.warehouse_name ||
-                  ""}
-              </strong>
-            </div>
+          <div>
+            Bộ phận: <strong>Kế hoạch-Vật Tư</strong>
           </div>
-
-          <table className="release-print-table">
-            <ReleaseTableHeader />
-
-            <tbody>
-              <ReleaseTableRows
-                pageRows={firstPageRows}
-                startIndex={0}
-              />
-            </tbody>
-          </table>
-
-          {/* Không có trang sau thì chữ ký nằm ở trang đầu */}
-          {!hasExtraPages && <ReleaseSignature />}
         </div>
 
-        {/* ======================================================
-            TRANG THỨ HAI TRỞ ĐI
-        ====================================================== */}
+        <div className="release-print-title-block">
+          <h1>PHIẾU XUẤT KHO VẬT TƯ, PHỤ TÙNG</h1>
 
-        {extraPages.map((pageRows, pageIndex) => {
-          const startIndex =
-            FIRST_PAGE_MAX_ROWS +
-            pageIndex * NEXT_PAGE_MAX_ROWS;
+          <div className="release-print-date">
+            {formatDateText(release?.release_date)}
+          </div>
+        </div>
 
-          const isLastPage =
-            pageIndex === extraPages.length - 1;
+        <div className="release-print-right-header">
+          <strong>Mẫu số 02 - VT</strong>
 
-          return (
-            <div
-              key={`page-${pageIndex}`}
-              className="release-print-paper release-print-paper-break"
-            >
-              <table className="release-print-table">
-                <ReleaseTableHeader />
+          <div>
+            (Ban hành theo TT số 99/2025/TT-BTC
+          </div>
 
-                <tbody>
-                  <ReleaseTableRows
-                    pageRows={pageRows}
-                    startIndex={startIndex}
-                  />
-                </tbody>
-              </table>
+          <div>
+            ngày 27/10/2025 của Bộ trưởng BTC)
+          </div>
 
-              {/* Chỉ trang cuối cùng mới có chữ ký */}
-              {isLastPage && <ReleaseSignature />}
-            </div>
-          );
-        })}
+          <div className="release-print-code-lines">
+            <div>Số: {code || "............."}</div>
+            <div>Nợ:.............</div>
+            <div>Có:.............</div>
+          </div>
+        </div>
       </div>
+
+      <div className="release-print-info">
+        <div>
+          Tên đơn vị lĩnh:{" "}
+          <strong>
+            {release?.receiver_unit?.name ||
+              release?.receiver_unit ||
+              ""}
+          </strong>
+        </div>
+
+        <div>
+          Đối tượng xuất kho:{" "}
+          <strong>
+            {release?.release_target?.name ||
+              release?.release_target ||
+              ""}
+          </strong>
+        </div>
+
+        <div>
+          Xuất tại kho:{" "}
+          <strong>
+            {release?.warehouse?.name ||
+              release?.warehouse_name ||
+              ""}
+          </strong>
+        </div>
+      </div>
+
+      <table className="release-print-table">
+        <ReleaseTableHeader />
+
+        <tbody>
+          <ReleaseTableRows
+            pageRows={pageRows}
+            pageIndex={pageIndex}
+          />
+        </tbody>
+      </table>
+
+          <ReleaseSignature />
+        </div>
+      ))}
     </div>
-  );
+  </div>
+);
 }
 
 export default ReleasePrintPage;
