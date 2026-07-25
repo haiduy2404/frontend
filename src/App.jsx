@@ -152,7 +152,12 @@ function App() {
                   <Route
                     path="release/edit/:id"
                     element={
-                      <RequireRole roles={["update_actual_released_quantity"]}>
+                      <RequireRole
+                        roles={[
+                          "view_actual_release",
+                          "update_actual_released_quantity",
+                        ]}
+                      >
                         <WarehouseOrderRelease />
                       </RequireRole>
                     }
