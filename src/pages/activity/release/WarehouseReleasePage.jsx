@@ -27,6 +27,7 @@ function WarehouseReleasePage() {
   const canInputActualQuantity = canDo("update_actual_released_quantity");
   const canUseReleaseActualPage = canUpdateRelease || canInputActualQuantity;
   const canDelete = canDo("delete_warehouse_release");
+  const canDeleteAdmin = canDo("delete_warehouse_admin");
   const [searchParams] = useSearchParams();
   const isPrintMode = searchParams.get("mode") === "print";
   const [releaseOrders, setReleaseOrders] = useState([]);
@@ -114,7 +115,15 @@ function WarehouseReleasePage() {
   };
 
   const canRejectReleaseByStatus = (status) => {
-    return status === "WAIT_TO_APPROVE";
+    if (status === "WAIT_TO_APPROVE") {
+      return canUpdateRelease;
+    }
+
+    if (status === "COMPLETED") {
+      return canDeleteAdmin;
+    }
+
+    return false;
   };
 
   const getWarehouseDisplayName = (warehouse) => {
@@ -435,7 +444,7 @@ function WarehouseReleasePage() {
     };
 
     const handleRejectRelease = async () => {
-    if (!canUpdateRelease) {
+    if (!canUpdateRelease && !canDeleteAdmin) {
       alert("Bạn không có quyền từ chối lệnh xuất kho");
       return;
     }
@@ -453,7 +462,23 @@ function WarehouseReleasePage() {
     }
 
     if (!canRejectReleaseByStatus(order.status)) {
-      alert("Chỉ được từ chối lệnh xuất kho ở trạng thái Chờ duyệt");
+      if (order.status === "COMPLETED" && !canDeleteAdmin) {
+        alert(
+          'Bạn cần quyền "delete_warehouse" để từ chối lệnh đã hoàn thành'
+        );
+        return;
+      }
+
+      if (order.status === "WAIT_TO_APPROVE" && !canUpdateRelease) {
+        alert(
+          'Bạn cần quyền "update_warehouse_release" để từ chối lệnh chờ duyệt'
+        );
+        return;
+      }
+
+      alert(
+        "Chỉ được từ chối lệnh ở trạng thái Chờ duyệt hoặc Hoàn thành"
+      );
       return;
     }
 
@@ -678,7 +703,7 @@ function WarehouseReleasePage() {
               <span>Chỉnh sửa</span>
             </button>
           )}
-        {canUpdateRelease && (
+        {(canUpdateRelease || canDeleteAdmin) && (
             <button
               type="button"
               className="release-reject-btn"
