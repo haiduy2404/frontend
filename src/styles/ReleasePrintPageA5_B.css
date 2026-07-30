@@ -6,13 +6,14 @@
 .release-print-page-a5 {
   width: 100%;
   height: 100vh;
-  background: #e5e7eb;
   padding: 16px 0;
   box-sizing: border-box;
 
   display: flex;
   flex-direction: column;
+
   overflow: hidden;
+  background: #e5e7eb;
 }
 
 /* =========================================================
@@ -22,6 +23,7 @@
 .release-print-toolbar-a5 {
   width: 210mm;
   margin: 0 auto 12px;
+
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -32,18 +34,21 @@
 .release-print-toolbar-a5 button {
   height: 34px;
   padding: 0 16px;
+
   border: 1px solid #2563eb;
   border-radius: 4px;
+
   background: #2563eb;
   color: #ffffff;
+
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .release-print-toolbar-a5 button:hover {
-  background: #1d4ed8;
   border-color: #1d4ed8;
+  background: #1d4ed8;
 }
 
 /* =========================================================
@@ -52,14 +57,14 @@
 
 .release-print-scroll-a5 {
   width: 100%;
-  flex: 1;
   min-height: 0;
+  padding-bottom: 24px;
+  box-sizing: border-box;
+
+  flex: 1;
 
   overflow-x: auto;
   overflow-y: auto;
-
-  padding-bottom: 24px;
-  box-sizing: border-box;
 }
 
 /* =========================================================
@@ -73,6 +78,7 @@
   margin: 0 auto;
   padding: 5mm 7mm 4mm;
   box-sizing: border-box;
+
   overflow: hidden;
 
   background: #ffffff;
@@ -101,14 +107,19 @@
 
 .release-print-header-a5 {
   display: grid;
-  grid-template-columns: 48mm minmax(0, 1fr) 60mm;
+  grid-template-columns: 48mm minmax(0, 1fr) 48mm;
   column-gap: 2mm;
   align-items: start;
-  margin-bottom: 1.5mm;
+
+  width: 100%;
+  min-height: 17mm;
+  margin-bottom: 1mm;
 }
 
+/* Đơn vị phía trên bên trái */
 .release-print-left-header-a5 {
   min-width: 0;
+
   font-size: 9.7pt;
   line-height: 1.15;
   text-align: left;
@@ -122,13 +133,15 @@
   font-weight: 700;
 }
 
+/* Tiêu đề chính ở giữa */
 .release-print-title-block-a5 {
-  min-width: 0;
-  text-align: center;
+  grid-column: 2;
 
-  position: relative;
-  left: -4mm;
-  top:   5mm;
+  position: static;
+  min-width: 0;
+  padding-top: 4mm;
+
+  text-align: center;
 }
 
 .release-print-title-block-a5 h1 {
@@ -138,35 +151,46 @@
   font-size: 13.5pt;
   font-weight: 700;
   line-height: 1.05;
+
   text-transform: uppercase;
   white-space: nowrap;
 }
 
+/* Ngày tháng nằm dưới tiêu đề */
 .release-print-date-a5 {
   margin-top: 1.5mm;
+
   font-size: 9.8pt;
+  font-weight: 400;
   line-height: 1.1;
+  text-align: center;
 }
 
+/* Dùng cho các mẫu khác có phần đầu bên phải */
 .release-print-right-header-a5 {
+  grid-column: 3;
+
   min-width: 0;
-  text-align: center;
+
   font-size: 9.5pt;
   line-height: 1.15;
+  text-align: center;
 }
 
 .release-print-right-header-a5 > strong {
   display: block;
   margin-bottom: 0.5mm;
+
   font-size: 9.8pt;
 }
 
 .release-print-code-lines-a5 {
   margin-top: 1.2mm;
   padding-left: 20mm;
-  text-align: left;
+
   font-size: 9.6pt;
   line-height: 1.15;
+  text-align: left;
 }
 
 .release-print-code-lines-a5 > div {
@@ -175,27 +199,103 @@
 
 /* =========================================================
    THÔNG TIN PHIẾU
+
+   Dòng 1:
+   Tên người nhận chế biến: .......... Đơn vị: ..........
+
+   Dòng 2:
+   Nhận tại kho: .........................................
    ========================================================= */
 
 .release-print-info-a5 {
-  margin-top: 0.8mm;
+  width: 100%;
+  margin-top: 0;
   margin-bottom: 1.5mm;
+
   font-size: 10pt;
   line-height: 1.1;
 }
 
-.release-print-info-a5 > div {
-  display: flex;
+/* Mỗi dòng thông tin */
+.processing-info-line {
+  width: 100%;
+  min-height: 5mm;
+
   align-items: baseline;
-  min-width: 0;
-  min-height: 4.7mm;
 }
 
-.release-print-info-a5 strong {
+/* Dòng đầu chia thành hai phần */
+.processing-info-line:first-child {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 61mm;
+  column-gap: 4mm;
+}
+
+/* Dòng kho chiếm toàn bộ chiều ngang */
+.processing-info-line:last-child {
+  display: block;
+}
+
+/* Mỗi cụm label + đường chấm */
+.processing-info-field {
+  display: flex;
+  align-items: baseline;
+
   min-width: 0;
-  margin-left: 2mm;
+  min-height: 5mm;
+}
+
+.processing-info-receiver {
+  min-width: 0;
+  margin: 0;
+}
+
+.processing-info-unit {
+  min-width: 0;
+  margin: 0;
+}
+
+.processing-info-warehouse {
+  width: 100%;
+  margin: 0;
+}
+
+/* Nhãn */
+.processing-info-label {
+  flex: 0 0 auto;
+
   font-weight: 700;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+}
+
+/* Đường chấm */
+.processing-info-dotted {
+  flex: 1;
+  min-width: 0;
+  height: 4.2mm;
+  margin-left: 1.5mm;
+
+  display: flex;
+  align-items: flex-end;
+
+  border-bottom: 1px dotted #000000;
+}
+
+/* Giá trị hiển thị trên đường chấm */
+.processing-info-dotted strong {
+  display: inline-block;
+
+  margin: 0 1mm;
+  padding: 0 0.8mm;
+
+  position: relative;
+  bottom: -0.15mm;
+
+  background: #ffffff;
+
+  font-weight: 700;
+  line-height: 1.05;
+  white-space: nowrap;
 }
 
 /* =========================================================
@@ -207,6 +307,7 @@
 
 .release-print-table-a5 {
   width: 100%;
+
   border-collapse: collapse;
   border-spacing: 0;
   table-layout: fixed;
@@ -217,16 +318,19 @@
 
 .release-print-table-a5 th,
 .release-print-table-a5 td {
-  border: 1px solid #000000;
   padding: 0.35mm 0.7mm;
+
+  border: 1px solid #000000;
+
   vertical-align: middle;
   overflow: hidden;
 }
 
 .release-print-table-a5 thead th {
-  text-align: center;
   font-weight: 700;
   line-height: 1.05;
+  text-align: center;
+
   white-space: normal;
   overflow-wrap: break-word;
 }
@@ -246,6 +350,7 @@
   height: 4mm;
   padding-top: 0;
   padding-bottom: 0;
+
   font-size: 8.8pt;
   line-height: 1;
 }
@@ -258,6 +363,7 @@
 
 .release-print-table-a5 tbody td {
   height: 5.7mm;
+
   font-size: 9.3pt;
   line-height: 1.05;
 }
@@ -265,40 +371,39 @@
 /* =========================================================
    ĐỘ RỘNG TỪNG CỘT
    ========================================================= */
-
-/* TT */
-.release-print-col-stt-a5 {
-  width: 7mm;
+/* Danh điểm vật tư */
+.processing-col-code-a5 {
+  width: 24mm;
 }
 
-/* Tên vật tư */
-.release-print-col-name-a5 {
-  width: 74mm;
+/* Tên nhãn hiệu quy cách vật tư */
+.processing-col-name-a5 {
+  width: 78mm;
 }
 
-/* Mã số */
-.release-print-col-code-a5 {
-  width: 19mm;
-}
-
-/* Đơn vị tính */
-.release-print-col-unit-a5 {
+/* ĐVT */
+.processing-col-unit-a5 {
   width: 16mm;
 }
 
-/* Yêu cầu và Thực xuất: mỗi cột 22mm */
-.release-print-col-qty-a5 {
-  width: 22mm;
+/* Số lượng */
+.processing-col-quantity-a5 {
+  width: 20mm;
 }
 
-/* Đơn giá */
-.release-print-col-price-a5 {
-  width: 17mm;
+/* Giá đơn vị */
+.processing-col-price-a5 {
+  width: 18mm;
 }
 
 /* Thành tiền */
-.release-print-col-amount-a5 {
-  width: 19mm;
+.processing-col-amount-a5 {
+  width: 24mm;
+}
+
+/* Ghi chú */
+.processing-col-note-a5 {
+  width: 16mm;
 }
 
 /* =========================================================
@@ -312,28 +417,28 @@
 
 .release-print-name-cell-a5 {
   padding-left: 1.2mm !important;
+
+  line-height: 1.05;
   text-align: left;
+
   white-space: normal;
   overflow-wrap: break-word;
   word-break: normal;
-  line-height: 1.05;
 }
 
 .release-print-number-cell-a5 {
   padding-right: 1.2mm !important;
+
   text-align: right;
   white-space: nowrap;
 }
 
-/* =========================================================
-   KHỐI CHỮ KÝ
-   6 chức danh nằm trên cùng một hàng
-   ========================================================= */
-
 .release-print-signature-row-a5 {
+  width: 100%;
+
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  column-gap: 1mm;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 0;
 
   margin-top: 3mm;
   text-align: center;
@@ -343,6 +448,7 @@
 }
 
 .release-print-signature-row-a5 > div {
+  width: 100%;
   min-width: 0;
   min-height: 20mm;
 
@@ -354,9 +460,11 @@
 
 .release-print-signature-row-a5 strong {
   display: block;
+
   font-size: 9.4pt;
   font-weight: 700;
   line-height: 1.1;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -367,18 +475,16 @@
   font-size: 8.5pt;
   font-style: italic;
   line-height: 1.05;
+  text-align: center;
   white-space: nowrap;
 }
 
-/* =========================================================
-   TÊN NGƯỜI KÝ
-   Phải chia đúng 6 cột giống khối chức danh
-   ========================================================= */
-
 .release-print-signer-name-row-a5 {
+  width: 100%;
+
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  column-gap: 1mm;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 0;
 
   margin-top: 5mm;
   text-align: center;
@@ -391,14 +497,13 @@
 }
 
 .release-print-signer-name-row-a5 > div {
+  width: 100%;
   min-width: 0;
   min-height: 4.5mm;
-  white-space: nowrap;
 }
 
 /* =========================================================
    LOADING
-   JSX hiện tại dùng class release-print-loading
    ========================================================= */
 
 .release-print-loading,
@@ -409,6 +514,7 @@
 
   background: #eef1f5;
   color: #111827;
+
   font-family: Arial, sans-serif;
   font-size: 14px;
 }
@@ -493,6 +599,7 @@
 
   .release-print-paper-break-a5 {
     margin-top: 0 !important;
+
     page-break-before: always;
     break-before: page;
   }

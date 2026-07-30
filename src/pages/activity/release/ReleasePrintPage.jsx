@@ -237,7 +237,7 @@ function ReleasePrintPage() {
             {line
               ? formatViNumber(
                   line.request_quantity_in_default_unit,
-                  3
+                  2
                 )
               : ""}
           </td>
@@ -246,7 +246,7 @@ function ReleasePrintPage() {
             {line
               ? formatViNumber(
                   line.actual_quantity_in_default_unit,
-                  3
+                  2
                 )
               : ""}
           </td>

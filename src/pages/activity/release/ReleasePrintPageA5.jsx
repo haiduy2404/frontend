@@ -195,8 +195,8 @@ function ReleasePrintPageA5() {
           <td className="release-print-name-cell-a5">{line?.goods_name || ""}</td>
           <td className="release-print-center-cell-a5">{line?.goods_code || ""}</td>
           <td className="release-print-center-cell-a5">{line?.default_goods_unit_name || line?.unit_name || ""}</td>
-          <td className="release-print-number-cell-a5">{line ? formatViNumber(line.request_quantity_in_default_unit, 3) : ""}</td>
-          <td className="release-print-number-cell-a5">{line ? formatViNumber(line.actual_quantity_in_default_unit, 3) : ""}</td>
+          <td className="release-print-number-cell-a5">{line ? formatViNumber(line.request_quantity_in_default_unit, 2) : ""}</td>
+          <td className="release-print-number-cell-a5">{line ? formatViNumber(line.actual_quantity_in_default_unit, 2) : ""}</td>
           <td className="release-print-number-cell-a5"></td>
           <td className="release-print-number-cell-a5"></td>
         </tr>
