@@ -359,77 +359,396 @@
   opacity: 0.45;
 }
 
+/* =========================================================
+   MODAL GIẤY ĐỀ NGHỊ CHUYỂN TIỀN
+   ========================================================= */
+
 .money-transfer-overlay {
   position: fixed;
   inset: 0;
   z-index: 1200;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgb(15 23 42 / 48%);
+
+  padding: 24px;
+
+  background: rgb(15 23 42 / 52%);
+  backdrop-filter: blur(2px);
+
+  overflow-y: auto;
 }
 
-.money-transfer-modal,
-.money-transfer-detail-modal {
-  width: min(720px, 100%);
+/* Tăng độ ưu tiên để không bị CSS khác ghi đè width */
+.money-transfer-overlay > .money-transfer-modal {
+  width: min(860px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+
+  display: flex;
+  flex-direction: column;
+
+  margin: auto;
   overflow: hidden;
+
+  border: 1px solid #d8e1eb;
+  border-radius: 14px;
+
+  background: #ffffff;
+  box-shadow: 0 28px 70px rgb(15 23 42 / 30%);
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.money-transfer-modal-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 20px 26px;
+
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.money-transfer-modal-header h2 {
+  margin: 0;
+
+  color: #172033;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.money-transfer-modal-header .money-transfer-kicker {
+  margin-bottom: 6px;
+
+  color: #456787;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.money-transfer-close-btn {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+  color: #64748b;
+
+  font-size: 24px;
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.money-transfer-close-btn:hover:not(:disabled) {
+  background: #eef2f7;
+  color: #172033;
+}
+
+/* =========================================================
+   FORM BODY
+   ========================================================= */
+
+.money-transfer-form-grid {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 17px 20px;
+
+  min-height: 0;
+  padding: 22px 26px 24px;
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.money-transfer-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.money-transfer-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.money-transfer-field > span {
+  color: #3c4d63;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.money-transfer-field input,
+.money-transfer-field textarea {
+  width: 100%;
+
+  border: 1px solid #cbd7e5;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #172033;
+
+  font-family: inherit;
+  font-size: 15px;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.money-transfer-field input {
+  height: 46px;
+  padding: 0 14px;
+}
+
+.money-transfer-field textarea {
+  min-height: 110px;
+  max-height: 200px;
+
+  padding: 12px 14px;
+
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.money-transfer-field input::placeholder,
+.money-transfer-field textarea::placeholder {
+  color: #94a3b8;
+}
+
+.money-transfer-field input:hover:not(:disabled),
+.money-transfer-field textarea:hover:not(:disabled) {
+  border-color: #9fb1c5;
+}
+
+.money-transfer-field input:focus,
+.money-transfer-field textarea:focus {
+  border-color: #315d89;
+  box-shadow: 0 0 0 3px rgb(23 58 99 / 10%);
+}
+
+/* Hiển thị field ở chế độ xem */
+.money-transfer-field input:disabled,
+.money-transfer-field textarea:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+
+  border-color: #cfdae7;
+  background: #edf3fb;
+  color: #24364d;
+
+  -webkit-text-fill-color: #24364d;
+}
+
+/* =========================================================
+   DÒNG MÃ SỐ THUẾ + NÚT TẢI CÔNG TY
+   ========================================================= */
+
+.money-transfer-tax-code-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 145px;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.money-transfer-load-company-btn {
+  display: inline-flex;
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 15px;
+
+  border: 1px solid #173a63;
+  border-radius: 9px;
+
+  background: #eef4fa;
+  color: #173a63;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.money-transfer-load-company-btn svg {
+  flex: 0 0 auto;
+  font-size: 17px;
+}
+
+.money-transfer-load-company-btn:hover:not(:disabled) {
+  background: #173a63;
+  color: #ffffff;
+}
+
+.money-transfer-load-company-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.money-transfer-load-company-btn:disabled svg {
+  animation: money-transfer-spin 0.8s linear infinite;
+}
+
+@keyframes money-transfer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.money-transfer-company-message {
+  display: block;
+  margin-top: 1px;
+
+  color: #496986;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.money-transfer-modal-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+
+  padding: 15px 26px;
+
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.money-transfer-modal-footer .money-transfer-primary-btn,
+.money-transfer-modal-footer .money-transfer-secondary-btn {
+  min-width: 94px;
+  min-height: 44px;
+
+  border-radius: 9px;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.money-transfer-modal-footer .money-transfer-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 20px;
+
+  border: 1px solid #173a63;
+  background: #173a63;
+  color: #ffffff;
+
+  cursor: pointer;
+}
+
+.money-transfer-modal-footer .money-transfer-primary-btn:hover:not(:disabled) {
+  border-color: #102f52;
+  background: #102f52;
+}
+
+.money-transfer-modal-footer .money-transfer-secondary-btn {
+  padding: 0 20px;
+
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+
+  cursor: pointer;
+}
+
+.money-transfer-modal-footer .money-transfer-secondary-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.money-transfer-modal-footer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* =========================================================
+   DETAIL MODAL
+   ========================================================= */
+
+.money-transfer-detail-modal {
+  width: min(760px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+
+  overflow: hidden;
+
   border: 1px solid #d9e0e8;
-  border-radius: 12px;
+  border-radius: 14px;
+
   background: #ffffff;
   box-shadow: 0 28px 70px rgb(15 23 42 / 28%);
 }
 
-.money-transfer-modal-header {
-  padding: 20px 22px;
-  border-bottom: 1px solid #e3e8ef;
-}
-
-.money-transfer-close-btn {
-  display: flex;
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: #607086;
-  font-size: 21px;
-  cursor: pointer;
-}
-
-.money-transfer-form-grid,
 .money-transfer-detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+
+  max-height: calc(100vh - 190px);
   padding: 22px;
+
+  overflow-y: auto;
 }
 
-.money-transfer-field.full-width,
 .money-transfer-detail-grid .full-width {
   grid-column: 1 / -1;
-}
-
-.money-transfer-modal-footer {
-  justify-content: flex-end;
-  padding: 15px 22px;
-  border-top: 1px solid #e3e8ef;
-  background: #f8fafc;
 }
 
 .money-transfer-detail-grid > div {
   min-width: 0;
   padding: 13px 14px;
+
   border: 1px solid #e0e6ed;
   border-radius: 8px;
+
   background: #fafbfd;
 }
 
 .money-transfer-detail-grid span {
   display: block;
   margin-bottom: 5px;
+
   color: #6f7d90;
   font-size: 11px;
   font-weight: 700;
@@ -439,6 +758,7 @@
 .money-transfer-detail-grid strong {
   display: block;
   overflow-wrap: anywhere;
+
   color: #28394f;
   font-size: 13px;
 }
@@ -461,14 +781,51 @@
     flex-direction: column;
   }
 
-  .money-transfer-filter-grid,
+  .money-transfer-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .money-transfer-overlay {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .money-transfer-overlay > .money-transfer-modal,
+  .money-transfer-detail-modal {
+    width: 100%;
+    max-height: calc(100vh - 20px);
+    border-radius: 10px;
+  }
+
+  .money-transfer-modal-header {
+    padding: 16px 17px;
+  }
+
+  .money-transfer-modal-header h2 {
+    font-size: 21px;
+  }
+
   .money-transfer-form-grid,
   .money-transfer-detail-grid {
     grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 17px;
   }
 
   .money-transfer-field.full-width,
   .money-transfer-detail-grid .full-width {
     grid-column: auto;
+  }
+
+  .money-transfer-tax-code-row {
+    grid-template-columns: 1fr;
+  }
+
+  .money-transfer-load-company-btn {
+    width: 100%;
+  }
+
+  .money-transfer-modal-footer {
+    padding: 13px 17px;
   }
 }

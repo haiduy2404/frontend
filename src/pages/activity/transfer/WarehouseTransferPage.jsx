@@ -7,6 +7,7 @@ import {
   RiEdit2Line,
   RiDeleteBin6Line,
   RiCheckboxCircleLine,
+  RiCloseCircleLine,
 } from "react-icons/ri";
 import {
   getWarehouseTransfersPageable,
@@ -21,12 +22,15 @@ export default function WarehouseTransferPage() {
   const canUpdate = canDo("update_warehouse_transfer");
   const canDelete = canDo("delete_warehouse_transfer");
   const canCreate = canDo("create_warehouse_transfer");
+  const canDeleteAdmin = canDo("delete_warehouse_admin");
   const [transfers, setTransfers] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [timeRange, setTimeRange] = useState("month");
   const [pageSize, setPageSize] = useState(20);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
+  const [rejecting, setRejecting] = useState(false);
+
   const unwrapList = (data) => {
     return Array.isArray(data)
       ? data
@@ -43,12 +47,20 @@ export default function WarehouseTransferPage() {
       : [];
   };
   const selectedRow = transfers.find((item) => item.id === selectedTransfer);
+
+  const handleToggleSelection = (transferId) => {
+    setSelectedTransfer((currentId) =>
+      currentId === transferId ? null : transferId
+    );
+  };
   const getTransferStatusText = (status) => {
     switch (status) {
       case "PENDING":
         return "Đang điều chuyển";
       case "COMPLETED":
         return "Đã hoàn thành";
+      case "CANCELLED":
+        return "Đã từ chối";
       default:
         return "-";
     }
@@ -59,8 +71,8 @@ export default function WarehouseTransferPage() {
     return;
   }
 
-  if (transfer.status === "COMPLETED") {
-    alert("Phiếu đã hoàn thành");
+  if (transfer.status !== "PENDING") {
+    alert("Chỉ được hoàn thành phiếu đang điều chuyển");
     return;
   }
 
@@ -71,11 +83,10 @@ export default function WarehouseTransferPage() {
   if (!confirmed) return;
 
   try {
-    await updateWarehouseTransferStatus(transfer.id, {
-      action: "complete",
-      status: "COMPLETED",
-    });
-
+    await updateWarehouseTransferStatus(
+      transfer.id,
+      "complete"
+    );
     setSelectedTransfer(null);
     await loadTransfers();
     alert("Hoàn thành phiếu điều chuyển thành công");
@@ -134,6 +145,53 @@ export default function WarehouseTransferPage() {
     navigate(`/dashboard/activity/transfer/detail/${code}?mode=edit`);
   };
 
+  const handleReject = async (transfer) => {
+    if (!canDeleteAdmin) {
+      alert(
+        'Bạn cần quyền "delete_warehouse_admin" để từ chối phiếu đã hoàn thành'
+      );
+      return;
+    }
+
+    if (!transfer?.id) {
+      alert("Vui lòng chọn phiếu điều chuyển cần từ chối");
+      return;
+    }
+
+    if (transfer.status !== "COMPLETED") {
+      alert("Chỉ được từ chối phiếu ở trạng thái Đã hoàn thành");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn từ chối phiếu ${getTransferCode(transfer)} không?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setRejecting(true);
+
+      await updateWarehouseTransferStatus(
+        transfer.id,
+        "cancel"
+      );
+
+      setSelectedTransfer(null);
+      await loadTransfers();
+      alert("Từ chối phiếu điều chuyển thành công");
+    } catch (error) {
+      console.error("REJECT TRANSFER ERROR:", error.response?.data || error);
+      alert(
+        error.response?.data?.message ||
+          error.response?.data?.detail ||
+          "Từ chối phiếu điều chuyển thất bại"
+      );
+    } finally {
+      setRejecting(false);
+    }
+  };
+
   const handleDelete = async (transfer) => {
       if (!transfer.id) return;
       if (!window.confirm("Bạn có chắc muốn xóa?")) {
@@ -180,25 +238,22 @@ export default function WarehouseTransferPage() {
             <option value="">Tình trạng thực hiện: Tất cả</option>
             <option value="PENDING">Đang điều chuyển</option>
             <option value="COMPLETED">Đã hoàn thành</option>
+            <option value="CANCELLED">Đã từ chối</option>
           </select>
             <div className="toolbar-spacer" />
-              <button type="button" className="icon-btn" onClick={loadTransfers}>
-                ↻
-              </button>
-
               {canUpdate && (
                 <button
                   type="button"
                   className="edit-btn"
-                  disabled={!selectedRow || selectedRow.status === "COMPLETED"}
+                  disabled={!selectedRow || selectedRow.status !== "PENDING"}
                   onClick={() => {
                     if (!selectedRow) {
                       alert("Vui lòng chọn phiếu cần chỉnh sửa");
                       return;
                     }
 
-                    if (selectedRow.status === "COMPLETED") {
-                      alert("Phiếu đã hoàn thành, không được chỉnh sửa.");
+                    if (selectedRow.status !== "PENDING") {
+                      alert("Chỉ được chỉnh sửa phiếu đang điều chuyển.");
                       return;
                     }
 
@@ -210,11 +265,32 @@ export default function WarehouseTransferPage() {
                 </button>
               )}
 
+              {canDeleteAdmin && (
+                <button
+                  type="button"
+                  className="delete-toolbar-btn"
+                  disabled={
+                    rejecting ||
+                    !selectedRow ||
+                    selectedRow.status !== "COMPLETED"
+                  }
+                  onClick={() => handleReject(selectedRow)}
+                  title={
+                    selectedRow && selectedRow.status !== "COMPLETED"
+                      ? "Chỉ được từ chối phiếu đã hoàn thành"
+                      : ""
+                  }
+                >
+                  <RiCloseCircleLine />
+                  <span>{rejecting ? "Đang từ chối..." : "Từ chối"}</span>
+                </button>
+              )}
+
               {canUpdate && (
                 <button
                   type="button"
                   className="complete-toolbar-btn"
-                  disabled={!selectedRow || selectedRow.status === "COMPLETED"}
+                  disabled={!selectedRow || selectedRow.status !== "PENDING"}
                   onClick={() => handleComplete(selectedRow)}
                 >
                   <RiCheckboxCircleLine />
@@ -273,13 +349,13 @@ export default function WarehouseTransferPage() {
                 <tr
                     key={item.id || item.code || index}
                     className={selectedTransfer === item.id ? "selected" : ""}
-                    onClick={() => setSelectedTransfer(item.id)}
+                    onClick={() => handleToggleSelection(item.id)}
                 >
                 <td>
                   <input
                     type="checkbox"
                     checked={selectedTransfer === item.id}
-                    readOnly
+                    onChange={() => handleToggleSelection(item.id)}
                     onClick={(e) => e.stopPropagation()}
                   />
                 </td>

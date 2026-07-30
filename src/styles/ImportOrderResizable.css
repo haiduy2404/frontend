@@ -1,0 +1,93 @@
+/* Thanh chia dọc có thể kéo giữa danh sách phiếu nhập và chi tiết hàng hóa. */
+
+.warehouse-import-main {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 190px);
+  min-height: 560px;
+  overflow: hidden;
+}
+
+.warehouse-import-list-pane {
+  flex: 0 0 56%;
+  min-height: 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.warehouse-import-list-pane .warehouse-import-table-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.warehouse-import-list-pane .warehouse-import-pagination {
+  flex: 0 0 auto;
+}
+
+.warehouse-import-main > .warehouse-import-detail {
+  flex: 1 1 auto;
+  min-height: 220px;
+  min-width: 0;
+  overflow: auto;
+}
+
+/* Chi tiết tự cuộn theo cả vùng dưới; bảng chỉ giữ cuộn ngang. */
+.warehouse-import-main > .warehouse-import-detail .import-list-detail-table-wrapper {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.detail-splitter.import-vertical-splitter {
+  position: relative;
+  flex: 0 0 12px;
+  width: 100%;
+  height: 12px;
+  min-height: 12px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  background: #eef3f8;
+  cursor: row-resize;
+  touch-action: none;
+  user-select: none;
+  z-index: 5;
+}
+
+.import-vertical-splitter-handle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52px;
+  height: 4px;
+  border-radius: 999px;
+  background: #94a3b8;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.detail-splitter.import-vertical-splitter:hover,
+.warehouse-import-main.is-resizing > .import-vertical-splitter {
+  background: #dbeafe;
+}
+
+.detail-splitter.import-vertical-splitter:hover .import-vertical-splitter-handle,
+.warehouse-import-main.is-resizing .import-vertical-splitter-handle {
+  background: #2563eb;
+}
+
+.warehouse-import-main.is-resizing,
+.warehouse-import-main.is-resizing * {
+  cursor: row-resize !important;
+}
+
+@media (max-height: 760px) {
+  .warehouse-import-main {
+    height: 620px;
+  }
+}

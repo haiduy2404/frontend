@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/WarehouseReleasePage.css";
@@ -35,6 +35,14 @@ function WarehouseReleasePage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailRows, setDetailRows] = useState([]);
+  const [detailSearch, setDetailSearch] = useState("");
+
+  const [topPaneHeight, setTopPaneHeight] = useState(null);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const splitContainerRef = useRef(null);
+  const listPaneRef = useRef(null);
+  const resizeStartRef = useRef(null);
 
   const [warehouses, setWarehouses] = useState([]);
 
@@ -52,6 +60,24 @@ function WarehouseReleasePage() {
   const [total, setTotal] = useState(0);
 
   const unwrapData = (response) => response?.data || response;
+  const filteredDetailRows = useMemo(() => {
+    const keyword = detailSearch.trim().toLowerCase();
+
+    if (!keyword) return detailRows;
+
+    return detailRows.filter((item) => {
+      const searchableText = [
+        item.goods_code,
+        item.goods_name,
+        item.unit_name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(keyword);
+    });
+  }, [detailRows, detailSearch]);
 
   const parseNumber = (value) => {
     if (value === null || value === undefined || value === "") return 0;
@@ -610,6 +636,82 @@ function WarehouseReleasePage() {
     deleteOrdersByIds([selectedOrder.id]);
   };
 
+  useEffect(() => {
+  if (!isResizing) return undefined;
+
+  const previousCursor = document.body.style.cursor;
+  const previousUserSelect = document.body.style.userSelect;
+
+  document.body.style.cursor = "row-resize";
+  document.body.style.userSelect = "none";
+
+  const handlePointerMove = (event) => {
+    const container = splitContainerRef.current;
+    const resizeStart = resizeStartRef.current;
+
+    if (!container || !resizeStart) return;
+
+    const containerHeight = container.getBoundingClientRect().height;
+
+    const minTopHeight = 180;
+    const minBottomHeight = 220;
+    const splitterHeight = 12;
+
+    const maxTopHeight = Math.max(
+      minTopHeight,
+      containerHeight - minBottomHeight - splitterHeight
+    );
+
+    const nextHeight =
+      resizeStart.height + (event.clientY - resizeStart.y);
+
+    const clampedHeight = Math.min(
+      maxTopHeight,
+      Math.max(minTopHeight, nextHeight)
+    );
+
+    setTopPaneHeight(clampedHeight);
+  };
+
+  const stopResizing = () => {
+    resizeStartRef.current = null;
+    setIsResizing(false);
+  };
+
+  window.addEventListener("pointermove", handlePointerMove);
+  window.addEventListener("pointerup", stopResizing);
+  window.addEventListener("pointercancel", stopResizing);
+
+  return () => {
+    window.removeEventListener("pointermove", handlePointerMove);
+    window.removeEventListener("pointerup", stopResizing);
+    window.removeEventListener("pointercancel", stopResizing);
+
+    document.body.style.cursor = previousCursor;
+    document.body.style.userSelect = previousUserSelect;
+  };
+}, [isResizing]);
+
+const handleSplitterPointerDown = (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    const listPane = listPaneRef.current;
+    if (!listPane) return;
+
+    event.preventDefault();
+
+    resizeStartRef.current = {
+      y: event.clientY,
+      height: listPane.getBoundingClientRect().height,
+    };
+
+    setIsResizing(true);
+  };
+
+  const resetPaneSize = () => {
+    setTopPaneHeight(null);
+};
+
   const actionOrder = getActionOrder();
 
   return (
@@ -752,7 +854,19 @@ function WarehouseReleasePage() {
         </div>
       </div>
 
-      <div className="release-order-main">
+      <div
+        ref={splitContainerRef}
+        className={`release-order-main${isResizing ? " is-resizing" : ""}`}
+      >
+      <div
+        ref={listPaneRef}
+        className="warehouse-release-list-pane"
+        style={
+          topPaneHeight === null
+            ? undefined
+            : { flexBasis: `${topPaneHeight}px` }
+        }
+      >
         <div className="release-order-table-wrapper">
           <table className="release-order-table">
             <thead>
@@ -878,13 +992,33 @@ function WarehouseReleasePage() {
             </button>
           </div>
         </div>
+        </div>
 
-        <div className="release-detail-splitter">⌄</div>
+        <div
+          className="release-detail-splitter warehouse-release-vertical-splitter"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Kéo để thay đổi chiều cao danh sách và chi tiết xuất kho"
+          title="Giữ chuột kéo lên hoặc xuống. Nhấp đúp để đặt lại."
+          onPointerDown={handleSplitterPointerDown}
+          onDoubleClick={resetPaneSize}
+        >
+          <span className="warehouse-release-splitter-handle" />
+        </div>
 
         <div className="release-order-detail">
           <h3>Chi tiết xuất kho</h3>
 
           <div className="release-detail-card">
+          <div className="release-detail-search">
+            <span>🔍</span>
+
+            <input
+              placeholder="Tìm mã hàng, tên hàng, đơn vị tính"
+              value={detailSearch}
+              onChange={(e) => setDetailSearch(e.target.value)}
+            />
+          </div>
             <div className="release-detail-table-wrapper">
               <table className="release-detail-table">
                 <colgroup>
@@ -916,14 +1050,14 @@ function WarehouseReleasePage() {
                     </tr>
                   )}
 
-                  {!detailLoading && detailRows.length === 0 && (
+                  {!detailLoading && filteredDetailRows.length === 0 && (
                     <tr>
                       <td colSpan={7}>Không có chi tiết hàng hóa</td>
                     </tr>
                   )}
 
                   {!detailLoading &&
-                    detailRows.map((item, index) => (
+                    filteredDetailRows.map((item, index) => (
                       <tr key={item.id}>
                         <td>{index + 1}</td>
                         <td>{item.goods_code || "-"}</td>
@@ -944,7 +1078,7 @@ function WarehouseReleasePage() {
                       </tr>
                     ))}
 
-                  {!detailLoading && detailRows.length > 0 && (
+                  {!detailLoading && filteredDetailRows.length > 0 && (
                     <tr className="release-total-row">
                       <td></td>
                       <td></td>
@@ -954,7 +1088,7 @@ function WarehouseReleasePage() {
 
                       <td className="release-number-col">
                         {formatViNumber(
-                          detailRows.reduce(
+                          filteredDetailRows.reduce(
                             (sum, item) =>
                               sum + parseNumber(item.requested_quantity),
                             0
@@ -965,7 +1099,7 @@ function WarehouseReleasePage() {
 
                       <td className="release-number-col">
                         {formatViNumber(
-                          detailRows.reduce(
+                          filteredDetailRows.reduce(
                             (sum, item) =>
                               sum + parseNumber(item.actual_quantity),
                             0
@@ -981,7 +1115,7 @@ function WarehouseReleasePage() {
 
             <div className="release-table-bottom-bar">
               <div>
-                Tổng số: <strong>{detailRows.length}</strong>
+                Tổng số: <strong>{filteredDetailRows.length}</strong>
               </div>
             </div>
           </div>

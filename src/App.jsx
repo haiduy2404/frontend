@@ -43,6 +43,7 @@ import WarehouseOrderRelease from "./pages/activity/release/WarehouseOrderReleas
 import WarehouseTransferPrintPage from "./pages/activity/transfer/WarehouseTransferPrintPage";
 import GoodsUnitPage from "./pages/good_unit/GoodsUnitPage";
 import TransferRequestPage from "./pages/tools/TransferRequestPage";
+import MoneyTransferRequestPrintPage from "./pages/tools/MoneyTransferRequestPrintPage";
 
 import "./styles/auth.css";
 
@@ -203,6 +204,14 @@ function App() {
                 element={
                   <RequireRole roles={["create_warehouse_release"]}>
                     <ReleaseOrderDetailPage />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="/dashboard/tools/money-transfer-requests/:id/print"
+                element={
+                  <RequireRole roles={["view_money_transfer_request"]}>
+                    <MoneyTransferRequestPrintPage />
                   </RequireRole>
                 }
               />

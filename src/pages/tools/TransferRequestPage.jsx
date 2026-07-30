@@ -1,44 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   RiAddLine,
-  RiCloseLine,
   RiDeleteBin6Line,
   RiEdit2Line,
-  RiEyeLine,
   RiFileList3Line,
+  RiPrinterLine,
   RiRefreshLine,
   RiSearchLine,
 } from "react-icons/ri";
 
 import "../../styles/TransferRequestPage.css";
 import { useAuth } from "../../contexts/AuthContext";
+import MoneyTransferRequestFormModal from "./MoneyTransferRequestFormModal";
 import {
-  createMoneyTransferRequest,
   deleteMoneyTransferRequest,
   getMoneyTransferRequestById,
   getMoneyTransferRequests,
-  updateMoneyTransferRequest,
 } from "../../services/moneyTransferRequestService";
 
-const createEmptyForm = () => ({
-  company_id: "",
-  request_date: new Date().toISOString().slice(0, 10),
-  total_amount: "",
-  bank_account_number: "",
-  bank_name: "",
-  reason: "",
-});
-
-const parseMoney = (value) => {
-  const text = String(value).trim();
-
-  if (text.includes(",")) {
-    return Number(text.replace(/\./g, "").replace(",", "."));
-  }
-
-  return Number(text);
-};
-
+const unwrapData = (response) => response?.data || response;
 const formatMoney = (value) => {
   const number = Number(value);
 
@@ -51,12 +32,44 @@ const formatMoney = (value) => {
 };
 
 const formatDate = (value) => {
-  const [year, month, day] = String(value).split("-");
-  return `${day}/${month}/${year}`;
+  if (!value) return "";
+
+  const text = String(value).trim();
+
+  // Backend đã trả dd/mm/yyyy thì giữ nguyên
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) {
+    return text;
+  }
+
+  // Backend trả yyyy-mm-dd hoặc yyyy-mm-ddTHH:mm:ss
+  const dateOnly = text.split("T")[0];
+  const match = dateOnly.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (match) {
+    const [, year, month, day] = match;
+    return `${day}/${month}/${year}`;
+  }
+
+  return text;
 };
 
+const getStatusLabel = (status) =>
+  status === "completed" ? "Hoàn thành" : "Tạm lưu";
+
 function TransferRequestPage() {
+  const navigate = useNavigate();
   const { canDo } = useAuth();
+
+  const handlePrintRequest = (requestId) => {
+    if (!requestId) {
+      alert("Không tìm thấy ID giấy đề nghị");
+      return;
+    }
+
+    navigate(
+      `/dashboard/tools/money-transfer-requests/${requestId}/print`
+    );
+  };
 
   const canView = canDo("view_money_transfer_request");
   const canCreate = canDo("create_money_transfer_request");
@@ -65,11 +78,11 @@ function TransferRequestPage() {
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [companyId, setCompanyId] = useState("");
+  const [companyTaxCode, setCompanyTaxCode] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -78,10 +91,7 @@ function TransferRequestPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const [formMode, setFormMode] = useState("");
-  const [editingId, setEditingId] = useState("");
-  const [formData, setFormData] = useState(createEmptyForm);
-  const [detailData, setDetailData] = useState(null);
+  const [formConfig, setFormConfig] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -97,25 +107,22 @@ function TransferRequestPage() {
     try {
       setLoading(true);
 
-    const response = await getMoneyTransferRequests({
+      const response = await getMoneyTransferRequests({
         page,
         page_size: pageSize,
         search: debouncedSearch || undefined,
-        company_id: companyId || undefined,
+        company_tax_code: companyTaxCode || undefined,
         request_date_from: dateFrom || undefined,
         request_date_to: dateTo || undefined,
-    });
+      });
 
-    const data = response.data;
+      const data = response.data;
 
-    setRows(data.results);
-    setTotal(data.total);
-    setTotalPages(data.total_pages);
+      setRows(data.results);
+      setTotal(data.total);
+      setTotalPages(data.total_pages);
     } catch (error) {
-      console.error(
-        "GET MONEY TRANSFER REQUESTS ERROR:",
-        error.response?.data
-      );
+      console.error("GET MONEY TRANSFER REQUESTS ERROR:", error.response?.data);
       alert("Không tải được danh sách giấy đề nghị chuyển tiền");
       setRows([]);
       setTotal(0);
@@ -125,7 +132,7 @@ function TransferRequestPage() {
     }
   }, [
     canView,
-    companyId,
+    companyTaxCode,
     dateFrom,
     dateTo,
     debouncedSearch,
@@ -137,163 +144,49 @@ function TransferRequestPage() {
     fetchRows();
   }, [fetchRows]);
 
-  if (!canView) {
-    return (
-      <div className="money-transfer-no-permission">
-        Tài khoản không được cấp quyền xem giấy đề nghị chuyển tiền.
-      </div>
-    );
-  }
-
   const openCreate = () => {
     if (!canCreate) return;
-    setEditingId("");
-    setFormData(createEmptyForm());
-    setFormMode("create");
+
+    setFormConfig({
+      mode: "create",
+      requestId: "",
+      initialData: null,
+    });
   };
 
-  const closeForm = () => {
-    if (saving) return;
-    setFormMode("");
-    setEditingId("");
-    setFormData(createEmptyForm());
-  };
+const openEdit = async (requestId) => {
+  if (!canUpdate) return;
 
-  const handleFormChange = (event) => {
-    const { name, value } = event.target;
+  try {
+    setActionLoading(true);
 
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-  };
+    const response = await getMoneyTransferRequestById(requestId);
+    const detail = unwrapData(response);
 
-  const validateForm = () => {
-    if (!formData.company_id.trim()) {
-      alert("Vui lòng nhập company_id");
-      return false;
+    if (!detail?.id) {
+      alert("Không tìm thấy dữ liệu giấy đề nghị");
+      return;
     }
 
-    if (!formData.request_date) {
-      alert("Vui lòng chọn ngày đề nghị");
-      return false;
-    }
+    setFormConfig({
+      mode: "edit",
+      requestId: detail.id,
+      initialData: detail,
+    });
+  } catch (error) {
+    console.error(
+      "GET MONEY TRANSFER REQUEST DETAIL ERROR:",
+      error.response?.data || error
+    );
 
-    const totalAmount = parseMoney(formData.total_amount);
-
-    if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
-      alert("Tổng số tiền phải lớn hơn 0");
-      return false;
-    }
-
-    if (!formData.bank_account_number.trim()) {
-      alert("Vui lòng nhập số tài khoản");
-      return false;
-    }
-
-    if (!formData.bank_name.trim()) {
-      alert("Vui lòng nhập tên ngân hàng");
-      return false;
-    }
-
-    return true;
-  };
-
-  const buildPayload = () => ({
-    company_id: formData.company_id.trim(),
-    request_date: formData.request_date,
-    total_amount: String(parseMoney(formData.total_amount)),
-    bank_account_number: formData.bank_account_number.trim(),
-    bank_name: formData.bank_name.trim(),
-    reason: formData.reason.trim()
-      ? formData.reason.trim()
-      : null,
-  });
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (formMode === "create" && !canCreate) return;
-    if (formMode === "edit" && !canUpdate) return;
-    if (!validateForm()) return;
-
-    try {
-      setSaving(true);
-
-      const payload = buildPayload();
-
-      if (formMode === "create") {
-        await createMoneyTransferRequest(payload);
-        alert("Tạo giấy đề nghị chuyển tiền thành công");
-      }
-
-      if (formMode === "edit") {
-        await updateMoneyTransferRequest(editingId, payload);
-        alert("Cập nhật giấy đề nghị chuyển tiền thành công");
-      }
-
-      setFormMode("");
-      setEditingId("");
-      setFormData(createEmptyForm());
-      await fetchRows();
-    } catch (error) {
-      console.error(
-        "SAVE MONEY TRANSFER REQUEST ERROR:",
-        error.response?.data
-      );
-      alert(
-        error.response?.data?.message ||
-          "Không thể lưu giấy đề nghị chuyển tiền"
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const openEdit = async (requestId) => {
-    if (!canUpdate) return;
-
-    try {
-      setSaving(true);
-
-      const data = await getMoneyTransferRequestById(requestId);
-
-      setEditingId(data.id);
-      setFormData({
-        company_id: data.company_id,
-        request_date: data.request_date,
-        total_amount: formatMoney(data.total_amount),
-        bank_account_number: data.bank_account_number,
-        bank_name: data.bank_name,
-        reason: data.reason,
-      });
-      setFormMode("edit");
-    } catch (error) {
-      console.error(
-        "GET MONEY TRANSFER REQUEST DETAIL ERROR:",
-        error.response?.data
-      );
-      alert("Không tải được thông tin giấy đề nghị");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const openDetail = async (requestId) => {
-    try {
-      setSaving(true);
-      const data = await getMoneyTransferRequestById(requestId);
-      setDetailData(data);
-    } catch (error) {
-      console.error(
-        "GET MONEY TRANSFER REQUEST DETAIL ERROR:",
-        error.response?.data
-      );
-      alert("Không tải được chi tiết giấy đề nghị");
-    } finally {
-      setSaving(false);
-    }
-  };
+    alert(
+      error.response?.data?.message ||
+        "Không tải được thông tin giấy đề nghị"
+    );
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   const handleDelete = async (requestId) => {
     if (!canDelete) return;
@@ -305,7 +198,7 @@ function TransferRequestPage() {
     if (!confirmed) return;
 
     try {
-      setSaving(true);
+      setActionLoading(true);
       await deleteMoneyTransferRequest(requestId);
       alert("Xóa giấy đề nghị chuyển tiền thành công");
 
@@ -324,18 +217,26 @@ function TransferRequestPage() {
           "Không thể xóa giấy đề nghị chuyển tiền"
       );
     } finally {
-      setSaving(false);
+      setActionLoading(false);
     }
   };
 
   const clearFilters = () => {
     setSearch("");
     setDebouncedSearch("");
-    setCompanyId("");
+    setCompanyTaxCode("");
     setDateFrom("");
     setDateTo("");
     setPage(1);
   };
+
+  if (!canView) {
+    return (
+      <div className="money-transfer-no-permission">
+        Tài khoản không được cấp quyền xem giấy đề nghị chuyển tiền.
+      </div>
+    );
+  }
 
   return (
     <div className="money-transfer-page">
@@ -346,13 +247,11 @@ function TransferRequestPage() {
           </div>
 
           <div>
-            <div className="money-transfer-kicker">
-              CÔNG CỤ TÀI CHÍNH
-            </div>
+            <div className="money-transfer-kicker">CÔNG CỤ TÀI CHÍNH</div>
             <h1>Giấy đề nghị chuyển tiền</h1>
             <p>
-              Quản lý đề nghị chuyển tiền theo công ty, thời gian và
-              tài khoản ngân hàng.
+              Quản lý đề nghị chuyển tiền theo công ty, thời gian và tài khoản
+              ngân hàng.
             </p>
           </div>
         </div>
@@ -404,12 +303,12 @@ function TransferRequestPage() {
           </label>
 
           <label className="money-transfer-field">
-            <span>Nhập mã số thuế công ty</span>
+            <span>Mã số thuế công ty</span>
             <input
-              value={companyId}
-              placeholder="Nhập MST"
+              value={companyTaxCode}
+              placeholder="Nhập mã số thuế"
               onChange={(event) => {
-                setCompanyId(event.target.value);
+                setCompanyTaxCode(event.target.value);
                 setPage(1);
               }}
             />
@@ -464,10 +363,12 @@ function TransferRequestPage() {
             <thead>
               <tr>
                 <th>Ngày đề nghị</th>
-                <th>Mã số thuế công ty</th>
+                <th>Mã số thuế</th>
+                <th>Tên công ty</th>
                 <th>Ngân hàng</th>
                 <th>Số tài khoản</th>
                 <th className="number-cell">Tổng số tiền</th>
+                <th>Trạng thái</th>
                 <th>Lý do</th>
                 <th className="action-cell">Thao tác</th>
               </tr>
@@ -476,7 +377,7 @@ function TransferRequestPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={9}>
                     <div className="money-transfer-status">
                       Đang tải dữ liệu...
                     </div>
@@ -484,10 +385,8 @@ function TransferRequestPage() {
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>
-                    <div className="money-transfer-status">
-                      Không có dữ liệu
-                    </div>
+                  <td colSpan={9}>
+                    <div className="money-transfer-status">Không có dữ liệu</div>
                   </td>
                 </tr>
               ) : (
@@ -495,22 +394,35 @@ function TransferRequestPage() {
                   <tr key={item.id}>
                     <td>{formatDate(item.request_date)}</td>
                     <td className="company-id-cell">
-                      {item.company_id}
+                      {item.company_tax_code}
                     </td>
+                    <td>{item.company_name}</td>
                     <td>{item.bank_name}</td>
                     <td>{item.bank_account_number}</td>
                     <td className="number-cell amount-cell">
                       {formatMoney(item.total_amount)} đ
+                    </td>
+                    <td>
+                      <span
+                        className={`money-transfer-status-badge ${
+                          item.status === "completed"
+                            ? "is-completed"
+                            : "is-draft"
+                        }`}
+                      >
+                        {getStatusLabel(item.status)}
+                      </span>
                     </td>
                     <td className="reason-cell">{item.reason}</td>
                     <td className="action-cell">
                       <div className="money-transfer-actions">
                         <button
                           type="button"
-                          title="Xem chi tiết"
-                          onClick={() => openDetail(item.id)}
+                          title="In giấy đề nghị"
+                          onClick={() => handlePrintRequest(item.id)}
+                          disabled={actionLoading}
                         >
-                          <RiEyeLine />
+                          <RiPrinterLine />
                         </button>
 
                         {canUpdate && (
@@ -518,6 +430,7 @@ function TransferRequestPage() {
                             type="button"
                             title="Chỉnh sửa"
                             onClick={() => openEdit(item.id)}
+                            disabled={actionLoading}
                           >
                             <RiEdit2Line />
                           </button>
@@ -529,6 +442,7 @@ function TransferRequestPage() {
                             className="danger"
                             title="Xóa"
                             onClick={() => handleDelete(item.id)}
+                            disabled={actionLoading}
                           >
                             <RiDeleteBin6Line />
                           </button>
@@ -582,176 +496,20 @@ function TransferRequestPage() {
         </div>
       </section>
 
-      {formMode && (
-        <div className="money-transfer-overlay">
-          <form className="money-transfer-modal" onSubmit={handleSubmit}>
-            <div className="money-transfer-modal-header">
-              <div>
-                <div className="money-transfer-kicker">
-                  {formMode === "create" ? "TẠO MỚI" : "CẬP NHẬT"}
-                </div>
-                <h2>
-                  {formMode === "create"
-                    ? "Lập giấy đề nghị chuyển tiền"
-                    : "Chỉnh sửa giấy đề nghị chuyển tiền"}
-                </h2>
-              </div>
-
-              <button
-                type="button"
-                className="money-transfer-close-btn"
-                onClick={closeForm}
-              >
-                <RiCloseLine />
-              </button>
-            </div>
-
-            <div className="money-transfer-form-grid">
-              <label className="money-transfer-field full-width">
-                <span>Nhập mã số thuế công ty *</span>
-                <input
-                  name="company_id"
-                  value={formData.company_id}
-                  onChange={handleFormChange}
-                  placeholder="MST"
-                />
-              </label>
-
-              <label className="money-transfer-field">
-                <span>Ngày đề nghị *</span>
-                <input
-                  type="date"
-                  name="request_date"
-                  value={formData.request_date}
-                  onChange={handleFormChange}
-                />
-              </label>
-
-              <label className="money-transfer-field">
-                <span>Tổng số tiền *</span>
-                <input
-                  name="total_amount"
-                  value={formData.total_amount}
-                  onChange={handleFormChange}
-                  onBlur={(event) => {
-                    const amount = parseMoney(event.target.value);
-                    if (Number.isFinite(amount)) {
-                      setFormData((previous) => ({
-                        ...previous,
-                        total_amount: formatMoney(amount),
-                      }));
-                    }
-                  }}
-                  placeholder="0"
-                />
-              </label>
-
-              <label className="money-transfer-field">
-                <span>Tên ngân hàng *</span>
-                <input
-                  name="bank_name"
-                  value={formData.bank_name}
-                  onChange={handleFormChange}
-                  maxLength={200}
-                />
-              </label>
-
-              <label className="money-transfer-field">
-                <span>Số tài khoản *</span>
-                <input
-                  name="bank_account_number"
-                  value={formData.bank_account_number}
-                  onChange={handleFormChange}
-                  maxLength={50}
-                />
-              </label>
-
-              <label className="money-transfer-field full-width">
-                <span>Lý do</span>
-                <textarea
-                  name="reason"
-                  value={formData.reason}
-                  onChange={handleFormChange}
-                  rows={4}
-                />
-              </label>
-            </div>
-
-            <div className="money-transfer-modal-footer">
-              <button
-                type="button"
-                className="money-transfer-secondary-btn"
-                onClick={closeForm}
-                disabled={saving}
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                className="money-transfer-primary-btn"
-                disabled={saving}
-              >
-                {saving ? "Đang lưu..." : "Lưu"}
-              </button>
-            </div>
-          </form>
-        </div>
+      {formConfig && (
+        <MoneyTransferRequestFormModal
+          mode={formConfig.mode}
+          requestId={formConfig.requestId}
+          initialData={formConfig.initialData}
+          onClose={() => setFormConfig(null)}
+          onSaved={async (message) => {
+            alert(message);
+            setFormConfig(null);
+            await fetchRows();
+          }}
+        />
       )}
 
-      {detailData && (
-        <div className="money-transfer-overlay">
-          <div className="money-transfer-detail-modal">
-            <div className="money-transfer-modal-header">
-              <div>
-                <div className="money-transfer-kicker">CHI TIẾT</div>
-                <h2>Giấy đề nghị chuyển tiền</h2>
-              </div>
-              <button
-                type="button"
-                className="money-transfer-close-btn"
-                onClick={() => setDetailData(null)}
-              >
-                <RiCloseLine />
-              </button>
-            </div>
-
-            <div className="money-transfer-detail-grid">
-              <div><span>Mã đề nghị</span><strong>{detailData.id}</strong></div>
-              <div><span>Company ID</span><strong>{detailData.company_id}</strong></div>
-              <div><span>Ngày đề nghị</span><strong>{formatDate(detailData.request_date)}</strong></div>
-              <div><span>Tổng số tiền</span><strong>{formatMoney(detailData.total_amount)} đ</strong></div>
-              <div><span>Ngân hàng</span><strong>{detailData.bank_name}</strong></div>
-              <div><span>Số tài khoản</span><strong>{detailData.bank_account_number}</strong></div>
-              <div className="full-width"><span>Lý do</span><strong>{detailData.reason}</strong></div>
-            </div>
-
-            <div className="money-transfer-modal-footer">
-              <button
-                type="button"
-                className="money-transfer-secondary-btn"
-                onClick={() => setDetailData(null)}
-              >
-                Đóng
-              </button>
-
-              {canUpdate && (
-                <button
-                  type="button"
-                  className="money-transfer-primary-btn"
-                  onClick={() => {
-                    const requestId = detailData.id;
-                    setDetailData(null);
-                    openEdit(requestId);
-                  }}
-                >
-                  <RiEdit2Line />
-                  Chỉnh sửa
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -529,3 +529,87 @@
 .release-reject-btn svg {
   font-size: 18px;
 }
+
+.warehouse-release-list-pane {
+  flex: 0 0 48%;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.warehouse-release-list-pane .release-order-table-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.warehouse-release-list-pane .release-order-pagination {
+  flex: 0 0 auto;
+}
+
+.release-order-detail {
+  flex: 1 1 auto;
+  min-height: 220px;
+  overflow: auto;
+}
+
+.warehouse-release-vertical-splitter {
+  position: relative;
+  flex: 0 0 12px;
+  height: 12px;
+  min-height: 12px;
+  cursor: row-resize;
+  touch-action: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e2e8f0;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.warehouse-release-vertical-splitter:hover {
+  background: #dbeafe;
+}
+
+.warehouse-release-splitter-handle {
+  width: 48px;
+  height: 4px;
+  border-radius: 999px;
+  background: #94a3b8;
+}
+
+.warehouse-release-vertical-splitter:hover
+.warehouse-release-splitter-handle {
+  background: #2563eb;
+}
+
+.release-order-main.is-resizing,
+.release-order-main.is-resizing * {
+  cursor: row-resize !important;
+}
+
+.release-detail-search {
+  width: 280px;
+  height: 36px;
+  margin-bottom: 12px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.release-detail-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+}

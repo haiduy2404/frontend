@@ -1,8 +1,9 @@
-import { useEffect, useState, useMemo, } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/ImportOrderPage.css"; 
 import "../../../styles/ImportOrderDetailPage.css";
+import "../../../styles/ImportOrderResizable.css";
 import {
   getWarehouseReceiptsPageable,
   getWarehouseReceiptByCode,
@@ -33,12 +34,20 @@ function ImportOrderPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
   const [total, setTotal] = useState(0);
+  const [detailSearch, setDetailSearch] = useState("");
   const [detailRows, setDetailRows] = useState([]);
   const [selectedReceiptDetail, setSelectedReceiptDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [openActionId, setOpenActionId] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
   const [filters, setFilters] = useState(getDefaultImportOrderFilters());
+
+  // Kích thước vùng danh sách phía trên. null = dùng tỷ lệ mặc định trong CSS.
+  const [topPaneHeight, setTopPaneHeight] = useState(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const splitContainerRef = useRef(null);
+  const listPaneRef = useRef(null);
+  const resizeStartRef = useRef(null);
 
 
  const unwrapData = (response) => response?.data || response;
@@ -64,6 +73,24 @@ function ImportOrderPage() {
     );
   });
 }, [importOrders, search]);
+
+const filteredDetailRows = useMemo(() => {
+  const keyword = detailSearch.trim().toLowerCase();
+
+  if (!keyword) return detailRows;
+
+  return detailRows.filter((item) => {
+    const goodsCode = String(item.goods_code || "").toLowerCase();
+    const goodsName = String(item.goods_name || "").toLowerCase();
+    const unitName = String(item.unit_name || "").toLowerCase();
+
+    return (
+      goodsCode.includes(keyword) ||
+      goodsName.includes(keyword) ||
+      unitName.includes(keyword)
+    );
+  });
+}, [detailRows, detailSearch]);
 
  const selectedRow = filteredImportOrders.find((item) => item.id === selectedId);
 
@@ -460,6 +487,77 @@ const fetchImportOrders = async (customParams = {}) => {
     });
   };
 
+  useEffect(() => {
+    if (!isResizing) return undefined;
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+
+    const handlePointerMove = (event) => {
+      const container = splitContainerRef.current;
+      const resizeStart = resizeStartRef.current;
+
+      if (!container || !resizeStart) return;
+
+      const containerHeight = container.getBoundingClientRect().height;
+      const minTopHeight = 220;
+      const minBottomHeight = 220;
+      const splitterHeight = 12;
+      const maxTopHeight = Math.max(
+        minTopHeight,
+        containerHeight - minBottomHeight - splitterHeight
+      );
+
+      const nextHeight = resizeStart.height + (event.clientY - resizeStart.y);
+      const clampedHeight = Math.min(
+        maxTopHeight,
+        Math.max(minTopHeight, nextHeight)
+      );
+
+      setTopPaneHeight(clampedHeight);
+    };
+
+    const stopResizing = () => {
+      resizeStartRef.current = null;
+      setIsResizing(false);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopResizing);
+    window.addEventListener("pointercancel", stopResizing);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopResizing);
+      window.removeEventListener("pointercancel", stopResizing);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+    };
+  }, [isResizing]);
+
+  const handleSplitterPointerDown = (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    const listPane = listPaneRef.current;
+    if (!listPane) return;
+
+    event.preventDefault();
+
+    resizeStartRef.current = {
+      y: event.clientY,
+      height: listPane.getBoundingClientRect().height,
+    };
+
+    setIsResizing(true);
+  };
+
+  const resetPaneSize = () => {
+    setTopPaneHeight(null);
+  };
+
   return (
     <div className="warehouse-import-page">
       <div className="warehouse-import-toolbar">
@@ -608,8 +706,20 @@ const fetchImportOrders = async (customParams = {}) => {
         </div>
       </div>
 
-      <div className="warehouse-import-main">
-        <div className="warehouse-import-table-wrapper">
+      <div
+        ref={splitContainerRef}
+        className={`warehouse-import-main${isResizing ? " is-resizing" : ""}`}
+      >
+        <div
+          ref={listPaneRef}
+          className="warehouse-import-list-pane"
+          style={
+            topPaneHeight === null
+              ? undefined
+              : { flexBasis: `${topPaneHeight}px` }
+          }
+        >
+          <div className="warehouse-import-table-wrapper">
           <table className="warehouse-import-table">
             <thead>
               <tr>
@@ -709,15 +819,31 @@ const fetchImportOrders = async (customParams = {}) => {
             </button>
           </div>
         </div>
+        </div>
 
-        <div className="detail-splitter">⌄</div>
+        <div
+          className="detail-splitter import-vertical-splitter"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Kéo để thay đổi chiều cao danh sách và chi tiết hàng hóa"
+          title="Giữ chuột và kéo lên hoặc xuống. Nhấp đúp để đặt lại."
+          onPointerDown={handleSplitterPointerDown}
+          onDoubleClick={resetPaneSize}
+        >
+          <span className="import-vertical-splitter-handle" />
+        </div>
+
           <div className="warehouse-import-detail">
             <h3>Chi tiết hàng hóa</h3>
 
             <div className="import-list-detail-card">
               <div className="detail-search">
                 <span>🔍</span>
-                <input placeholder="Tìm kiếm" readOnly />
+                <input
+                  placeholder="Tìm mã hàng, tên hàng, ĐVT"
+                  value={detailSearch}
+                  onChange={(e) => setDetailSearch(e.target.value)}
+                />
               </div>
 
               <div className="import-list-detail-table-wrapper">
@@ -759,14 +885,14 @@ const fetchImportOrders = async (customParams = {}) => {
                       </tr>
                     )}
 
-                    {!detailLoading && detailRows.length === 0 && (
+                    {!detailLoading && filteredDetailRows.length === 0&& (
                       <tr>
                         <td colSpan={11}>Không có chi tiết hàng hóa</td>
                       </tr>
                     )}
 
                     {!detailLoading &&
-                      detailRows.map((item, index) => {
+                      filteredDetailRows.map((item, index) => {
                         const requestedQuantity = parseMoney(
                           item.request_quantity || item.requested_quantity || 0
                         );
@@ -818,7 +944,7 @@ const fetchImportOrders = async (customParams = {}) => {
                         );
                       })}
 
-                    {!detailLoading && detailRows.length > 0 && (
+                    {!detailLoading && filteredDetailRows.length > 0 && (
                       <tr className="table-total-row">
                         <td></td>
                         <td></td>
@@ -828,7 +954,7 @@ const fetchImportOrders = async (customParams = {}) => {
 
                         <td className="number-col">
                           {formatViQuantity(
-                            detailRows.reduce(
+                            filteredDetailRows.reduce(
                               (sum, item) =>
                                 sum +
                                 parseMoney(
@@ -898,7 +1024,7 @@ const fetchImportOrders = async (customParams = {}) => {
 
               <div className="table-bottom-bar">
                 <div>
-                  Tổng số: <strong>{detailRows.length}</strong>
+                  Tổng số: <strong>{filteredDetailRows.length}</strong>
                 </div>
 
                 <div className="table-pagination">
@@ -908,7 +1034,9 @@ const fetchImportOrders = async (customParams = {}) => {
                     <option value={50}>50</option>
                     <option value={100}>100</option>
                   </select>
-                  <strong>1 - {detailRows.length}</strong>
+                  <strong>
+                    {filteredDetailRows.length > 0 ? 1 : 0} - {filteredDetailRows.length}
+                  </strong>
                   <button disabled>‹</button>
                   <button disabled>›</button>
                 </div>
