@@ -1,0 +1,474 @@
+.money-transfer-page {
+  min-height: 100%;
+  padding: 24px;
+  background: #f3f6fa;
+  color: #172033;
+  box-sizing: border-box;
+}
+
+.money-transfer-page *,
+.money-transfer-page *::before,
+.money-transfer-page *::after {
+  box-sizing: border-box;
+}
+
+.money-transfer-no-permission {
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+.money-transfer-header,
+.money-transfer-filter-card,
+.money-transfer-table-card {
+  border: 1px solid #dde4ec;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+}
+
+.money-transfer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 26px;
+  border-top: 4px solid #173a63;
+}
+
+.money-transfer-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.money-transfer-title-icon {
+  display: flex;
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #eaf1f8;
+  color: #173a63;
+  font-size: 28px;
+}
+
+.money-transfer-kicker {
+  margin-bottom: 5px;
+  color: #4b6885;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.money-transfer-header h1,
+.money-transfer-section-heading h2,
+.money-transfer-modal-header h2 {
+  margin: 0;
+  color: #172033;
+}
+
+.money-transfer-header h1 {
+  font-size: 24px;
+}
+
+.money-transfer-header p,
+.money-transfer-section-heading p {
+  margin: 6px 0 0;
+  color: #66758a;
+  font-size: 13px;
+}
+
+.money-transfer-primary-btn,
+.money-transfer-secondary-btn,
+.money-transfer-clear-btn,
+.money-transfer-icon-btn {
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.money-transfer-primary-btn {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 18px;
+  border: 1px solid #173a63;
+  background: #173a63;
+  color: #ffffff;
+}
+
+.money-transfer-secondary-btn {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.money-transfer-filter-card,
+.money-transfer-table-card {
+  margin-top: 18px;
+}
+
+.money-transfer-filter-card {
+  padding: 20px 22px;
+}
+
+.money-transfer-section-heading,
+.money-transfer-modal-header,
+.money-transfer-modal-footer,
+.money-transfer-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.money-transfer-icon-btn {
+  display: flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #173a63;
+  font-size: 18px;
+}
+
+.money-transfer-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(230px, 1.5fr) minmax(230px, 1.3fr) 180px 180px auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 18px;
+}
+
+.money-transfer-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.money-transfer-field > span {
+  color: #3f4f64;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.money-transfer-field input,
+.money-transfer-field textarea,
+.money-transfer-pagination select {
+  width: 100%;
+  border: 1px solid #ccd6e2;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #172033;
+  font: inherit;
+  outline: none;
+}
+
+.money-transfer-field input {
+  height: 40px;
+  padding: 0 11px;
+}
+
+.money-transfer-field textarea {
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.money-transfer-field input:focus,
+.money-transfer-field textarea:focus {
+  border-color: #476f98;
+  box-shadow: 0 0 0 3px rgb(23 58 99 / 10%);
+}
+
+.money-transfer-search-input {
+  position: relative;
+}
+
+.money-transfer-search-input svg {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  color: #8090a4;
+  transform: translateY(-50%);
+}
+
+.money-transfer-search-input input {
+  padding-left: 34px;
+}
+
+.money-transfer-clear-btn {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.money-transfer-table-card {
+  overflow: hidden;
+}
+
+.money-transfer-table-card .table-heading {
+  padding: 19px 22px;
+  border-bottom: 1px solid #e4e9f0;
+}
+
+.money-transfer-table-scroll {
+  width: 100%;
+  max-height: calc(100vh - 430px);
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.money-transfer-table {
+  width: 100%;
+  min-width: 1180px;
+  border-collapse: collapse;
+}
+
+.money-transfer-table th,
+.money-transfer-table td {
+  padding: 12px 13px;
+  border-right: 1px solid #e6ebf1;
+  border-bottom: 1px solid #e6ebf1;
+  color: #35445a;
+  font-size: 12.5px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.money-transfer-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f4f7fa;
+  color: #26364b;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.money-transfer-table .number-cell {
+  text-align: right;
+}
+
+.money-transfer-table .action-cell {
+  width: 132px;
+  text-align: center;
+}
+
+.company-id-cell {
+  max-width: 230px;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amount-cell {
+  color: #173a63 !important;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.reason-cell {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.money-transfer-actions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.money-transfer-actions button {
+  display: flex;
+  width: 31px;
+  height: 31px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #365675;
+  cursor: pointer;
+}
+
+.money-transfer-actions button.danger {
+  border-color: #f1c6c4;
+  color: #b42318;
+}
+
+.money-transfer-status {
+  display: flex;
+  min-height: 210px;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.money-transfer-pagination {
+  padding: 14px 20px;
+  background: #fafbfd;
+  color: #647287;
+  font-size: 12px;
+}
+
+.money-transfer-pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.money-transfer-pagination select {
+  width: 72px;
+  height: 33px;
+  padding: 0 7px;
+}
+
+.money-transfer-pagination button {
+  width: 33px;
+  height: 33px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.money-transfer-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.money-transfer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgb(15 23 42 / 48%);
+}
+
+.money-transfer-modal,
+.money-transfer-detail-modal {
+  width: min(720px, 100%);
+  overflow: hidden;
+  border: 1px solid #d9e0e8;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 28px 70px rgb(15 23 42 / 28%);
+}
+
+.money-transfer-modal-header {
+  padding: 20px 22px;
+  border-bottom: 1px solid #e3e8ef;
+}
+
+.money-transfer-close-btn {
+  display: flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #607086;
+  font-size: 21px;
+  cursor: pointer;
+}
+
+.money-transfer-form-grid,
+.money-transfer-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 22px;
+}
+
+.money-transfer-field.full-width,
+.money-transfer-detail-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.money-transfer-modal-footer {
+  justify-content: flex-end;
+  padding: 15px 22px;
+  border-top: 1px solid #e3e8ef;
+  background: #f8fafc;
+}
+
+.money-transfer-detail-grid > div {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  background: #fafbfd;
+}
+
+.money-transfer-detail-grid span {
+  display: block;
+  margin-bottom: 5px;
+  color: #6f7d90;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.money-transfer-detail-grid strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #28394f;
+  font-size: 13px;
+}
+
+@media (max-width: 1080px) {
+  .money-transfer-filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .money-transfer-page {
+    padding: 14px;
+  }
+
+  .money-transfer-header,
+  .money-transfer-section-heading,
+  .money-transfer-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .money-transfer-filter-grid,
+  .money-transfer-form-grid,
+  .money-transfer-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .money-transfer-field.full-width,
+  .money-transfer-detail-grid .full-width {
+    grid-column: auto;
+  }
+}

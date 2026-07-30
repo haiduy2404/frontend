@@ -82,6 +82,49 @@ function ImportOrderDetailPage() {
     const goodsSearchRequestIdRef = useRef(0);
     const goodsPendingRequestsRef = useRef(0);
     const debouncedGoodsKeywordRef = useRef("");
+    const enterNavigationRef = useRef(null);
+
+    const handleEnterMoveNext = (event) => {
+      if (
+        event.key !== "Enter" ||
+        event.nativeEvent?.isComposing ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const fields = Array.from(
+        enterNavigationRef.current?.querySelectorAll(
+          '[data-enter-next="true"]:not(:disabled):not([readonly]):not([type="hidden"])'
+        ) || []
+      );
+
+      const currentIndex = fields.indexOf(event.currentTarget);
+      if (currentIndex === -1) return;
+
+      const direction = event.shiftKey ? -1 : 1;
+      const nextField = fields[currentIndex + direction];
+
+      event.currentTarget.blur();
+
+      if (!nextField) return;
+
+      requestAnimationFrame(() => {
+        nextField.focus();
+
+        if (
+          nextField.tagName === "INPUT" &&
+          !["checkbox", "radio", "file"].includes(nextField.type) &&
+          typeof nextField.select === "function"
+        ) {
+          nextField.select();
+        }
+      });
+    };
     const canPrintTransfer = canDo("print_transfer_request");
     const canPrintReceipt = canDo("print_warehouse_receipt");
     const handlePrint = () => {
@@ -428,6 +471,72 @@ function ImportOrderDetailPage() {
       inventory_id: "",
       conversion_ratio: "",
     });
+
+    const handleUnitPriceEnter = (event, rowId) => {
+      if (
+        event.key !== "Enter" ||
+        event.nativeEvent?.isComposing ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.metaKey
+      ) {
+        return;
+      }
+
+      // Shift + Enter vẫn quay lại ô trước
+      if (event.shiftKey) {
+        handleEnterMoveNext(event);
+        return;
+      }
+
+      event.preventDefault();
+
+      // Blur trước để onBlur của đơn giá chạy và format số
+      event.currentTarget.blur();
+
+      const newRow = createEmptyRow();
+
+      setItems((prev) => {
+        const currentIndex = prev.findIndex(
+          (item) => String(item.id) === String(rowId)
+        );
+
+        if (currentIndex === -1) {
+          return [...prev, newRow];
+        }
+
+        return [
+          ...prev.slice(0, currentIndex + 1),
+          newRow,
+          ...prev.slice(currentIndex + 1),
+        ];
+      });
+
+      setShowGoodsDropdown(false);
+      setActiveGoodsRowId(null);
+      setGoodsKeyword("");
+
+      // Chờ React render dòng mới rồi focus vào Mã hàng
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const goodsCodeInputs = Array.from(
+            enterNavigationRef.current?.querySelectorAll(
+              "[data-goods-code-row-id]"
+            ) || []
+          );
+
+          const newGoodsCodeInput = goodsCodeInputs.find(
+            (input) =>
+              input.dataset.goodsCodeRowId === String(newRow.id)
+          );
+
+          if (newGoodsCodeInput) {
+            newGoodsCodeInput.focus();
+            newGoodsCodeInput.select();
+          }
+        });
+      });
+    };
 
     const handleAddRow = (rowId) => {
       setItems((prev) => {
@@ -1557,7 +1666,7 @@ const handleOpenTransferPrint = () => {
   };
 
   return (
-    <div className="import-order-detail-page">
+    <div className="import-order-detail-page" ref={enterNavigationRef}>
       <div className="import-order-detail-header">
         <div className="detail-header-left">
           <h2>
@@ -1590,8 +1699,10 @@ const handleOpenTransferPrint = () => {
             <div className="form-group">
             <label>Kỳ</label>
               <input
+                data-enter-next="true"
                 name="terms"
                 value={headerData.terms}
+                onKeyDown={handleEnterMoveNext}
                 onChange={handleHeaderChange}
                 placeholder="Nhập kỳ"
                 disabled={isLockedWhenReceived}
@@ -1609,9 +1720,11 @@ const handleOpenTransferPrint = () => {
             </label>
               <div className="input-with-icon">
                 <input
+                  data-enter-next="true"
                   className="date-text-input"
                   name="inward_date"
                   value={headerData.inward_date}
+                  onKeyDown={handleEnterMoveNext}
                   onChange={handleHeaderChange}
                   onBlur={(e) =>
                     setHeaderData((prev) => ({
@@ -1649,8 +1762,10 @@ const handleOpenTransferPrint = () => {
                 Nhập kho <span>*</span>
             </label>
             <select
+                data-enter-next="true"
                 name="warehouse_id"
                 value={headerData.warehouse_id}
+                onKeyDown={handleEnterMoveNext}
                 onChange={handleHeaderChange}
                 disabled={isLockedWhenReceived}
                 >
@@ -1669,8 +1784,10 @@ const handleOpenTransferPrint = () => {
             <div className="form-group">
             <label>Người giao hàng</label>
             <input
+                data-enter-next="true"
                 name="delivery_person"
                 value={headerData.delivery_person}
+                onKeyDown={handleEnterMoveNext}
                 onChange={handleHeaderChange}
                 placeholder="Nhập người giao hàng"
                 disabled={isLockedOnlyPrint}            
@@ -1680,8 +1797,10 @@ const handleOpenTransferPrint = () => {
             <div className="form-group">
             <label>Ký hiệu HĐ</label>
             <input
+                data-enter-next="true"
                 name="invoice_symbol"
                 value={headerData.invoice_symbol}
+                onKeyDown={handleEnterMoveNext}
                 onChange={handleHeaderChange}
                 placeholder="Nhập ký hiệu hóa đơn"
                 disabled={isLockedOnlyPrint}            
@@ -1691,8 +1810,10 @@ const handleOpenTransferPrint = () => {
             <div className="form-group">
             <label>Số hóa đơn</label>
             <input
+                data-enter-next="true"
                 name="invoice_no"
                 value={headerData.invoice_no}
+                onKeyDown={handleEnterMoveNext}
                 onChange={handleHeaderChange}
                 placeholder="Nhập số hóa đơn"
                 disabled={isLockedOnlyPrint}            
@@ -1703,9 +1824,11 @@ const handleOpenTransferPrint = () => {
             <label>Ngày, tháng, năm hóa đơn</label>
               <div className="input-with-icon">
                 <input
+                  data-enter-next="true"
                   className="date-text-input"
                   name="invoice_date"
                   value={headerData.invoice_date}
+                  onKeyDown={handleEnterMoveNext}
                   onChange={handleHeaderChange}
                   onBlur={(e) =>
                     setHeaderData((prev) => ({
@@ -1744,8 +1867,10 @@ const handleOpenTransferPrint = () => {
 
                 <div className="tax-code-load-row">
                     <input
+                    data-enter-next="true"
                     name="tax_code"
                     value={headerData.tax_code}
+                    onKeyDown={handleEnterMoveNext}
                     onChange={handleHeaderChange}
                     placeholder="Nhập mã số thuế"
                     disabled={isLockedOnlyPrint}            
@@ -1766,29 +1891,35 @@ const handleOpenTransferPrint = () => {
             <div className="form-group">
             <label>Mã KH</label>
             <input
+                data-enter-next="true"
                 name="supplier_code"
                 value={headerData.supplier_code}
+                onKeyDown={handleEnterMoveNext}
                 onChange={handleHeaderChange}
                 placeholder="Nhập mã khách hàng / NCC"
                 disabled={isLockedOnlyPrint}            
             />
             </div>
 
-            <div className="form-group">
-            <label>Tên đơn vị cung cấp</label>
-            <input
+            <div className="form-group supplier-name-group">
+              <label>Tên đơn vị cung cấp</label>
+              <input
+                data-enter-next="true"
                 name="supplier_name"
                 value={headerData.supplier_name}
+                onKeyDown={handleEnterMoveNext}
                 onChange={handleHeaderChange}
                 placeholder="Nhập tên đơn vị cung cấp"
-                disabled={isLockedOnlyPrint}            
-            />
+                disabled={isLockedOnlyPrint}
+              />
             </div>
             <div className="form-group description-group">
             <label>Diễn giải</label>
             <input
+                data-enter-next="true"
                 name="description"
                 value={headerData.description}
+                onKeyDown={handleEnterMoveNext}
                 onChange={handleHeaderChange}
                 placeholder="Nhập diễn giải"
                 disabled={isPrintMode}
@@ -1851,8 +1982,11 @@ const handleOpenTransferPrint = () => {
                     <td className="goods-code-dropdown-cell">
                     <div className="goods-code-dropdown-box">
                         <input
+                        data-enter-next="true"
+                        data-goods-code-row-id={String(item.id)}
                         value={item.goods_code}
                         placeholder="Chọn mã hàng"
+                        onKeyDown={handleEnterMoveNext}
                         onFocus={() => {
                             openGoodsDropdown(item.id, item.goods_code || "");
                         }}
@@ -1930,8 +2064,10 @@ const handleOpenTransferPrint = () => {
                     </td>
                     <td>
                       <input
+                        data-enter-next="true"
                         className="table-text-input"
                         value={item.goods_name || ""}
+                        onKeyDown={handleEnterMoveNext}
                         placeholder="Tên hàng"
                         onChange={(e) =>
                           handleChangeItemField(item.id, "goods_name", e.target.value)
@@ -1941,8 +2077,10 @@ const handleOpenTransferPrint = () => {
                     </td>
                     <td>
                       <select
+                        data-enter-next="true"
                         className="table-unit-select"
                         value={item.unit_id || ""}
+                        onKeyDown={handleEnterMoveNext}
                         onChange={(e) => handleChangeItemUnit(item.id, e.target.value)}
                         disabled={isPrintMode || !item.goods_id}
                       >
@@ -1969,8 +2107,10 @@ const handleOpenTransferPrint = () => {
 
                     <td className="number-col">
                       <input
+                        data-enter-next="true"
                         className="table-number-input"
                         value={item.requested_quantity}
+                        onKeyDown={handleEnterMoveNext}
                         onChange={(e) =>
                           handleChangeItemField(item.id, "requested_quantity", e.target.value)
                         }
@@ -1986,8 +2126,10 @@ const handleOpenTransferPrint = () => {
                     </td>
                     <td className="number-col">
                     <input
+                        data-enter-next="true"
                         className="table-number-input"
                         value={item.actual_quantity}
+                        onKeyDown={handleEnterMoveNext}
                         onChange={(e) =>
                         handleChangeItemField(item.id, "actual_quantity", e.target.value)
                         }
@@ -2013,10 +2155,15 @@ const handleOpenTransferPrint = () => {
                     </td>
                     <td className="number-col">
                     <input
+                      data-enter-next="true"
                       className="table-number-input"
                       value={item.unit_price}
                       onChange={(e) =>
-                        handleChangeItemField(item.id, "unit_price", e.target.value)
+                        handleChangeItemField(
+                          item.id,
+                          "unit_price",
+                          e.target.value
+                        )
                       }
                       onBlur={(e) =>
                         handleChangeItemField(
@@ -2024,6 +2171,9 @@ const handleOpenTransferPrint = () => {
                           "unit_price",
                           formatViNumber(e.target.value, 3)
                         )
+                      }
+                      onKeyDown={(e) =>
+                        handleUnitPriceEnter(e, item.id)
                       }
                       disabled={isPrintMode}
                     />
@@ -2323,7 +2473,7 @@ const handleOpenTransferPrint = () => {
           <div className="print-reason-modal-overlay">
             <div className="print-reason-modal">
               <div className="print-reason-modal-header">
-                <h3>Lý do in Phiếu nhập tiền</h3>
+                <h3>Nhập thông tin in giấy đề nghị chuyển tiền</h3>
                 <button
                   type="button"
                   onClick={() => setShowPrintReasonModal(false)}

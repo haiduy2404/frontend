@@ -27,6 +27,7 @@ import InspectionDetailPage from "./pages/activity/import/InspectionDetailPage";
 import InspectionPrintPage from "./pages/activity/import/InspectionPrintPage";
 import WarehouseImportCompanyReportPage from "./pages/report/WarehouseImportCompanyReportPage";
 import WarehouseImportCompanyChartPage from "./pages/report/WarehouseImportCompanyChartPage";
+import BeginningInventoryPage from "./pages/report/BeginningInventoryPage";
 import NoPermissionPage from "./pages/NoPermissionPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GuestRoute from "./components/GuestRoute";
@@ -37,9 +38,12 @@ import WarehouseTransferPage from "./pages/activity/transfer/WarehouseTransferPa
 import WarehouseTransferDetailPage from "./pages/activity/transfer/WarehouseTransferDetailPage";
 import ReleasePrintPageA4 from "./pages/activity/release/ReleasePrintPageA4";
 import ReleasePrintPageA5 from "./pages/activity/release/ReleasePrintPageA5";
+import ReleasePrintProcessingPage from "./pages/activity/release/ReleasePrintProcessingPage";
 import WarehouseOrderRelease from "./pages/activity/release/WarehouseOrderRelease";
 import WarehouseTransferPrintPage from "./pages/activity/transfer/WarehouseTransferPrintPage";
 import GoodsUnitPage from "./pages/good_unit/GoodsUnitPage";
+import TransferRequestPage from "./pages/tools/TransferRequestPage";
+
 import "./styles/auth.css";
 
 // Bridges global auth events from the axios interceptor to router navigation.
@@ -85,12 +89,24 @@ function App() {
                   element={<GoodsUnitPage />}
               />
               <Route
+                path="tools/transfer-request"
+                element={
+                  <RequireRole roles={["view_money_transfer_request"]}>
+                    <TransferRequestPage />
+                  </RequireRole>
+                }
+              />
+              <Route
                 path="stock-manager/company-list"
                 element={<CompanyListPage />}
               />
               <Route
                 path="report/import-company"
                 element={<WarehouseImportCompanyReportPage />}
+              />
+              <Route
+                path="report/beginning-inventory"
+                element={<BeginningInventoryPage />}
               />
               <Route
                 path="report/warehouse-import-company-chart"
@@ -207,6 +223,14 @@ function App() {
                     <ReleasePrintPageA5 />
                   </RequireRole>
                }
+              />
+              <Route
+                path="/dashboard/activity/export/release-print-processing/:code"
+                element={
+                  <RequireRole roles={["view_warehouse_release"]}>
+                    <ReleasePrintProcessingPage />
+                  </RequireRole>
+                }
               />
 
               <Route

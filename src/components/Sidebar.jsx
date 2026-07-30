@@ -53,7 +53,7 @@ const Sidebar = () => {
                     }
                     onClick={() => setActiveMenu("warehouse")}
                   >
-                    Tồn kho đầu kỳ
+                    Tồn kho
                   </NavLink>
               </div>
             )}
@@ -155,6 +155,51 @@ const Sidebar = () => {
           </div>
       </div>
         <div className="sidebar-extra-menu">
+        {/* CÔNG CỤ */}
+        <div
+          className={`sidebar-item sidebar-report-wrap ${
+            activeMenu === "tools" ? "active-parent" : ""
+          }`}
+          onClick={() => toggleMenu("tools")}
+        >
+          <span className="sidebar-icon">🧰</span>
+
+          {!collapsed && (
+            <span className="sidebar-text">Công cụ</span>
+          )}
+
+          {!collapsed && (
+            <span className="sidebar-arrow">
+              {openMenu === "tools" ? "⌄" : "›"}
+            </span>
+          )}
+
+          {!collapsed && openMenu === "tools" && (
+            <div
+              className="report-mega-menu"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="report-column">
+                <div className="report-title">CÔNG CỤ</div>
+
+                <NavLink
+                  to="/dashboard/tools/transfer-request"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "report-link active"
+                      : "report-link"
+                  }
+                  onClick={() => {
+                    setActiveMenu("tools");
+                    setOpenMenu("");
+                  }}
+                >
+                  Giấy đề nghị chuyển tiền
+                </NavLink>
+              </div>
+            </div>
+          )}
+        </div>
         {/* BÁO CÁO */}
           <div
             className={`sidebar-item sidebar-report-wrap ${
@@ -211,6 +256,18 @@ const Sidebar = () => {
                     }}
                   >
                     Thẻ kho
+                  </NavLink>
+                  <NavLink
+                      to="/dashboard/report/beginning-inventory"
+                      className={({ isActive }) =>
+                        isActive ? "report-link active" : "report-link"
+                      }
+                      onClick={() => {
+                        setActiveMenu("report");
+                        setOpenMenu("");
+                      }}
+                    >
+                      Tồn kho đầu kỳ
                   </NavLink>
                 </div>
               </div>

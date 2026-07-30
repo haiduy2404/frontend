@@ -1535,3 +1535,12 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.supplier-name-group {
+  grid-column: span 2;
+}
+
+.supplier-name-group input {
+  width: 100%;
+  box-sizing: border-box;
+}

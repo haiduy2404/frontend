@@ -21,14 +21,17 @@ function WarehouseOrderRelease() {
 
   const [searchParams] = useSearchParams();
   const isPrintMode = searchParams.get("mode") === "print";
-  const [printPaperSize, setPrintPaperSize] = useState("A4");
+  const [printForm, setPrintForm] = useState("industrial");
   const handlePrint = () => {
-    const targetPath =
-      printPaperSize === "A5"
-        ? `/dashboard/activity/export/release-print-a5/${headerData.code || id}`
-        : `/dashboard/activity/export/release-print/${headerData.code || id}`;
+    const releaseCode = headerData.code || id;
 
-    navigate(targetPath);
+    const printRoutes = {
+      industrial: `/dashboard/activity/export/release-print/${releaseCode}`,
+      operation: `/dashboard/activity/export/release-print-a5/${releaseCode}`,
+      processing: `/dashboard/activity/export/release-print-processing/${releaseCode}`,
+    };
+
+    navigate(printRoutes[printForm]);
   };
   const canSaveActual =
     canDo("update_actual_released_quantity") ||
@@ -48,6 +51,7 @@ function WarehouseOrderRelease() {
     warehouse_name: "",
     receiver_unit: "",
     release_target: "",
+    contract_number: "",
     description: "",
   });
 
@@ -117,6 +121,7 @@ function WarehouseOrderRelease() {
           data.release_target_name ||
           data.release_target ||
           "",
+        contract_number: data.contract_number || "",
         description: data.description || "",
       });
 
@@ -241,6 +246,7 @@ function WarehouseOrderRelease() {
     warehouse_id: headerData.warehouse_id,
     receiver_unit: headerData.receiver_unit || null,
     release_target: headerData.release_target || null,
+    contract_number: headerData.contract_number?.trim() || null,
     description: headerData.description || null,
 
     items: items.map((item) => ({
@@ -348,6 +354,15 @@ function WarehouseOrderRelease() {
             <div className="form-group">
               <label>Số phiếu XK</label>
               <input value={headerData.code} disabled />
+            </div>
+
+            <div className="form-group">
+              <label>Hợp đồng số</label>
+              <input
+                value={headerData.contract_number || ""}
+                placeholder="Không có số hợp đồng"
+                disabled
+              />
             </div>
 
             <div className="form-group">
@@ -532,12 +547,13 @@ function WarehouseOrderRelease() {
             {isPrintMode && (
                 <>
                 <select
-                    className="header-select"
-                    value={printPaperSize}
-                    onChange={(e) => setPrintPaperSize(e.target.value)}
+                  className="header-select"
+                  value={printForm}
+                  onChange={(e) => setPrintForm(e.target.value)}
                 >
-                    <option value="A4">In giấy A4</option>
-                    <option value="A5">In giấy A5</option>
+                  <option value="industrial">In giấy A4 (Công nghiệp)</option>
+                  <option value="operation">In giấy A5 (Vận dụng)</option>
+                  <option value="processing">In giấy A5 (Chế biến)</option>
                 </select>
                 <button className="print-footer-btn" onClick={handlePrint}>
                     <RiPrinterLine />

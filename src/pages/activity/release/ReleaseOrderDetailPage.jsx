@@ -56,11 +56,64 @@ function ReleaseOrderDetailPage() {
   const [goodsKeyword, setGoodsKeyword] = useState("");
   const [debouncedGoodsKeyword, setDebouncedGoodsKeyword] = useState("");
   const [deletedItems, setDeletedItems] = useState([]);
+  const enterNavigationRef = useRef(null);
   const warehouseIdRef = useRef("");
   const debouncedGoodsKeywordRef = useRef("");
   const goodsSearchRequestIdRef = useRef(0);
   const goodsPendingRequestsRef = useRef(0);
   const goodsRequestControllerRef = useRef(null);
+
+  const handleEnterMoveNext = (event) => {
+  if (
+    event.key !== "Enter" ||
+    event.nativeEvent?.isComposing ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.metaKey
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const container = enterNavigationRef.current;
+
+  if (!container) return;
+
+  const fields = Array.from(
+    container.querySelectorAll(
+      '[data-enter-next="true"]:not(:disabled):not([readonly])'
+    )
+  );
+
+  const currentIndex = fields.indexOf(event.currentTarget);
+
+  if (currentIndex === -1) return;
+
+  const nextIndex = event.shiftKey
+    ? currentIndex - 1
+    : currentIndex + 1;
+
+  const nextField = fields[nextIndex];
+
+  // Làm mất focus để onBlur của ô hiện tại chạy trước
+  event.currentTarget.blur();
+
+  if (!nextField) return;
+
+  requestAnimationFrame(() => {
+    nextField.focus();
+
+    if (
+      nextField.tagName === "INPUT" &&
+      nextField.type !== "checkbox" &&
+      typeof nextField.select === "function"
+    ) {
+      nextField.select();
+    }
+  });
+};
+
   const fetchReleaseReferences = async (warehouseId) => {
     try {
         const baseParams = warehouseId ? { warehouse_id: warehouseId } : {};
@@ -210,6 +263,173 @@ function ReleaseOrderDetailPage() {
     });
   };
 
+  const parseExpressionNumber = (value) => {
+  const text = String(value || "").trim();
+
+  if (!text) {
+    throw new Error("Số không hợp lệ");
+  }
+
+  let normalized = text;
+
+  // Dạng Việt Nam: 1.234,56
+  if (text.includes(",")) {
+    if ((text.match(/,/g) || []).length > 1) {
+      throw new Error("Số không hợp lệ");
+    }
+
+    const [integerPart, decimalPart] = text.split(",");
+    const normalizedInteger = integerPart.replace(/\./g, "");
+
+    if (
+      !normalizedInteger ||
+      !/^\d+$/.test(normalizedInteger) ||
+      !decimalPart ||
+      !/^\d+$/.test(decimalPart)
+    ) {
+      throw new Error("Số không hợp lệ");
+    }
+
+    normalized = `${normalizedInteger}.${decimalPart}`;
+  }
+  // Dạng phân cách hàng nghìn: 1.000 hoặc 1.000.000
+  else if (/^\d{1,3}(\.\d{3})+$/.test(text)) {
+    normalized = text.replace(/\./g, "");
+  }
+  // Dạng số thông thường: 10 hoặc 10.5
+  else if (!/^\d+(\.\d+)?$/.test(text)) {
+    throw new Error("Số không hợp lệ");
+  }
+
+  const number = Number(normalized);
+
+  if (!Number.isFinite(number)) {
+    throw new Error("Số không hợp lệ");
+  }
+
+  return number;
+};
+
+const evaluateQuantityExpression = (value) => {
+  const expression = String(value ?? "").replace(/\s+/g, "");
+
+  if (!expression) return null;
+
+  // Chỉ cho nhập số, dấu thập phân, phép tính và ngoặc
+  if (!/^[0-9.,+\-*/()]+$/.test(expression)) {
+    return null;
+  }
+
+  let position = 0;
+
+  const currentCharacter = () => expression[position];
+
+  const parseFactor = () => {
+    const character = currentCharacter();
+
+    // Số âm hoặc số dương
+    if (character === "+" || character === "-") {
+      position += 1;
+
+      const valueAfterSign = parseFactor();
+
+      return character === "-" ? -valueAfterSign : valueAfterSign;
+    }
+
+    // Biểu thức trong ngoặc
+    if (character === "(") {
+      position += 1;
+
+      const result = parseExpression();
+
+      if (currentCharacter() !== ")") {
+        throw new Error("Thiếu dấu đóng ngoặc");
+      }
+
+      position += 1;
+      return result;
+    }
+
+    // Đọc một số
+    const startPosition = position;
+
+    while (
+      position < expression.length &&
+      /[0-9.,]/.test(currentCharacter())
+    ) {
+      position += 1;
+    }
+
+    if (startPosition === position) {
+      throw new Error("Thiếu số");
+    }
+
+    const numberText = expression.slice(startPosition, position);
+
+    return parseExpressionNumber(numberText);
+  };
+
+  const parseTerm = () => {
+    let result = parseFactor();
+
+    while (
+      currentCharacter() === "*" ||
+      currentCharacter() === "/"
+    ) {
+      const operator = currentCharacter();
+      position += 1;
+
+      const rightValue = parseFactor();
+
+      if (operator === "*") {
+        result *= rightValue;
+      } else {
+        if (rightValue === 0) {
+          throw new Error("Không thể chia cho 0");
+        }
+
+        result /= rightValue;
+      }
+    }
+
+    return result;
+  };
+
+  function parseExpression() {
+    let result = parseTerm();
+
+    while (
+      currentCharacter() === "+" ||
+      currentCharacter() === "-"
+    ) {
+      const operator = currentCharacter();
+      position += 1;
+
+      const rightValue = parseTerm();
+
+      if (operator === "+") {
+        result += rightValue;
+      } else {
+        result -= rightValue;
+      }
+    }
+
+    return result;
+  }
+
+  try {
+    const result = parseExpression();
+
+    if (position !== expression.length || !Number.isFinite(result)) {
+      return null;
+    }
+
+    return result;
+  } catch {
+    return null;
+  }
+};
+
   const parseConversionRatio = (value) => {
     if (value === null || value === undefined || value === "") return 1;
     if (typeof value === "number") return value;
@@ -250,6 +470,7 @@ function ReleaseOrderDetailPage() {
     warehouse_id: "",
     receiver_unit: "",
     release_target: "",
+    contract_number: "",
     description: "",
   });
 
@@ -489,27 +710,53 @@ function ReleaseOrderDetailPage() {
   };
 
   const handleChangeItemField = (rowId, field, value) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== rowId) return item;
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.id !== rowId) return item;
 
-        const nextItem = {
-          ...item,
-          [field]: value,
-        };
+          const nextItem = {
+            ...item,
+            [field]: value,
+          };
 
-        if (field === "marked_old") {
-          nextItem.actual_quantity = value ? item.requested_quantity : "0,00";
-        }
+          if (field === "marked_old") {
+            nextItem.actual_quantity = value ? item.requested_quantity : "0,00";
+          }
 
-        if (field === "requested_quantity" && nextItem.marked_old) {
-          nextItem.actual_quantity = value;
-        }
+          if (field === "requested_quantity" && nextItem.marked_old) {
+            nextItem.actual_quantity = value;
+          }
 
-        return nextItem;
-      })
-    );
-  };
+          return nextItem;
+        })
+      );
+    };
+
+    const handleRequestedQuantityBlur = (rowId, value) => {
+      const result = evaluateQuantityExpression(value);
+
+      if (result === null) {
+        alert(
+          "Phép tính SL yêu cầu không hợp lệ.\n" +
+          "Ví dụ hợp lệ: 10 + 5 - 2 hoặc (10 + 5) * 2"
+        );
+
+        return false;
+      }
+
+      if (result < 0) {
+        alert("SL yêu cầu không được nhỏ hơn 0");
+        return false;
+      }
+
+      handleChangeItemField(
+        rowId,
+        "requested_quantity",
+        formatViNumber(result, 2)
+      );
+
+      return true;
+    };
 
   const handleAddRow = (rowId) => {
     setItems((prev) => {
@@ -522,6 +769,76 @@ function ReleaseOrderDetailPage() {
 
       return [...prev.slice(0, index + 1), newRow, ...prev.slice(index + 1)];
     });
+  };
+
+  const handleRequestedQuantityEnter = (event, rowId) => {
+  if (
+    event.key !== "Enter" ||
+    event.nativeEvent?.isComposing ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.metaKey
+  ) {
+    return;
+  }
+
+  // Shift + Enter vẫn quay lại ô trước
+  if (event.shiftKey) {
+    handleEnterMoveNext(event);
+    return;
+  }
+
+  event.preventDefault();
+
+  const isValid = handleRequestedQuantityBlur(
+    rowId,
+    event.currentTarget.value
+  );
+
+  if (!isValid) {
+    event.currentTarget.focus();
+    event.currentTarget.select();
+    return;
+  }
+
+  const newRow = createEmptyRow();
+
+  setItems((prev) => {
+    const currentIndex = prev.findIndex(
+      (item) => String(item.id) === String(rowId)
+    );
+
+    if (currentIndex === -1) {
+      return [...prev, newRow];
+    }
+
+    return [
+      ...prev.slice(0, currentIndex + 1),
+      newRow,
+      ...prev.slice(currentIndex + 1),
+    ];
+  });
+
+  setShowGoodsDropdown(false);
+  setActiveGoodsRowId(null);
+  setGoodsKeyword("");
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const newGoodsCodeInput =
+        enterNavigationRef.current?.querySelector(
+          `[data-goods-code-row-id="${String(newRow.id)}"]`
+        );
+
+      if (!newGoodsCodeInput) return;
+
+      newGoodsCodeInput.focus();
+
+      if (typeof newGoodsCodeInput.select === "function") {
+        newGoodsCodeInput.select();
+      }
+    });
+  });
   };
 
   const handleDeleteRow = (rowId) => {
@@ -572,6 +889,7 @@ function ReleaseOrderDetailPage() {
         receiver_unit_id: null,
         release_target: headerData.release_target || null,
         release_target_id: null,
+        contract_number: headerData.contract_number?.trim() || null,
         description: headerData.description || null,
 
         items: releasePayloadItems
@@ -581,7 +899,8 @@ function ReleaseOrderDetailPage() {
             goods_id: item.goods_id,
             goods_unit_id: item.unit_id || null,
             goods_name_display: item.goods_name || null,
-            requested_quantity: parseNumber(item.requested_quantity),
+            requested_quantity:
+              evaluateQuantityExpression(item.requested_quantity) ?? 0,
             conversion_ratio: parseConversionRatio(item.conversion_ratio || 1),
             is_delete: Boolean(item.is_delete),
         })),
@@ -610,6 +929,24 @@ function ReleaseOrderDetailPage() {
     }
 
     const validItems = items.filter((item) => item.goods_id);
+
+    const invalidQuantityItem = validItems.find((item) => {
+    const result = evaluateQuantityExpression(
+      item.requested_quantity
+    );
+
+    return result === null || result < 0;
+  });
+
+  if (invalidQuantityItem) {
+    alert(
+      `SL yêu cầu của vật tư ${
+        invalidQuantityItem.goods_code || ""
+      } không hợp lệ`
+    );
+
+    return false;
+}
 
     if (validItems.length === 0) {
       alert("Vui lòng chọn ít nhất một vật tư");
@@ -693,6 +1030,7 @@ function ReleaseOrderDetailPage() {
         warehouse_id: data.warehouse_id || "",
         receiver_unit: data.receiver_unit?.name || "",
         release_target: data.release_target?.name || "",
+        contract_number: data.contract_number || "",
         description: data.description || "",
         }));
 
@@ -777,6 +1115,7 @@ function ReleaseOrderDetailPage() {
           warehouse_id: warehouseId,
           receiver_unit: receiverUnitName,
           release_target: releaseTargetName,
+          contract_number: data.contract_number || "",
           description: data.description || "",
         });
 
@@ -947,7 +1286,10 @@ function ReleaseOrderDetailPage() {
         </div>
       </div>
 
-      <div className="import-order-detail-body">
+      <div
+        className="import-order-detail-body"
+        ref={enterNavigationRef}
+      >
         <div className="info-section-title">Thông tin phiếu xuất kho</div>
 
         <div className="import-voucher-card">
@@ -955,6 +1297,8 @@ function ReleaseOrderDetailPage() {
             <div className="form-group">
               <label>Kỳ</label>
               <input
+                data-enter-next="true"
+                onKeyDown={handleEnterMoveNext}
                 name="terms"
                 value={headerData.terms}
                 onChange={handleHeaderChange}
@@ -985,6 +1329,8 @@ function ReleaseOrderDetailPage() {
 
               <div className="input-with-icon">
                 <input
+                  data-enter-next="true"
+                  onKeyDown={handleEnterMoveNext}
                   className="date-text-input"
                   name="release_date"
                   value={headerData.release_date}
@@ -998,7 +1344,6 @@ function ReleaseOrderDetailPage() {
                   placeholder="dd/mm/yyyy"
                   disabled={isPrintMode}
                 />
-
                 <button
                   type="button"
                   disabled={isPrintMode}
@@ -1025,13 +1370,14 @@ function ReleaseOrderDetailPage() {
               <label>
                 Xuất kho <span>*</span>
               </label>
-
-              <select
-                name="warehouse_id"
-                value={headerData.warehouse_id}
-                onChange={handleHeaderChange}
-                disabled={isPrintMode}
-              >
+                <select
+                  data-enter-next="true"
+                  onKeyDown={handleEnterMoveNext}
+                  name="warehouse_id"
+                  value={headerData.warehouse_id}
+                  onChange={handleHeaderChange}
+                  disabled={isPrintMode}
+                >
                 <option value="">
                   {warehouseLoading ? "Đang tải danh sách kho..." : "Chọn kho xuất"}
                 </option>
@@ -1050,17 +1396,18 @@ function ReleaseOrderDetailPage() {
                     {receiverUnitMode === "manual" ? (
                     <>
                         <input
-                        value={headerData.receiver_unit}
-                        onChange={(e) =>
+                          data-enter-next="true"
+                          onKeyDown={handleEnterMoveNext}
+                          value={headerData.receiver_unit}
+                          onChange={(e) =>
                             setHeaderData((prev) => ({
-                            ...prev,
-                            receiver_unit: e.target.value,
+                              ...prev,
+                              receiver_unit: e.target.value,
                             }))
-                        }
-                        placeholder="Nhập đơn vị lĩnh vật tư"
-                        disabled={isPrintMode}
+                          }
+                          placeholder="Nhập đơn vị lĩnh vật tư"
+                          disabled={isPrintMode}
                         />
-
                         <button
                         type="button"
                         className="switch-select-btn"
@@ -1076,21 +1423,23 @@ function ReleaseOrderDetailPage() {
                         </button>
                     </>
                     ) : (
-                <select
-                value={headerData.receiver_unit}
-                onChange={(e) => {
-                    if (e.target.value === "__manual__") {
-                    setReceiverUnitMode("manual");
-                    return;
-                    }
+                    <select
+                      data-enter-next="true"
+                      onKeyDown={handleEnterMoveNext}
+                      value={headerData.receiver_unit}
+                      onChange={(e) => {
+                        if (e.target.value === "__manual__") {
+                          setReceiverUnitMode("manual");
+                          return;
+                        }
 
-                    setHeaderData((prev) => ({
-                    ...prev,
-                    receiver_unit: e.target.value,
-                    }));
-                }}
-                disabled={isPrintMode}
-                >
+                        setHeaderData((prev) => ({
+                          ...prev,
+                          receiver_unit: e.target.value,
+                        }));
+                      }}
+                      disabled={isPrintMode}
+                    >
                 <option value="">Chọn đơn vị lĩnh vật tư</option>
                 <option value="__manual__">Không chọn / Nhập tay</option>
 
@@ -1119,15 +1468,17 @@ function ReleaseOrderDetailPage() {
             {releaseTargetMode === "manual" ? (
                 <>
                 <input
-                    value={headerData.release_target}
-                    onChange={(e) =>
+                  data-enter-next="true"
+                  onKeyDown={handleEnterMoveNext}
+                  value={headerData.release_target}
+                  onChange={(e) =>
                     setHeaderData((prev) => ({
-                        ...prev,
-                        release_target: e.target.value,
+                      ...prev,
+                      release_target: e.target.value,
                     }))
-                    }
-                    placeholder="Nhập đối tượng xuất kho"
-                    disabled={isPrintMode}
+                  }
+                  placeholder="Nhập đối tượng xuất kho"
+                  disabled={isPrintMode}
                 />
 
                 <button
@@ -1146,21 +1497,23 @@ function ReleaseOrderDetailPage() {
                 </>
             ) : (
                 <select
-                value={headerData.release_target}
-                onChange={(e) => {
+                  data-enter-next="true"
+                  onKeyDown={handleEnterMoveNext}
+                  value={headerData.release_target}
+                  onChange={(e) => {
                     const value = e.target.value;
 
                     if (value === "__manual__") {
-                    setReleaseTargetMode("manual");
-                    return;
+                      setReleaseTargetMode("manual");
+                      return;
                     }
 
                     setHeaderData((prev) => ({
-                    ...prev,
-                    release_target: value,
+                      ...prev,
+                      release_target: value,
                     }));
-                }}
-                disabled={isPrintMode}
+                  }}
+                  disabled={isPrintMode}
                 >
                 <option value="">Chọn đối tượng xuất kho</option>
                 <option value="__manual__">Không chọn / Nhập tay</option>
@@ -1182,9 +1535,24 @@ function ReleaseOrderDetailPage() {
                 </select>
             )}
             </div>
+            <div className="form-group">
+            <label>Hợp đồng số</label>
+            <input
+              data-enter-next="true"
+              onKeyDown={handleEnterMoveNext}
+              name="contract_number"
+              value={headerData.contract_number}
+              onChange={handleHeaderChange}
+              placeholder="Nhập số hợp đồng"
+              disabled={isPrintMode}
+            />
+            </div>
+
             <div className="form-group description-group">
               <label>Diễn giải</label>
               <input
+                data-enter-next="true"
+                onKeyDown={handleEnterMoveNext}
                 name="description"
                 value={headerData.description}
                 onChange={handleHeaderChange}
@@ -1249,6 +1617,9 @@ function ReleaseOrderDetailPage() {
                     <td className="goods-code-dropdown-cell">
                       <div className="goods-code-dropdown-box">
                         <input
+                          data-enter-next="true"
+                          data-goods-code-row-id={String(item.id)}
+                          onKeyDown={handleEnterMoveNext}
                           value={item.goods_code}
                           placeholder="Chọn mã VT"
                           disabled={isPrintMode}
@@ -1323,6 +1694,8 @@ function ReleaseOrderDetailPage() {
 
                     <td>
                       <input
+                        data-enter-next="true"
+                        onKeyDown={handleEnterMoveNext}
                         className="table-text-input"
                         value={item.goods_name || ""}
                         placeholder="Tên hàng"
@@ -1339,7 +1712,8 @@ function ReleaseOrderDetailPage() {
 
                     <td>
                       <select
-                        className="table-unit-select"
+                        data-enter-next="true"
+                        onKeyDown={handleEnterMoveNext}
                         value={item.unit_id || ""}
                         onChange={(e) =>
                           handleChangeItemUnit(item.id, e.target.value)
@@ -1371,18 +1745,32 @@ function ReleaseOrderDetailPage() {
                     </td>
 
                     <td className="number-col">
-                      <input
-                        className="table-number-input"
-                        value={item.requested_quantity}
-                        onChange={(e) =>
+                    <input
+                      className="table-number-input"
+                      value={item.requested_quantity}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        if (/^[0-9.,+\-*/()\s]*$/.test(value)) {
                           handleChangeItemField(
                             item.id,
                             "requested_quantity",
-                            e.target.value
-                          )
+                            value
+                          );
                         }
-                        disabled={isPrintMode}
-                      />
+                      }}
+                      onBlur={(e) =>
+                        handleRequestedQuantityBlur(
+                          item.id,
+                          e.target.value
+                        )
+                      }
+                      data-enter-next="true"
+                      onKeyDown={(e) =>
+                        handleRequestedQuantityEnter(e, item.id)
+                      }
+                      disabled={isPrintMode}
+                    />
                     </td>
 
                     <td className="delete-row-col">
@@ -1419,7 +1807,10 @@ function ReleaseOrderDetailPage() {
                     {formatViNumber(
                       items.reduce(
                         (sum, item) =>
-                          sum + parseNumber(item.requested_quantity),
+                          sum +
+                          (evaluateQuantityExpression(
+                            item.requested_quantity
+                          ) ?? 0),
                         0
                       ),
                       2

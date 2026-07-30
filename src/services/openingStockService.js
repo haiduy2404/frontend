@@ -36,3 +36,25 @@ export const importStockBalanceExcel = async (formData, onUploadProgress) => {
 
   return response.data;
 };
+
+export const captureBeginningInventory = async (warehouseIds) => {
+  const response = await axiosInstance.post(
+    "/inventory/beginning-inventory/capture",
+    {
+      warehouse_ids: warehouseIds,
+    }
+  );
+
+  return response.data;
+};
+
+export const getBeginningInventories = async (params = {}) => {
+  const response = await axiosInstance.get(
+    "/inventory/beginning-inventory/pageable",
+    {
+      params,
+    }
+  );
+
+  return response.data;
+};

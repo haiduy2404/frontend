@@ -32,7 +32,59 @@ export default function WarehouseTransferDetailPage() {
   const [activeStockRowId, setActiveStockRowId] = useState(null);
   const [stockKeyword, setStockKeyword] = useState("");
   const stockSearchTimerRef = useRef(null);
+  const enterNavigationRef = useRef(null);
   const [deletedRows, setDeletedRows] = useState([]);
+
+  const handleEnterMoveNext = (event) => {
+    if (
+      event.key !== "Enter" ||
+      event.nativeEvent?.isComposing ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const container = enterNavigationRef.current;
+
+    if (!container) return;
+
+    const fields = Array.from(
+      container.querySelectorAll(
+        '[data-enter-next="true"]:not(:disabled):not([readonly])'
+      )
+    );
+
+    const currentIndex = fields.indexOf(event.currentTarget);
+
+    if (currentIndex === -1) return;
+
+    const nextIndex = event.shiftKey
+      ? currentIndex - 1
+      : currentIndex + 1;
+
+    const nextField = fields[nextIndex];
+
+    event.currentTarget.blur();
+
+    if (!nextField) return;
+
+    requestAnimationFrame(() => {
+      nextField.focus();
+
+      if (
+        nextField.tagName === "INPUT" &&
+        nextField.type !== "checkbox" &&
+        nextField.type !== "radio" &&
+        typeof nextField.select === "function"
+      ) {
+        nextField.select();
+      }
+    });
+  };
 
   const [form, setForm] = useState({
     id: null,
@@ -296,6 +348,69 @@ export default function WarehouseTransferDetailPage() {
     });
   };
 
+  const handleTransferQuantityEnter = (event, rowId) => {
+    if (
+      event.key !== "Enter" ||
+      event.nativeEvent?.isComposing ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey
+    ) {
+      return;
+    }
+
+    // Shift + Enter quay lại ô trước
+    if (event.shiftKey) {
+      handleEnterMoveNext(event);
+      return;
+    }
+
+    event.preventDefault();
+
+    // Cho onBlur chạy để định dạng SL điều chuyển
+    event.currentTarget.blur();
+
+    const newRow = createEmptyRow();
+
+    setRows((prev) => {
+      const currentIndex = prev.findIndex(
+        (row) => String(row.row_id) === String(rowId)
+      );
+
+      if (currentIndex === -1) {
+        return [...prev, newRow];
+      }
+
+      return [
+        ...prev.slice(0, currentIndex + 1),
+        newRow,
+        ...prev.slice(currentIndex + 1),
+      ];
+    });
+
+    setShowStockDropdown(false);
+    setActiveStockRowId(null);
+    setStockKeyword("");
+
+    // Chờ dòng mới render rồi focus Mã hàng
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const newGoodsCodeInput =
+          enterNavigationRef.current?.querySelector(
+            `[data-stock-code-row-id="${String(newRow.row_id)}"]`
+          );
+
+        if (!newGoodsCodeInput) return;
+
+        newGoodsCodeInput.focus();
+
+        if (typeof newGoodsCodeInput.select === "function") {
+          newGoodsCodeInput.select();
+        }
+      });
+    });
+  };
+
     const handleDeleteRow = (rowId) => {
     setRows((prev) => {
         const deletedRow = prev.find((item) => item.row_id === rowId);
@@ -526,7 +641,10 @@ export default function WarehouseTransferDetailPage() {
   };
 
   return (
-    <div className="warehouse-transfer-page">
+    <div
+      className="warehouse-transfer-page"
+      ref={enterNavigationRef}
+    >
       <div className="transfer-title">
         Phiếu điều chuyển {form.transfer_code || ""}
       </div>
@@ -545,6 +663,8 @@ export default function WarehouseTransferDetailPage() {
               <div className="form-group required">
                 <label>Kho xuất</label>
                 <select
+                  data-enter-next="true"
+                  onKeyDown={handleEnterMoveNext}
                   disabled={isViewMode}
                   value={form.from_warehouse_id}
                   onChange={(e) => handleFromWarehouseChange(e.target.value)}
@@ -568,6 +688,8 @@ export default function WarehouseTransferDetailPage() {
               <div className="form-group required">
                 <label>Kho nhập</label>
                 <select
+                  data-enter-next="true"
+                  onKeyDown={handleEnterMoveNext}
                   disabled={isViewMode}
                   value={form.to_warehouse_id}
                   onChange={(e) => handleToWarehouseChange(e.target.value)}
@@ -597,6 +719,8 @@ export default function WarehouseTransferDetailPage() {
               <div className="form-group full">
                 <label>Lý do điều chuyển</label>
                 <input
+                  data-enter-next="true"
+                  onKeyDown={handleEnterMoveNext}
                   disabled={isViewMode}
                   value={form.reason}
                   onChange={(e) => handleFormChange("reason", e.target.value)}
@@ -607,6 +731,8 @@ export default function WarehouseTransferDetailPage() {
               <div className="form-group full">
                 <label>Tham chiếu</label>
                 <input
+                  data-enter-next="true"
+                  onKeyDown={handleEnterMoveNext}
                   disabled={isViewMode}
                   value={form.reference}
                   onChange={(e) =>
@@ -673,6 +799,9 @@ export default function WarehouseTransferDetailPage() {
       <td className="goods-code-dropdown-cell">
         <div className="goods-code-dropdown-box">
           <input
+            data-enter-next="true"
+            data-stock-code-row-id={String(row.row_id)}
+            onKeyDown={handleEnterMoveNext}
             value={row.goods_code}
             placeholder={form.from_warehouse_id ? "Chọn mã hàng" : "Chọn kho xuất trước"}
             disabled={isViewMode || !form.from_warehouse_id}
@@ -744,12 +873,28 @@ export default function WarehouseTransferDetailPage() {
       <td>{row.remaining_quantity}</td>
 
       <td>
-        <input
-          disabled={isViewMode}
-          value={row.transfer_quantity}
-          onChange={(e) => handleRowChange(row.row_id, "transfer_quantity", e.target.value)}
-          onBlur={(e) => handleRowChange(row.row_id, "transfer_quantity", formatViNumber(e.target.value, 2))}
-        />
+      <input
+        data-enter-next="true"
+        onKeyDown={(e) =>
+          handleTransferQuantityEnter(e, row.row_id)
+        }
+        disabled={isViewMode}
+        value={row.transfer_quantity}
+        onChange={(e) =>
+          handleRowChange(
+            row.row_id,
+            "transfer_quantity",
+            e.target.value
+          )
+        }
+        onBlur={(e) =>
+          handleRowChange(
+            row.row_id,
+            "transfer_quantity",
+            formatViNumber(e.target.value, 2)
+          )
+        }
+      />
       </td>
 
       <td>{row.transfer_main_quantity}</td>
