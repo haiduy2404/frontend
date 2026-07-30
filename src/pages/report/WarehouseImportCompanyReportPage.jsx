@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "../../styles/WarehouseImportCompanyReportPage.css";
 
 import { getWarehouseReceiptByCode } from "../../services/warehouseReceiptService";
@@ -8,6 +15,11 @@ import { useAuth } from "../../contexts/AuthContext";
 
 function WarehouseImportCompanyReportPage() {
   const companyDropdownRef = useRef(null);
+
+  const companyRequestIdRef = useRef(0);
+  const skipFirstCompanySearchRef = useRef(true);
+
+  const [companySearch, setCompanySearch] = useState("");
 
   const [filters, setFilters] = useState({
     start_date: "",
@@ -33,10 +45,70 @@ function WarehouseImportCompanyReportPage() {
   });
   const { canDo } = useAuth();
   const unwrapData = (response) => response?.data || response;
+  const fetchCompanies = useCallback(async (keyword = "") => {
+    const requestId = ++companyRequestIdRef.current;
 
-    useEffect(() => {
-        fetchCompanies();
-    }, []);
+    try {
+      setCompanyLoading(true);
+
+      const params = {
+        page: 1,
+        page_size: 1000,
+      };
+
+      const searchText = keyword.trim();
+
+      if (searchText) {
+        params.search = searchText;
+      }
+
+      const response = await getCompanies(params);
+      const data = response?.data || response;
+
+      const results = Array.isArray(data?.results)
+        ? data.results
+        : Array.isArray(data)
+        ? data
+        : [];
+
+      if (requestId !== companyRequestIdRef.current) return;
+
+      setCompanies(results);
+    } catch (error) {
+      if (requestId !== companyRequestIdRef.current) return;
+
+      console.error(
+        "LOAD COMPANIES ERROR:",
+        error.response?.data || error
+      );
+
+      setCompanies([]);
+    } finally {
+      if (requestId === companyRequestIdRef.current) {
+        setCompanyLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCompanies("");
+} , [fetchCompanies]);
+  
+  useEffect(() => {
+  // Không gọi lại lần đầu vì phía trên đã tải danh sách ban đầu.
+  if (skipFirstCompanySearchRef.current) {
+    skipFirstCompanySearchRef.current = false;
+    return;
+  }
+
+  const timeoutId = window.setTimeout(() => {
+    fetchCompanies(companySearch);
+  }, 1500);
+
+  return () => {
+    window.clearTimeout(timeoutId);
+  };
+}, [companySearch, fetchCompanies]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -55,33 +127,8 @@ function WarehouseImportCompanyReportPage() {
     };
   }, []);
 
-  const fetchCompanies = async () => {
-    try {
-      setCompanyLoading(true);
 
-      const response = await getCompanies({
-        page: 1,
-        page_size: 1000,
-      });
-
-      const data = unwrapData(response);
-
-      const results = Array.isArray(data?.results)
-        ? data.results
-        : Array.isArray(data)
-        ? data
-        : [];
-
-      setCompanies(results);
-    } catch (error) {
-      console.error("LOAD COMPANIES ERROR:", error.response?.data || error);
-      setCompanies([]);
-    } finally {
-      setCompanyLoading(false);
-    }
-  };
-
-    const fetchReport = async (customFilters = filters) => {
+  const fetchReport = async (customFilters = filters) => {
     try {
         setReportLoading(true);
 
@@ -474,75 +521,103 @@ const handleToggleChartMetric = (metricKey) => {
 
               {isCompanyDropdownOpen && (
                 <div className="company-dropdown-menu">
-                  {companyLoading && (
-                    <div className="company-dropdown-loading">
-                      Đang tải công ty...
-                    </div>
-                  )}
+                <div className="company-dropdown-search">
+                <input
+                  type="text"
+                  value={companySearch}
+                  placeholder="Nhập tên công ty (hoặc MST) để tìm kiếm..."
+                  autoFocus
+                  onChange={(event) => {
+                    setCompanySearch(event.target.value);
+                  }}
+                />
 
-                  {!companyLoading && (
-                    <>
-                      <label className="company-dropdown-option all-option">
-                        <input
-                          type="checkbox"
-                          checked={
-                            companies.length > 0 &&
-                            filters.companyIds.length === companies.length
-                          }
-                          onChange={handleToggleAllCompanies}
-                        />
-                        <span>Chọn tất cả</span>
-                      </label>
+                {companySearch && (
+                  <button
+                    type="button"
+                    title="Xóa từ khóa"
+                    onClick={() => setCompanySearch("")}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
 
-                      <div className="company-dropdown-divider" />
+              <div className="company-dropdown-list">
+                {companyLoading && (
+                  <div className="company-dropdown-loading">
+                    Đang tìm công ty...
+                  </div>
+                )}
 
-                      {companies.length === 0 && (
-                        <div className="company-dropdown-empty">
-                          Không có công ty
-                        </div>
-                      )}
+                {!companyLoading && (
+                  <>
+                    <label className="company-dropdown-option all-option">
+                      <input
+                        type="checkbox"
+                        checked={
+                          companies.length > 0 &&
+                          filters.companyIds.length === companies.length
+                        }
+                        onChange={handleToggleAllCompanies}
+                      />
 
-                        {companies.map((company) => {
-                        const companyId = company.id;
-                        const companyName = company.supplier_name;
-                        const taxCode = company.tax_code;
+                      <span>Chọn tất cả kết quả</span>
+                    </label>
 
-                        return (
-                            <label
-                            key={companyId}
-                            className="company-dropdown-option"
-                            >
-                            <input
-                                type="checkbox"
-                                checked={filters.companyIds.includes(companyId)}
-                                onChange={() => handleToggleCompany(companyId)}
-                            />
+                    <div className="company-dropdown-divider" />
 
-                            <span>
-                                <strong>{companyName}</strong>
-                                <small>MST: {taxCode}</small>
-                            </span>
-                            </label>
-                        );
-                        })}
-
-                      <div className="company-dropdown-footer">
-                        <span>
-                          Đã chọn {filters.companyIds.length} /{" "}
-                          {companies.length} công ty
-                        </span>
-
-                        <button type="button" onClick={handleClearCompanies}>
-                          Xóa chọn
-                        </button>
+                    {companies.length === 0 && (
+                      <div className="company-dropdown-empty">
+                        Không tìm thấy công ty
                       </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+                    )}
 
+                    {companies.map((company) => {
+                      const companyId = company.id;
+                      const companyName = company.supplier_name;
+                      const taxCode = company.tax_code;
+
+                      return (
+                        <label
+                          key={companyId}
+                          className="company-dropdown-option"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={filters.companyIds.includes(companyId)}
+                            onChange={() =>
+                              handleToggleCompany(companyId)
+                            }
+                          />
+
+                          <span>
+                            <strong>{companyName}</strong>
+                            <small>MST: {taxCode}</small>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+
+              <div className="company-dropdown-footer">
+                <span>
+                  Đã chọn {filters.companyIds.length} công ty
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleClearCompanies}
+                >
+                  Xóa chọn
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
           <button
             type="button"
             className="report-primary-btn"
