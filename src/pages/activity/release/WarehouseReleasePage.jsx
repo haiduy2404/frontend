@@ -17,7 +17,12 @@ import {
 
 import { getWarehouses } from "../../../services/warehouseService";
 
-import { RiEdit2Line, RiDeleteBin6Line,RiCloseCircleLine, } from "react-icons/ri";
+import {
+  RiEdit2Line,
+  RiDeleteBin6Line,
+  RiCloseCircleLine,
+  RiLoader4Line,
+} from "react-icons/ri";
 
 function WarehouseReleasePage() {
   const navigate = useNavigate();
@@ -470,6 +475,8 @@ function WarehouseReleasePage() {
     };
 
     const handleRejectRelease = async () => {
+    if (rejecting) return;
+
     if (!canUpdateRelease && !canDeleteAdmin) {
       alert("Bạn không có quyền từ chối lệnh xuất kho");
       return;
@@ -490,7 +497,7 @@ function WarehouseReleasePage() {
     if (!canRejectReleaseByStatus(order.status)) {
       if (order.status === "COMPLETED" && !canDeleteAdmin) {
         alert(
-          'Bạn cần quyền "delete_warehouse" để từ chối lệnh đã hoàn thành'
+          'Bạn cần quyền "delete_warehouse_admin" để từ chối lệnh đã hoàn thành'
         );
         return;
       }
@@ -518,20 +525,37 @@ function WarehouseReleasePage() {
       return;
     }
 
+    const releaseCode = getRowCode(order) || warehouseReleaseId;
     const confirmed = window.confirm(
-      "Bạn có chắc muốn từ chối lệnh xuất kho này không?\n"
+      `Bạn có chắc chắn muốn từ chối phiếu ${releaseCode} không?`
     );
 
     if (!confirmed) return;
-
     try {
       setRejecting(true);
 
+      // Đợi React hiển thị vòng loading
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+      // Loading đủ 1,5 giây trước khi gửi API về backend
+      const randomLoadingTime =
+        Math.floor(Math.random() * (1500 - 700 + 1)) + 700;
+
+        await new Promise((resolve) =>
+        setTimeout(resolve, randomLoadingTime)
+      );
+
+      // Sau 1,5 giây mới gọi API từ chối
       await updateWarehouseReleaseStatus(
         warehouseReleaseId,
         "cancel"
       );
 
+      // API thành công rồi mới tải lại danh sách
       setSelectedIds([]);
       setSelectedId(null);
       setSelectedOrder(null);
@@ -541,9 +565,7 @@ function WarehouseReleasePage() {
         page: 1,
       });
 
-      alert(
-        "Từ chối lệnh xuất kho thành công. "
-      );
+      alert(`Từ chối phiếu ${releaseCode} thành công.`);
     } catch (error) {
       console.error(
         "REJECT WAREHOUSE RELEASE ERROR:",
@@ -553,7 +575,7 @@ function WarehouseReleasePage() {
       alert(
         error.response?.data?.message ||
           error.response?.data?.detail ||
-          "Không thể từ chối lệnh xuất kho"
+          `Không thể từ chối phiếu ${releaseCode}`
       );
     } finally {
       setRejecting(false);
@@ -823,7 +845,11 @@ const handleSplitterPointerDown = (event) => {
                   : ""
               }
             >
-              <RiCloseCircleLine />
+              {rejecting ? (
+                <RiLoader4Line className="release-action-loading-icon" />
+              ) : (
+                <RiCloseCircleLine />
+              )}
 
               <span>
                 {rejecting ? "Đang từ chối..." : "Từ chối"}

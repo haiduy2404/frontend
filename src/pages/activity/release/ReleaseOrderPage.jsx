@@ -8,7 +8,6 @@ import {
   getReleaseOrderByCode,
   deleteReleaseOrder,
   submitReleaseOrder,
-  completeReleaseOrder,
 } from "../../../services/releaseOrderService";
 
 import {
@@ -314,40 +313,6 @@ const handleTimeTypeChange = (e) => {
     }
     };
 
-    const handleCompleteSelectedAsWarehouseRelease = async () => {
-    const completable = releaseOrders.filter(
-        (r) => selectedIds.includes(r.id) && r.status === "WAIT_TO_APPROVE"
-    );
-    const skipped = selectedIds.length - completable.length;
-
-    if (completable.length === 0) {
-        alert("Không có lệnh nào ở trạng thái Chờ duyệt để hoàn thành xuất kho.");
-        return;
-    }
-
-    const msg =
-        skipped > 0
-        ? `Hoàn thành xuất kho ${completable.length} lệnh (bỏ qua ${skipped} lệnh không ở trạng thái Chờ duyệt)?`
-        : `Bạn có chắc muốn hoàn thành xuất kho ${completable.length} lệnh đã chọn không?`;
-    if (!window.confirm(msg)) return;
-
-    const results = await Promise.allSettled(
-        completable.map((r) => completeReleaseOrder(r.id))
-    );
-    const failed = results.filter((r) => r.status === "rejected");
-
-    setSelectedIds([]);
-    await fetchReleaseOrders();
-
-    if (failed.length === 0) {
-        alert(`Hoàn thành xuất kho ${completable.length} lệnh thành công`);
-    } else {
-        alert(
-        `Hoàn thành ${completable.length - failed.length}/${completable.length} thành công. ` +
-        `${failed.length} lệnh thất bại.`
-        );
-    }
-    };
 
   const handleCloneReleaseOrder = (row) => {
       if (!row) {
@@ -627,7 +592,6 @@ const resetPaneSize = () => {
           )}
 
           {canDo("complete_warehouse_release") && (
-            <>
               <button
                 className="complete-toolbar-btn"
                 disabled={selectedIds.length > 1 ? false : !selectedRow}
@@ -650,45 +614,6 @@ const resetPaneSize = () => {
                     : "Trình duyệt"}
                 </span>
               </button>
-              <button
-                className="complete-toolbar-btn"
-                style={{ color: "#0d9488" }}
-                disabled={selectedIds.length > 1 ? false : !selectedRow}
-                onClick={() => {
-                  if (selectedIds.length > 1) {
-                    handleCompleteSelectedAsWarehouseRelease();
-                    return;
-                  }
-                  if (!selectedRow) {
-                    alert("Vui lòng chọn phiếu cần hoàn thành xuất kho");
-                    return;
-                  }
-                  const confirmed = window.confirm(
-                    `Hoàn thành xuất kho lệnh ${selectedRow.code || selectedRow.release_code || ""}?`
-                  );
-                  if (!confirmed) return;
-                  completeReleaseOrder(selectedRow.id)
-                    .then(() => {
-                      fetchReleaseOrders();
-                      alert("Hoàn thành xuất kho thành công");
-                    })
-                    .catch((error) => {
-                      alert(
-                        error.response?.data?.message ||
-                        error.response?.data?.detail ||
-                        "Hoàn thành xuất kho thất bại"
-                      );
-                    });
-                }}
-              >
-                <RiCheckboxCircleLine />
-                <span>
-                  {selectedIds.length > 1
-                    ? `Hoàn thành XK (${selectedIds.length})`
-                    : "Hoàn thành XK"}
-                </span>
-              </button>
-            </>
           )}
 
           {canDo("create_warehouse_release") && (

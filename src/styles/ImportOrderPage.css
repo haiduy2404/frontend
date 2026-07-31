@@ -662,3 +662,31 @@
   border-collapse: collapse;
   table-layout: fixed;
 }
+
+.import-action-loading-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  animation: import-action-spin 0.8s linear infinite;
+}
+
+.complete-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.complete-toolbar-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+@keyframes import-action-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -8,6 +8,7 @@ import {
   RiDeleteBin6Line,
   RiCheckboxCircleLine,
   RiCloseCircleLine,
+  RiLoader4Line,
 } from "react-icons/ri";
 import {
   getWarehouseTransfersPageable,
@@ -30,6 +31,7 @@ export default function WarehouseTransferPage() {
   const [pageSize, setPageSize] = useState(20);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
   const [rejecting, setRejecting] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
   const unwrapList = (data) => {
     return Array.isArray(data)
@@ -66,39 +68,74 @@ export default function WarehouseTransferPage() {
     }
   };
   const handleComplete = async (transfer) => {
-  if (!transfer?.id) {
-    alert("Vui lòng chọn phiếu điều chuyển");
-    return;
-  }
+    if (completing || rejecting) return;
 
-  if (transfer.status !== "PENDING") {
-    alert("Chỉ được hoàn thành phiếu đang điều chuyển");
-    return;
-  }
+    if (!canUpdate) {
+      alert("Bạn không có quyền hoàn thành phiếu điều chuyển");
+      return;
+    }
 
-  const confirmed = window.confirm(
-    `Bạn có chắc muốn hoàn thành phiếu ${getTransferCode(transfer)} không?`
-  );
+    if (!transfer?.id) {
+      alert("Vui lòng chọn phiếu điều chuyển");
+      return;
+    }
 
-  if (!confirmed) return;
+    if (transfer.status !== "PENDING") {
+      alert("Chỉ được hoàn thành phiếu đang điều chuyển");
+      return;
+    }
 
-  try {
-    await updateWarehouseTransferStatus(
-      transfer.id,
-      "complete"
+    const transferCode = getTransferCode(transfer) || transfer.id;
+
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn hoàn thành phiếu ${transferCode} không?`
     );
-    setSelectedTransfer(null);
-    await loadTransfers();
-    alert("Hoàn thành phiếu điều chuyển thành công");
-  } catch (error) {
-    console.error("COMPLETE TRANSFER ERROR:", error.response?.data || error);
-    alert(
-      error.response?.data?.message ||
-        error.response?.data?.detail ||
-        "Hoàn thành phiếu điều chuyển thất bại"
-    );
-  }
-};
+
+    if (!confirmed) return;
+
+    try {
+      setCompleting(true);
+
+      // Đợi React hiển thị vòng loading và nội dung nút.
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+      // Loading ngẫu nhiên từ 0,7 giây đến 1,5 giây.
+      const randomLoadingTime =
+        Math.floor(Math.random() * (1500 - 700 + 1)) + 700;
+
+      // Hết thời gian loading mới gửi API về backend.
+      await new Promise((resolve) =>
+        setTimeout(resolve, randomLoadingTime)
+      );
+
+      await updateWarehouseTransferStatus(
+        transfer.id,
+        "complete"
+      );
+
+      setSelectedTransfer(null);
+      await loadTransfers();
+
+      alert(`Hoàn thành phiếu ${transferCode} thành công.`);
+    } catch (error) {
+      console.error(
+        "COMPLETE TRANSFER ERROR:",
+        error.response?.data || error
+      );
+
+      alert(
+        error.response?.data?.message ||
+          error.response?.data?.detail ||
+          `Không thể hoàn thành phiếu ${transferCode}`
+      );
+    } finally {
+      setCompleting(false);
+    }
+  };
 
   const loadTransfers = async () => {
     try {
@@ -146,6 +183,8 @@ export default function WarehouseTransferPage() {
   };
 
   const handleReject = async (transfer) => {
+    if (rejecting || completing) return;
+
     if (!canDeleteAdmin) {
       alert(
         'Bạn cần quyền "delete_warehouse_admin" để từ chối phiếu đã hoàn thành'
@@ -163,14 +202,32 @@ export default function WarehouseTransferPage() {
       return;
     }
 
+    const transferCode = getTransferCode(transfer) || transfer.id;
+
     const confirmed = window.confirm(
-      `Bạn có chắc muốn từ chối phiếu ${getTransferCode(transfer)} không?`
+      `Bạn có chắc chắn muốn từ chối phiếu ${transferCode} không?`
     );
 
     if (!confirmed) return;
 
     try {
       setRejecting(true);
+
+      // Đợi React hiển thị vòng loading và nội dung nút.
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+      // Loading ngẫu nhiên từ 0,7 giây đến 1,5 giây.
+      const randomLoadingTime =
+        Math.floor(Math.random() * (1500 - 700 + 1)) + 700;
+
+      // Hết thời gian loading mới gửi API về backend.
+      await new Promise((resolve) =>
+        setTimeout(resolve, randomLoadingTime)
+      );
 
       await updateWarehouseTransferStatus(
         transfer.id,
@@ -179,13 +236,18 @@ export default function WarehouseTransferPage() {
 
       setSelectedTransfer(null);
       await loadTransfers();
-      alert("Từ chối phiếu điều chuyển thành công");
+
+      alert(`Từ chối phiếu ${transferCode} thành công.`);
     } catch (error) {
-      console.error("REJECT TRANSFER ERROR:", error.response?.data || error);
+      console.error(
+        "REJECT TRANSFER ERROR:",
+        error.response?.data || error
+      );
+
       alert(
         error.response?.data?.message ||
           error.response?.data?.detail ||
-          "Từ chối phiếu điều chuyển thất bại"
+          `Không thể từ chối phiếu ${transferCode}`
       );
     } finally {
       setRejecting(false);
@@ -271,6 +333,7 @@ export default function WarehouseTransferPage() {
                   className="delete-toolbar-btn"
                   disabled={
                     rejecting ||
+                    completing ||
                     !selectedRow ||
                     selectedRow.status !== "COMPLETED"
                   }
@@ -281,8 +344,15 @@ export default function WarehouseTransferPage() {
                       : ""
                   }
                 >
-                  <RiCloseCircleLine />
-                  <span>{rejecting ? "Đang từ chối..." : "Từ chối"}</span>
+                  {rejecting ? (
+                    <RiLoader4Line className="transfer-action-loading-icon" />
+                  ) : (
+                    <RiCloseCircleLine />
+                  )}
+
+                  <span>
+                    {rejecting ? "Đang từ chối..." : "Từ chối"}
+                  </span>
                 </button>
               )}
 
@@ -290,11 +360,23 @@ export default function WarehouseTransferPage() {
                 <button
                   type="button"
                   className="complete-toolbar-btn"
-                  disabled={!selectedRow || selectedRow.status !== "PENDING"}
+                  disabled={
+                    completing ||
+                    rejecting ||
+                    !selectedRow ||
+                    selectedRow.status !== "PENDING"
+                  }
                   onClick={() => handleComplete(selectedRow)}
                 >
-                  <RiCheckboxCircleLine />
-                  <span>Hoàn thành</span>
+                  {completing ? (
+                    <RiLoader4Line className="transfer-action-loading-icon" />
+                  ) : (
+                    <RiCheckboxCircleLine />
+                  )}
+
+                  <span>
+                    {completing ? "Đang hoàn thành..." : "Hoàn thành"}
+                  </span>
                 </button>
               )}
 

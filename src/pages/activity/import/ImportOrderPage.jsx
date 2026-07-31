@@ -17,6 +17,7 @@ import {
   RiEdit2Line,
   RiDeleteBin6Line,
   RiCheckboxCircleLine,
+  RiLoader4Line,
 } from "react-icons/ri";
 
 import {
@@ -38,6 +39,7 @@ function ImportOrderPage() {
   const [detailRows, setDetailRows] = useState([]);
   const [selectedReceiptDetail, setSelectedReceiptDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [openActionId, setOpenActionId] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
   const [filters, setFilters] = useState(getDefaultImportOrderFilters());
@@ -298,59 +300,68 @@ const fetchImportOrders = async (customParams = {}) => {
     );
 
     const handleCompleteReceipt = async (row) => {
-      const confirmed = window.confirm(
-        `Bạn có chắc muốn hoàn thành phiếu ${row.code || row.invoice_code || ""} không?`
-      );
-      if (!confirmed) return;
-      try {
-        await updateWarehouseReceiptStatus(row.id, { status: "COMPLETED" });
-        setOpenActionId(null);
-        await fetchImportOrders();
-        alert("Hoàn thành phiếu nhập thành công");
-      } catch (error) {
-        console.error("COMPLETE RECEIPT ERROR:", error.response?.data || error);
-        alert(
-          error.response?.data?.message ||
-            error.response?.data?.detail ||
-            "Hoàn thành phiếu nhập thất bại"
-        );
-      }
-    };
+      if (completing) return;
 
-    const handleCompleteSelectedReceipts = async () => {
-      const completable = filteredImportOrders.filter(
-        (r) => selectedIds.includes(r.id) && r.status !== "COMPLETED"
-      );
-      const skipped = selectedIds.length - completable.length;
-
-      if (completable.length === 0) {
-        alert("Không có phiếu nào có thể hoàn thành (tất cả đã hoàn thành).");
+      if (!row?.id) {
+        alert("Vui lòng chọn phiếu cần hoàn thành");
         return;
       }
 
-      const msg =
-        skipped > 0
-          ? `Hoàn thành ${completable.length} phiếu (bỏ qua ${skipped} phiếu đã hoàn thành)?`
-          : `Bạn có chắc muốn hoàn thành ${completable.length} phiếu nhập đã chọn không?`;
-      if (!window.confirm(msg)) return;
+      if (row.status === "COMPLETED") {
+        alert("Phiếu đã hoàn thành.");
+        return;
+      }
 
-      const results = await Promise.allSettled(
-        completable.map((r) =>
-          updateWarehouseReceiptStatus(r.id, { status: "COMPLETED" })
-        )
+      const receiptCode = row.code || row.invoice_code || row.id;
+
+      const confirmed = window.confirm(
+        `Bạn có chắc chắn muốn hoàn thành phiếu ${receiptCode} không?`
       );
-      const failed = results.filter((r) => r.status === "rejected");
 
-      setSelectedIds([]);
-      await fetchImportOrders();
+      if (!confirmed) return;
 
-      if (failed.length === 0) {
-        alert(`Hoàn thành ${completable.length} phiếu nhập thành công`);
-      } else {
-        alert(
-          `Hoàn thành ${completable.length - failed.length}/${completable.length} thành công. ` +
-          `${failed.length} phiếu thất bại.`
+      try {
+        setCompleting(true);
+
+        // Đợi React hiển thị vòng loading và nội dung nút.
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
+          });
+        });
+
+        // Loading ngẫu nhiên từ 0,7 giây đến 1,5 giây.
+        const randomLoadingTime =
+          Math.floor(Math.random() * (1500 - 700 + 1)) + 700;
+
+        // Hết thời gian loading mới gửi API về backend.
+        await new Promise((resolve) =>
+          setTimeout(resolve, randomLoadingTime)
         );
+
+        await updateWarehouseReceiptStatus(
+          row.id,
+          { status: "COMPLETED" }
+        );
+
+        setOpenActionId(null);
+        setSelectedIds([]);
+        await fetchImportOrders();
+
+        alert(`Hoàn thành phiếu ${receiptCode} thành công.`);
+      } catch (error) {
+        console.error(
+          "COMPLETE RECEIPT ERROR:",
+          error.response?.data || error
+        );
+
+        alert(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            `Không thể hoàn thành phiếu ${receiptCode}`
+        );
+      } finally {
+        setCompleting(false);
       }
     };
   const handleDeleteReceipt = async (row) => {
@@ -558,6 +569,20 @@ const fetchImportOrders = async (customParams = {}) => {
     setTopPaneHeight(null);
   };
 
+  const selectedCheckboxRow =
+    selectedIds.length === 1
+      ? filteredImportOrders.find((row) => row.id === selectedIds[0]) || null
+      : null;
+
+  const completeActionRow =
+    selectedIds.length === 1 ? selectedCheckboxRow : selectedRow;
+
+  const isCompleteButtonDisabled =
+    completing ||
+    selectedIds.length > 1 ||
+    !completeActionRow ||
+    completeActionRow.status === "COMPLETED";
+
   return (
     <div className="warehouse-import-page">
       <div className="warehouse-import-toolbar">
@@ -651,24 +676,36 @@ const fetchImportOrders = async (customParams = {}) => {
           {canDo("complete_warehouse_receipt") && (
             <button
               className="complete-toolbar-btn"
-              disabled={selectedIds.length > 1 ? false : !selectedRow}
+              disabled={isCompleteButtonDisabled}
+              title={
+                selectedIds.length > 1
+                  ? "Chỉ được hoàn thành 1 phiếu tại một thời điểm"
+                  : completeActionRow?.status === "COMPLETED"
+                  ? "Phiếu đã hoàn thành"
+                  : ""
+              }
               onClick={() => {
                 if (selectedIds.length > 1) {
-                  handleCompleteSelectedReceipts();
+                  alert("Chỉ được hoàn thành 1 phiếu tại một thời điểm");
                   return;
                 }
-                if (!selectedRow) {
+
+                if (!completeActionRow) {
                   alert("Vui lòng chọn phiếu cần hoàn thành");
                   return;
                 }
-                handleCompleteReceipt(selectedRow);
+
+                handleCompleteReceipt(completeActionRow);
               }}
             >
-              <RiCheckboxCircleLine />
+              {completing ? (
+                <RiLoader4Line className="import-action-loading-icon" />
+              ) : (
+                <RiCheckboxCircleLine />
+              )}
+
               <span>
-                {selectedIds.length > 1
-                  ? `Hoàn thành (${selectedIds.length})`
-                  : "Hoàn thành"}
+                {completing ? "Đang hoàn thành..." : "Hoàn thành"}
               </span>
             </button>
           )}
@@ -730,7 +767,7 @@ const fetchImportOrders = async (customParams = {}) => {
                       onChange={handleToggleAll}
                   />
                 </th>
-                <th>Số hóa đơn</th>
+                <th>Số phiếu nhập kho</th>
                 <th>Tình trạng thực hiện</th>
                 <th>Ngày nhập kho</th>
                 <th>Kho nhập</th>

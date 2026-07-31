@@ -12,6 +12,7 @@ import {
   RiSave3Line,
   RiCheckboxCircleLine,
   RiPrinterLine,
+  RiLoader4Line,
 } from "react-icons/ri";
 
 function WarehouseOrderRelease() {
@@ -41,6 +42,7 @@ function WarehouseOrderRelease() {
 
   const [releaseId, setReleaseId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [fillActualQuantity, setFillActualQuantity] = useState(false);
 
   const [headerData, setHeaderData] = useState({
@@ -288,6 +290,8 @@ function WarehouseOrderRelease() {
   };
 
   const handleCompleteRelease = async () => {
+    if (completing) return;
+
     if (!canComplete && !canSaveActual) {
       alert("Bạn không có quyền hoàn thành xuất kho");
       return;
@@ -295,24 +299,57 @@ function WarehouseOrderRelease() {
 
     if (!validateBeforeSave()) return;
 
+    const voucherCode = headerData.code || id || releaseId;
+
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn hoàn thành phiếu ${voucherCode} không?`
+    );
+
+    if (!confirmed) return;
+
     try {
+      setCompleting(true);
+
+      // Đợi React render vòng loading và chữ "Đang hoàn thành..."
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+      // Random từ 0,7 giây đến 1,5 giây
+      const randomLoadingTime =
+        Math.floor(Math.random() * (1500 - 700 + 1)) + 700;
+
+      // Loading xong mới bắt đầu gửi API
+      await new Promise((resolve) =>
+        setTimeout(resolve, randomLoadingTime)
+      );
+
       const payload = buildPayload();
 
-      // lưu SL thực xuất trước
+      // Lưu số lượng thực xuất
       await updateReleaseOrder(releaseId, payload);
 
-      // sau đó hoàn thành xuất kho
+      // Sau đó mới hoàn thành phiếu
       await completeReleaseOrder(releaseId);
 
-      alert("Hoàn thành xuất kho thành công");
+      alert(`Hoàn thành phiếu ${voucherCode} thành công.`);
+
       navigate("/dashboard/activity/export/release");
     } catch (error) {
-      console.error("COMPLETE RELEASE ERROR:", error.response?.data || error);
+      console.error(
+        "COMPLETE RELEASE ERROR:",
+        error.response?.data || error
+      );
+
       alert(
         error.response?.data?.message ||
           error.response?.data?.detail ||
-          "Hoàn thành xuất kho thất bại"
+          `Không thể hoàn thành phiếu ${voucherCode}`
       );
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -570,9 +607,22 @@ function WarehouseOrderRelease() {
             )}
 
             {!isPrintMode && (canComplete || canSaveActual) && (
-                <button className="complete-btn" onClick={handleCompleteRelease}>
-                <RiCheckboxCircleLine />
-                Hoàn thành
+                <button
+                  className="complete-btn"
+                  onClick={handleCompleteRelease}
+                  disabled={completing}
+                >
+                  {completing ? (
+                    <>
+                      <RiLoader4Line className="complete-loading-icon" />
+                      Đang hoàn thành...
+                    </>
+                  ) : (
+                    <>
+                      <RiCheckboxCircleLine />
+                      Hoàn thành
+                    </>
+                  )}
                 </button>
             )}
         </div>
