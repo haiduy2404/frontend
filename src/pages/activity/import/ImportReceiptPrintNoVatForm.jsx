@@ -13,7 +13,8 @@ function ImportReceiptPrintNoVatForm() {
 
   const location = useLocation();
   const signerThuKhoFromInput = location.state?.signerThuKho || "";
-
+  const attachedDocumentNumber =
+    location.state?.attachedDocumentNumber || "";
   const [receipt, setReceipt] = useState(null);
   const [loading, setLoading] = useState(false);
   const [metadataMap, setMetadataMap] = useState({});
@@ -439,7 +440,10 @@ const signerGiamDoc = getMetadataValue("GIÁM ĐỐC");
             </div>
 
             <div className="receipt-attachment-row">
-                 Số chứng từ gốc kèm theo: ...
+              Số chứng từ gốc kèm theo:{" "}
+              <strong>
+                {attachedDocumentNumber || "........................"}
+              </strong>
             </div>
 
               <div className="receipt-signature-row">

@@ -67,6 +67,8 @@ function ImportOrderDetailPage() {
     const [transferBankAccountNumber, setTransferBankAccountNumber] = useState("");
     const [showReceiptPrintModal, setShowReceiptPrintModal] = useState(false);
     const [receiptWarehouseKeeper, setReceiptWarehouseKeeper] = useState("");
+    const [receiptAttachedDocumentNumber, setReceiptAttachedDocumentNumber] =
+      useState("");
     const [showAddGoodsModal, setShowAddGoodsModal] = useState(false);
     const [deletedItems, setDeletedItems] = useState([]);
     const [companyId, setCompanyId] = useState(null);
@@ -1526,34 +1528,36 @@ const handleOpenTransferPrint = () => {
     }
 
     setReceiptWarehouseKeeper("");
+    setReceiptAttachedDocumentNumber("");
     setShowReceiptPrintModal(true);
   };
 
   const handleConfirmReceiptPrint = () => {
-  if (!receiptWarehouseKeeper.trim()) {
-    alert("Vui lòng nhập người thủ kho");
-    return;
-  }
+    if (!receiptWarehouseKeeper.trim()) {
+      alert("Vui lòng nhập người thủ kho");
+      return;
+    }
+
+    const printState = {
+      signerThuKho: receiptWarehouseKeeper.trim(),
+      attachedDocumentNumber: receiptAttachedDocumentNumber.trim(),
+    };
 
     const hasVat = items.some(
-    (item) => Number(item.vat || 0) > 0
-  );
+      (item) => Number(item.vat || 0) > 0
+    );
 
-  if (hasVat) {
-    navigate(`/dashboard/activity/import/order/${id}/receipt-print-vat`, {
-      state: {
-        signerThuKho: receiptWarehouseKeeper.trim(),
-      },
+    if (hasVat) {
+      navigate(`/dashboard/activity/import/order/${id}/receipt-print-vat`, {
+        state: printState,
+      });
+      return;
+    }
+
+    navigate(`/dashboard/activity/import/order/${id}/receipt-print-no-vat`, {
+      state: printState,
     });
-    return;
-  }
-
-  navigate(`/dashboard/activity/import/order/${id}/receipt-print-no-vat`, {
-    state: {
-      signerThuKho: receiptWarehouseKeeper.trim(),
-    },
-  });
-};
+  };
 
   const handleSelectTransferBank = (bankId) => {
     setTransferBankId(bankId);
@@ -2446,6 +2450,15 @@ const handleOpenTransferPrint = () => {
                     value={receiptWarehouseKeeper}
                     onChange={(e) => setReceiptWarehouseKeeper(e.target.value)}
                     placeholder="Nhập tên người thủ kho"
+                  />
+
+                  <label>Số chứng từ kèm theo</label>
+                  <input
+                    value={receiptAttachedDocumentNumber}
+                    onChange={(e) =>
+                      setReceiptAttachedDocumentNumber(e.target.value)
+                    }
+                    placeholder="Nhập số chứng từ kèm theo"
                   />
                 </div>
 

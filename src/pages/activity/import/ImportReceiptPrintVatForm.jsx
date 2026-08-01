@@ -16,7 +16,8 @@ function ImportReceiptPrintVatForm() {
 
   const location = useLocation();
   const signerThuKhoFromInput = location.state?.signerThuKho || "";
-
+  const attachedDocumentNumber =
+    location.state?.attachedDocumentNumber || "";
   const normalizeKey = (value) => {
     return String(value || "").trim().toLowerCase();
   };
@@ -548,7 +549,10 @@ const numberToVietnameseText = (value) => {
             </div>
 
             <div className="receipt-attachment-row">
-                 Số chứng từ gốc kèm theo: ...
+              Số chứng từ gốc kèm theo:{" "}
+              <strong>
+                {attachedDocumentNumber || "........................"}
+              </strong>
             </div>
 
             <div className="receipt-signature-row">
@@ -724,7 +728,10 @@ const numberToVietnameseText = (value) => {
                   </div>
 
                   <div className="receipt-attachment-row">
-                      Số chứng từ gốc kèm theo: ...
+                    Số chứng từ gốc kèm theo:{" "}
+                    <strong>
+                      {attachedDocumentNumber || "........................"}
+                    </strong>
                   </div>
 
                   <div className="receipt-signature-row">
