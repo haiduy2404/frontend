@@ -470,3 +470,25 @@
   font-size: 16px;
   line-height: 22px;
 }
+
+.inspection-draft-btn {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inspection-draft-btn:hover:not(:disabled) {
+  background: #eff6ff;
+}
+
+.inspection-draft-btn:disabled,
+.inspection-save-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

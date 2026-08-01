@@ -56,6 +56,25 @@ function InspectionPage() {
     return numbers;
   };
 
+  const getInspectionExecutionStatus = (row) => {
+    const status = String(row?.status || "").toUpperCase();
+
+    switch (status) {
+      case "COMPLETED":
+        return {
+          isCompleted: true,
+          label: "Đã hoàn thành",
+        };
+
+      case "RECEIVED":
+      default:
+        return {
+          isCompleted: false,
+          label: "Chờ kiểm nghiệm",
+        };
+    }
+  };
+
   const filteredInspections = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
@@ -128,6 +147,7 @@ const fetchInspections = async (customParams = {}) => {
       search,
       page,
       page_size: pageSize,
+      in_testing_page: 1,
       ...filterParams,
       ...customParams,
     });
@@ -347,6 +367,7 @@ const fetchInspections = async (customParams = {}) => {
                   />
                 </th>
                 <th>Số biên bản kiểm nghiệm</th>
+                <th>Tình trạng thực hiện</th>
                 <th>Tham chiếu phiếu nhập kho</th>
                 <th>Ngày nhập kho</th>
               </tr>
@@ -370,6 +391,7 @@ const fetchInspections = async (customParams = {}) => {
                 null;
 
                 const inspectionCode = getInspectionCodeFromReceiptCode(receiptCode);
+                const executionStatus =getInspectionExecutionStatus(row);
 
                 return (
                 <tr
@@ -402,6 +424,18 @@ const fetchInspections = async (customParams = {}) => {
                     {inspectionCode}
                     </td>
 
+                    <td>
+                    <span
+                      className={`inspection-execution-status ${
+                        executionStatus.isCompleted
+                          ? "completed"
+                          : "waiting"
+                      }`}
+                    >
+                      {executionStatus.label}
+                    </span>
+                  </td>
+
                     <td>{receiptCode}</td>
                     <td>{formatDate(receiptDate)}</td>
                 </tr>
@@ -410,7 +444,7 @@ const fetchInspections = async (customParams = {}) => {
 
               {!loading && filteredInspections.length === 0 && (
                 <tr>
-                  <td className="inspection-empty-row" colSpan={4}>
+                  <td className="inspection-empty-row" colSpan={5}>
                     Không có biên bản kiểm nghiệm
                   </td>
                 </tr>

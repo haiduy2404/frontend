@@ -6,6 +6,7 @@ import {
   getWarehouseReceiptsPageable,
   getWarehouseReceiptByCode,
   updateWarehouseReceiptInventoriesActual,
+  updateWarehouseReceiptStatus,
 } from "../../../services/warehouseReceiptService";
 
 import { useAuth } from "../../../contexts/AuthContext";
@@ -25,9 +26,20 @@ function InspectionDetailPage() {
 
   const [receiptOptions, setReceiptOptions] = useState([]);
   const [detailRows, setDetailRows] = useState([]);
+  const [receiptDetail, setReceiptDetail] = useState(null);
+  const [savingAction, setSavingAction] = useState("");
   const [loadingReceipts, setLoadingReceipts] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const canUpdateInspection = canDo("update_warehouse_receipt_items");
+  const canUpdateInspection = canDo(
+  "update_warehouse_receipt_items"
+);
+
+  const canCompleteInspection = canDo(
+    "complete_warehouse_receipt"
+  );
+
+  const isReceiptCompleted =
+    String(receiptDetail?.status || "").toUpperCase() === "COMPLETED";
   
 
   const [form, setForm] = useState({
@@ -87,14 +99,21 @@ function InspectionDetailPage() {
       const response = await getWarehouseReceiptsPageable({
         page: 1,
         page_size: 100,
+        in_testing_page: 1,
       });
 
       const data = unwrapData(response);
-      const results = Array.isArray(data?.results) ? data.results : [];
+      const results = Array.isArray(data?.results)
+        ? data.results
+        : [];
 
       setReceiptOptions(results);
     } catch (error) {
-      console.error("LOAD RECEIPT OPTIONS ERROR:", error.response?.data || error);
+      console.error(
+        "LOAD RECEIPT OPTIONS ERROR:",
+        error.response?.data || error
+      );
+
       alert("Không tải được danh sách phiếu nhập kho");
       setReceiptOptions([]);
     } finally {
@@ -102,71 +121,102 @@ function InspectionDetailPage() {
     }
   };
 
-  const fetchReceiptDetail = async (receiptCode) => {
-    if (!receiptCode) {
-      setDetailRows([]);
-      return;
-    }
+const fetchReceiptDetail = async (receiptCode) => {
+  if (!receiptCode) {
+    setReceiptDetail(null);
+    setDetailRows([]);
+    return;
+  }
 
-    try {
-      setLoadingDetail(true);
+  try {
+    setLoadingDetail(true);
 
-      const response = await getWarehouseReceiptByCode(receiptCode);
-      const data = unwrapData(response);
+    const response = await getWarehouseReceiptByCode(receiptCode);
+    const data = unwrapData(response);
 
-      const rows =
-        data?.inventory_lines ||
-        data?.inventory ||
-        data?.items ||
-        data?.details ||
-        [];
+    setReceiptDetail(data);
 
-        const mappedRows = Array.isArray(rows)
-        ? rows.map((item, index) => {
-            const originalQuantity =
-                item.original_quantity ||
-                item.document_quantity ||
-                item.quantity ||
-                0;
+    const rows =
+      data?.inventory_lines ||
+      data?.inventory ||
+      data?.items ||
+      data?.details ||
+      [];
 
-            const acceptedQuantity =
-                item.accepted_quantity !== null &&
-                item.accepted_quantity !== undefined &&
-                item.accepted_quantity !== ""
-                ? item.accepted_quantity
-                : originalQuantity;
+    const mappedRows = Array.isArray(rows)
+      ? rows.map((item, index) => {
+          // BE kiểm tra accepted + rejected theo request_quantity.
+          // Nếu không có request_quantity mới dùng original_quantity.
+          const documentQuantity =
+            item.request_quantity ??
+            item.original_quantity ??
+            item.document_quantity ??
+            item.quantity ??
+            0;
 
-            const rejectedQuantity =
-                item.rejected_quantity !== null &&
-                item.rejected_quantity !== undefined &&
-                item.rejected_quantity !== ""
-                ? item.rejected_quantity
-                : parseNumber(originalQuantity) - parseNumber(acceptedQuantity);
+          const acceptedQuantity =
+            item.accepted_quantity !== null &&
+            item.accepted_quantity !== undefined &&
+            item.accepted_quantity !== ""
+              ? item.accepted_quantity
+              : documentQuantity;
 
-            return {
-                id: item.inventory_id || item.goods_id || index + 1,
-                inventory_id: item.inventory_id || "",
-                goods_id: item.goods_id || "",
-                goods_code: item.goods_code || "",
-                goods_name: item.goods_name || "",
-                unit_name: item.unit_name || item.unit || "",
+          const rejectedQuantity =
+            item.rejected_quantity !== null &&
+            item.rejected_quantity !== undefined &&
+            item.rejected_quantity !== ""
+              ? item.rejected_quantity
+              : parseNumber(documentQuantity) -
+                parseNumber(acceptedQuantity);
 
-                original_quantity: formatViNumber(originalQuantity, 2),
-                accepted_quantity: formatViNumber(acceptedQuantity, 2),
-                rejected_quantity: formatViNumber(rejectedQuantity, 2),
-            };
-            })
-        : [];
+          return {
+            id:
+              item.inventory_id ||
+              item.goods_id ||
+              index + 1,
 
-      setDetailRows(mappedRows);
-    } catch (error) {
-      console.error("LOAD RECEIPT DETAIL ERROR:", error.response?.data || error);
-      alert("Không tải được chi tiết phiếu nhập kho");
-      setDetailRows([]);
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
+            inventory_id: item.inventory_id || "",
+            goods_id: item.goods_id || "",
+            goods_code: item.goods_code || "",
+            goods_name: item.goods_name || "",
+            unit_name:
+              item.unit_name ||
+              item.unit ||
+              "",
+
+            original_quantity: formatViNumber(
+              documentQuantity,
+              2
+            ),
+
+            accepted_quantity: formatViNumber(
+              acceptedQuantity,
+              2
+            ),
+
+            rejected_quantity: formatViNumber(
+              rejectedQuantity,
+              2
+            ),
+          };
+        })
+      : [];
+
+    setDetailRows(mappedRows);
+  } catch (error) {
+    console.error(
+      "LOAD RECEIPT DETAIL ERROR:",
+      error.response?.data || error
+    );
+
+    alert("Không tải được chi tiết phiếu nhập kho");
+
+    setReceiptDetail(null);
+    setDetailRows([]);
+  } finally {
+    setLoadingDetail(false);
+  }
+};
 
   useEffect(() => {
     fetchReceiptOptions();
@@ -217,56 +267,171 @@ function InspectionDetailPage() {
     );
   };
 
-    const handleSave = async () => {
-      if (!canUpdateInspection) {
-        alert("Bạn không có quyền cập nhật biên bản kiểm nghiệm");
-        return;
+const handleSave = async (isComplete = false) => {
+  if (!canUpdateInspection) {
+    alert("Bạn không có quyền cập nhật biên bản kiểm nghiệm");
+    return;
+  }
+
+  if (isComplete && !canCompleteInspection) {
+    alert("Bạn không có quyền hoàn thành phiếu nhập kho");
+    return;
+  }
+
+  if (!form.inspection_code) {
+    alert("Vui lòng nhập số biên bản kiểm nghiệm");
+    return;
+  }
+
+  if (!form.warehouse_receipt_code) {
+    alert("Vui lòng chọn phiếu nhập kho tham chiếu");
+    return;
+  }
+
+  if (!receiptDetail?.id) {
+    alert("Không tìm thấy ID phiếu nhập kho");
+    return;
+  }
+
+  if (isReceiptCompleted) {
+    alert("Phiếu nhập kho này đã hoàn thành");
+    return;
+  }
+
+  if (detailRows.length === 0) {
+    alert("Phiếu nhập kho chưa có chi tiết hàng hóa");
+    return;
+  }
+
+  const invalidRow = detailRows.find((item) => {
+    const documentQuantity = parseNumber(
+      item.original_quantity
+    );
+
+    const acceptedQuantity = parseNumber(
+      item.accepted_quantity
+    );
+
+    const rejectedQuantity = parseNumber(
+      item.rejected_quantity
+    );
+
+    return (
+      acceptedQuantity < 0 ||
+      rejectedQuantity < 0 ||
+      Math.abs(
+        acceptedQuantity +
+          rejectedQuantity -
+          documentQuantity
+      ) > 0.00001
+    );
+  });
+
+  if (invalidRow) {
+    alert(
+      `Số lượng kiểm nghiệm của mã ${
+        invalidRow.goods_code ||
+        invalidRow.goods_name ||
+        ""
+      } không hợp lệ. Tổng số lượng đạt và không đạt phải bằng số lượng theo chứng từ.`
+    );
+
+    return;
+  }
+
+  if (isComplete) {
+    const confirmed = window.confirm(
+      "Bạn có chắc muốn hoàn thành kiểm nghiệm? Phiếu nhập kho sẽ chuyển sang trạng thái Đã hoàn thành và cập nhật tồn kho."
+    );
+
+    if (!confirmed) {
+      return;
     }
-    if (!form.inspection_code) {
-        alert("Vui lòng nhập số biên bản kiểm nghiệm");
-        return;
+  }
+
+  // API inventories-actual chỉ nhận inventories.
+  const payload = {
+    inventories: detailRows.map((item) => ({
+      inventory_id: item.inventory_id,
+
+      accepted_quantity: parseNumber(
+        item.accepted_quantity
+      ),
+
+      rejected_quantity: parseNumber(
+        item.rejected_quantity
+      ),
+    })),
+  };
+
+  console.log(
+    isComplete
+      ? "COMPLETE INSPECTION INVENTORIES PAYLOAD:"
+      : "SAVE INSPECTION DRAFT PAYLOAD:",
+    payload
+  );
+
+  setSavingAction(isComplete ? "complete" : "draft");
+
+  try {
+    // Bước 1: lưu số lượng kiểm nghiệm.
+    await updateWarehouseReceiptInventoriesActual(
+      form.warehouse_receipt_code,
+      payload
+    );
+
+    if (isComplete) {
+      // Bước 2: chỉ nút Hoàn thành mới đổi status phiếu nhập.
+      await updateWarehouseReceiptStatus(
+        receiptDetail.id,
+        {
+          status: "COMPLETED",
+        }
+      );
+
+      alert(
+        "Hoàn thành kiểm nghiệm và cập nhật phiếu nhập kho thành công"
+      );
+
+      navigate("/dashboard/activity/import/inspection");
+      return;
     }
 
-    if (!form.warehouse_receipt_code) {
-        alert("Vui lòng chọn phiếu nhập kho tham chiếu");
-        return;
-    }
+    // Lưu tạm: không gọi API status, tiếp tục ở lại trang.
+    await fetchReceiptDetail(
+      form.warehouse_receipt_code
+    );
 
-    if (detailRows.length === 0) {
-        alert("Phiếu nhập kho chưa có chi tiết hàng hóa");
-        return;
-    }
+    alert("Lưu tạm số liệu kiểm nghiệm thành công");
+  } catch (error) {
+    console.error(
+      isComplete
+        ? "COMPLETE INSPECTION ERROR:"
+        : "SAVE INSPECTION DRAFT ERROR:",
+      error.response?.data || error
+    );
 
-    const payload = {
-        inventories: detailRows.map((item) => ({
-        inventory_id: item.inventory_id,
-        accepted_quantity: parseNumber(item.accepted_quantity),
-        rejected_quantity: parseNumber(item.rejected_quantity),
-        })),
-    };
+    const responseData = error.response?.data;
 
-    console.log("INVENTORIES ACTUAL PAYLOAD:", payload);
+    const message =
+      responseData?.message ||
+      responseData?.detail ||
+      responseData?.status ||
+      responseData?.data?.status ||
+      responseData?.data?.accepted_quantity ||
+      (isComplete
+        ? "Hoàn thành kiểm nghiệm thất bại"
+        : "Lưu tạm kiểm nghiệm thất bại");
 
-    try {
-        await updateWarehouseReceiptInventoriesActual(
-        form.warehouse_receipt_code,
-        payload
-        )
-
-          const checkResponse = await getWarehouseReceiptByCode(form.warehouse_receipt_code);
-          console.log("AFTER SAVE CHECK:", checkResponse?.data || checkResponse);
-
-        alert("Lưu số lượng kiểm nghiệm thành công");
-        navigate("/dashboard/activity/import/inspection");
-    } catch (error) {
-        console.error("SAVE INVENTORIES ACTUAL ERROR:", error.response?.data || error);
-        alert(
-        error.response?.data?.message ||
-            error.response?.data?.detail ||
-            "Lưu số lượng kiểm nghiệm thất bại"
-        );
-    }
-    };
+    alert(
+      typeof message === "string"
+        ? message
+        : JSON.stringify(message)
+    );
+  } finally {
+    setSavingAction("");
+  }
+};
 
   const handleOpenReceiptReference = () => {
     if (!form.warehouse_receipt_code) {
@@ -321,25 +486,53 @@ function InspectionDetailPage() {
           >
             {isPrintMode ? "Quay lại" : "Hủy"}
           </button>
-            {isPrintMode ? (
-              <button
-                type="button"
-                className="inspection-save-btn"
-                onClick={handleOpenWarehouseKeeperModal}
-              >
-                In Biên bản kiểm nghiệm
-              </button>
-            ) : (
-              canUpdateInspection && (
-                <button
-                  type="button"
-                  className="inspection-save-btn"
-                  onClick={handleSave}
-                >
-                  Lưu
-                </button>
-              )
-            )}
+{isPrintMode ? (
+  <button
+    type="button"
+    className="inspection-save-btn"
+    onClick={handleOpenWarehouseKeeperModal}
+  >
+    In Biên bản kiểm nghiệm
+  </button>
+) : (
+  canUpdateInspection && (
+    <>
+      <button
+        type="button"
+        className="inspection-draft-btn"
+        onClick={() => handleSave(false)}
+        disabled={
+          Boolean(savingAction) ||
+          loadingDetail ||
+          isReceiptCompleted
+        }
+      >
+        {savingAction === "draft"
+          ? "Đang lưu..."
+          : "Lưu tạm"}
+      </button>
+
+      {canCompleteInspection && (
+        <button
+          type="button"
+          className="inspection-save-btn"
+          onClick={() => handleSave(true)}
+          disabled={
+            Boolean(savingAction) ||
+            loadingDetail ||
+            isReceiptCompleted
+          }
+        >
+          {savingAction === "complete"
+            ? "Đang hoàn thành..."
+            : isReceiptCompleted
+            ? "Đã hoàn thành"
+            : "Hoàn thành"}
+        </button>
+      )}
+    </>
+  )
+)}
         </div>
       </div>
 
@@ -459,7 +652,12 @@ function InspectionDetailPage() {
                         onChange={(e) =>
                           handleChangeAcceptedQuantity(item.id, e.target.value)
                         }
-                        disabled={isPrintMode || !canUpdateInspection}
+                        disabled={
+                          isPrintMode ||
+                          !canUpdateInspection ||
+                          isReceiptCompleted ||
+                          Boolean(savingAction)
+                        }
                       />
                     </td>
 

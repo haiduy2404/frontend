@@ -299,71 +299,121 @@ const fetchImportOrders = async (customParams = {}) => {
       detailTotalAmount + detailVatTotalAmount
     );
 
-    const handleCompleteReceipt = async (row) => {
-      if (completing) return;
+const handleApproveReceipts = async (rows) => {
+  if (completing) return;
 
-      if (!row?.id) {
-        alert("Vui lòng chọn phiếu cần hoàn thành");
-        return;
-      }
+  const approvalRows = Array.isArray(rows)
+    ? rows.filter(
+        (row) => row?.status === "WAITING_DELIVERY"
+      )
+    : [];
 
-      if (row.status === "COMPLETED") {
-        alert("Phiếu đã hoàn thành.");
-        return;
-      }
+  if (approvalRows.length === 0) {
+    alert(
+      "Vui lòng chọn ít nhất một phiếu đang Chờ nhận hàng"
+    );
+    return;
+  }
 
-      const receiptCode = row.code || row.invoice_code || row.id;
+  const confirmed = window.confirm(
+    approvalRows.length === 1
+      ? `Bạn có chắc muốn trình duyệt phiếu ${
+          approvalRows[0].code ||
+          approvalRows[0].invoice_code ||
+          approvalRows[0].id
+        }?`
+      : `Bạn có chắc muốn trình duyệt ${approvalRows.length} phiếu đã chọn?`
+  );
 
-      const confirmed = window.confirm(
-        `Bạn có chắc chắn muốn hoàn thành phiếu ${receiptCode} không?`
-      );
+  if (!confirmed) return;
 
-      if (!confirmed) return;
+  try {
+    setCompleting(true);
 
-      try {
-        setCompleting(true);
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      });
+    });
 
-        // Đợi React hiển thị vòng loading và nội dung nút.
-        await new Promise((resolve) => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(resolve);
-          });
+    const randomLoadingTime =
+      Math.floor(Math.random() * (1500 - 700 + 1)) + 700;
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, randomLoadingTime)
+    );
+
+    const results = await Promise.allSettled(
+      approvalRows.map((row) =>
+        updateWarehouseReceiptStatus(row.id, {
+          status: "RECEIVED",
+        })
+      )
+    );
+
+    const successRows = [];
+    const failedRows = [];
+
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        successRows.push(approvalRows[index]);
+      } else {
+        failedRows.push({
+          row: approvalRows[index],
+          error: result.reason,
         });
-
-        // Loading ngẫu nhiên từ 0,7 giây đến 1,5 giây.
-        const randomLoadingTime =
-          Math.floor(Math.random() * (1500 - 700 + 1)) + 700;
-
-        // Hết thời gian loading mới gửi API về backend.
-        await new Promise((resolve) =>
-          setTimeout(resolve, randomLoadingTime)
-        );
-
-        await updateWarehouseReceiptStatus(
-          row.id,
-          { status: "COMPLETED" }
-        );
-
-        setOpenActionId(null);
-        setSelectedIds([]);
-        await fetchImportOrders();
-
-        alert(`Hoàn thành phiếu ${receiptCode} thành công.`);
-      } catch (error) {
-        console.error(
-          "COMPLETE RECEIPT ERROR:",
-          error.response?.data || error
-        );
-
-        alert(
-          error.response?.data?.message ||
-            error.response?.data?.detail ||
-            `Không thể hoàn thành phiếu ${receiptCode}`
-        );
-      } finally {
-        setCompleting(false);
       }
-    };
+    });
+
+    setOpenActionId(null);
+    setSelectedIds([]);
+
+    await fetchImportOrders();
+
+    if (failedRows.length === 0) {
+      alert(
+        `Trình duyệt thành công ${successRows.length} phiếu.`
+      );
+      return;
+    }
+
+    const failedCodes = failedRows
+      .map(
+        ({ row }) =>
+          row.code ||
+          row.invoice_code ||
+          row.id
+      )
+      .join(", ");
+
+    failedRows.forEach(({ row, error }) => {
+      console.error(
+        `APPROVE RECEIPT ${
+          row.code || row.id
+        } ERROR:`,
+        error?.response?.data || error
+      );
+    });
+
+    alert(
+      `Trình duyệt thành công ${successRows.length}/${approvalRows.length} phiếu.\nPhiếu thất bại: ${failedCodes}`
+    );
+  } catch (error) {
+    console.error(
+      "APPROVE RECEIPTS ERROR:",
+      error.response?.data || error
+    );
+
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Không thể trình duyệt các phiếu đã chọn"
+    );
+  } finally {
+    setCompleting(false);
+  }
+};
+
   const handleDeleteReceipt = async (row) => {
   const confirmed = window.confirm(
     `Bạn có chắc muốn xóa phiếu ${row.code || row.invoice_code || ""} không?`
@@ -383,31 +433,50 @@ const fetchImportOrders = async (customParams = {}) => {
   }
 };
 
-  const isAllChecked =
-    filteredImportOrders.length > 0 &&
-    filteredImportOrders.every((row) => selectedIds.includes(row.id));
+const waitingDeliveryRows =
+  filteredImportOrders.filter(
+    (row) => row.status === "WAITING_DELIVERY"
+  );
 
-  const handleToggleAll = (e) => {
-    const checked = e.target.checked;
+const isAllChecked =
+  waitingDeliveryRows.length > 0 &&
+  waitingDeliveryRows.every((row) =>
+    selectedIds.includes(row.id)
+  );
 
-    if (checked) {
-      setSelectedIds(filteredImportOrders.map((row) => row.id));
-    } else {
-      setSelectedIds([]);
+const handleToggleAll = (e) => {
+  const checked = e.target.checked;
+
+  if (!checked) {
+    setSelectedIds([]);
+    return;
+  }
+
+  if (waitingDeliveryRows.length === 0) {
+    alert("Không có phiếu Chờ nhận hàng để trình duyệt");
+    return;
+  }
+
+  setSelectedIds(
+    waitingDeliveryRows.map((row) => row.id)
+  );
+};
+
+const handleToggleOne = (e, row) => {
+  e.stopPropagation();
+
+  if (row.status !== "WAITING_DELIVERY") {
+    return;
+  }
+
+  setSelectedIds((prev) => {
+    if (prev.includes(row.id)) {
+      return prev.filter((id) => id !== row.id);
     }
-  };
 
-  const handleToggleOne = (e, rowId) => {
-    e.stopPropagation();
-
-    setSelectedIds((prev) => {
-      if (prev.includes(rowId)) {
-        return prev.filter((id) => id !== rowId);
-      }
-
-      return [...prev, rowId];
-    });
-  };
+    return [...prev, row.id];
+  });
+};
 
     const handleDeleteSelectedReceipts = async () => {
     if (selectedIds.length === 0) {
@@ -569,19 +638,27 @@ const fetchImportOrders = async (customParams = {}) => {
     setTopPaneHeight(null);
   };
 
-  const selectedCheckboxRow =
-    selectedIds.length === 1
-      ? filteredImportOrders.find((row) => row.id === selectedIds[0]) || null
-      : null;
+  const selectedApprovalRows = selectedIds
+  .map((selectedRowId) =>
+    filteredImportOrders.find(
+      (row) => row.id === selectedRowId
+    )
+  )
+  .filter(
+    (row) =>
+      row &&
+      row.status === "WAITING_DELIVERY"
+  );
 
-  const completeActionRow =
-    selectedIds.length === 1 ? selectedCheckboxRow : selectedRow;
+const approvalRows =
+  selectedApprovalRows.length > 0
+    ? selectedApprovalRows
+    : selectedRow?.status === "WAITING_DELIVERY"
+    ? [selectedRow]
+    : [];
 
-  const isCompleteButtonDisabled =
-    completing ||
-    selectedIds.length > 1 ||
-    !completeActionRow ||
-    completeActionRow.status === "COMPLETED";
+const isApproveButtonDisabled =
+  completing || approvalRows.length === 0;
 
   return (
     <div className="warehouse-import-page">
@@ -673,42 +750,41 @@ const fetchImportOrders = async (customParams = {}) => {
             </button>
           )}
 
-          {canDo("complete_warehouse_receipt") && (
-            <button
-              className="complete-toolbar-btn"
-              disabled={isCompleteButtonDisabled}
-              title={
-                selectedIds.length > 1
-                  ? "Chỉ được hoàn thành 1 phiếu tại một thời điểm"
-                  : completeActionRow?.status === "COMPLETED"
-                  ? "Phiếu đã hoàn thành"
-                  : ""
-              }
-              onClick={() => {
-                if (selectedIds.length > 1) {
-                  alert("Chỉ được hoàn thành 1 phiếu tại một thời điểm");
-                  return;
-                }
+{canDo("complete_warehouse_receipt") && (
+  <button
+    className="complete-toolbar-btn"
+    disabled={isApproveButtonDisabled}
+    title={
+      approvalRows.length === 0
+        ? "Chỉ phiếu Chờ nhận hàng mới được trình duyệt"
+        : `Trình duyệt ${approvalRows.length} phiếu`
+    }
+    onClick={() => {
+      if (approvalRows.length === 0) {
+        alert(
+          "Vui lòng chọn ít nhất một phiếu đang Chờ nhận hàng"
+        );
+        return;
+      }
 
-                if (!completeActionRow) {
-                  alert("Vui lòng chọn phiếu cần hoàn thành");
-                  return;
-                }
+      handleApproveReceipts(approvalRows);
+    }}
+  >
+    {completing ? (
+      <RiLoader4Line className="import-action-loading-icon" />
+    ) : (
+      <RiCheckboxCircleLine />
+    )}
 
-                handleCompleteReceipt(completeActionRow);
-              }}
-            >
-              {completing ? (
-                <RiLoader4Line className="import-action-loading-icon" />
-              ) : (
-                <RiCheckboxCircleLine />
-              )}
-
-              <span>
-                {completing ? "Đang hoàn thành..." : "Hoàn thành"}
-              </span>
-            </button>
-          )}
+    <span>
+      {completing
+        ? `Đang trình duyệt ${approvalRows.length} phiếu...`
+        : selectedIds.length > 0
+        ? `Trình duyệt (${selectedIds.length})`
+        : "Trình duyệt"}
+    </span>
+  </button>
+)}
 
           {canDo("delete_warehouse_receipt") && (
             <button
@@ -761,11 +837,16 @@ const fetchImportOrders = async (customParams = {}) => {
             <thead>
               <tr>
                 <th className="checkbox-col">
-                  <input
-                      type="checkbox"
-                      checked={isAllChecked}
-                      onChange={handleToggleAll}
-                  />
+                <input
+                  type="checkbox"
+                  checked={isAllChecked}
+                  disabled={
+                    completing ||
+                    waitingDeliveryRows.length === 0
+                  }
+                  title="Chọn tất cả phiếu Chờ nhận hàng"
+                  onChange={handleToggleAll}
+                />
                 </th>
                 <th>Số phiếu nhập kho</th>
                 <th>Tình trạng thực hiện</th>
@@ -789,12 +870,21 @@ const fetchImportOrders = async (customParams = {}) => {
               }}
                 >
                   <td className="checkbox-col">
-                    <input
-                        type="checkbox"
-                        checked={selectedIds.includes(row.id)}
-                        onChange={(e) => handleToggleOne(e, row.id)}
-                        onClick={(e) => e.stopPropagation()}
-                    />
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(row.id)}
+                    disabled={
+                      completing ||
+                      row.status !== "WAITING_DELIVERY"
+                    }
+                    title={
+                      row.status !== "WAITING_DELIVERY"
+                        ? "Chỉ phiếu Chờ nhận hàng mới được chọn"
+                        : ""
+                    }
+                    onChange={(e) => handleToggleOne(e, row)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                   </td>
 
                   <td
@@ -1091,12 +1181,22 @@ const fetchImportOrders = async (customParams = {}) => {
       onClick={(e) => e.stopPropagation()}
     >
       <button
+        disabled={
+          importOrders.find(
+            (item) => item.id === openActionId
+          )?.status !== "WAITING_DELIVERY"
+        }
         onClick={() => {
-          const row = importOrders.find((item) => item.id === openActionId);
-          if (row) handleCompleteReceipt(row);
+          const row = importOrders.find(
+            (item) => item.id === openActionId
+          );
+
+          if (row) {
+            handleApproveReceipts([row]);
+          }
         }}
       >
-        Hoàn thành
+        Trình duyệt
       </button>
 
       <button

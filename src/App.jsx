@@ -7,6 +7,7 @@ import {
   useNavigate,
   Outlet,
 } from "react-router-dom";
+import TheKhoExportPage from "./pages/report/TheKhoExportPage";
 import ReleaseOrderPage from "./pages/activity/release/ReleaseOrderPage";
 import ReleaseOrderDetailPage from "./pages/activity/release/ReleaseOrderDetailPage";
 import LoginPage from "./pages/LoginPage";
@@ -105,6 +106,12 @@ function App() {
                 path="report/import-company"
                 element={<WarehouseImportCompanyReportPage />}
               />
+
+              <Route
+                path="report/stock-card"
+                element={<TheKhoExportPage />}
+              />
+              
               <Route
                 path="report/beginning-inventory"
                 element={<BeginningInventoryPage />}
