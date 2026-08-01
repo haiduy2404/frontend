@@ -98,6 +98,26 @@ function ImportReceiptPrintNoVatForm() {
     return <div className="import-receipt-print-loading">Đang tải dữ liệu...</div>;
   }
 
+  const formatViUnitPrice = (value) => {
+  const rawValue = String(value ?? "0").trim();
+
+  // Lấy phần thập phân và bỏ các số 0 vô nghĩa ở cuối
+  const decimalPart = rawValue.includes(".")
+    ? rawValue.split(".")[1].replace(/0+$/, "")
+    : "";
+
+  // Có trên 3 chữ số thập phân thực tế thì hiển thị 5,
+  // còn lại luôn hiển thị đủ 3 chữ số
+  const fractionDigits = decimalPart.length > 3 ? 5 : 3;
+
+  const number = Number(rawValue || 0);
+
+  return number.toLocaleString("vi-VN", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+};
+
   const formatViNumber = (value, fractionDigits = 2) => {
   const number = Number(value || 0);
 
@@ -393,7 +413,7 @@ const signerGiamDoc = getMetadataValue("GIÁM ĐỐC");
                     </td>
 
                     <td className="receipt-money-cell">
-                        {line ? formatViNumber(unitPrice, 0) : ""}
+                      {line ? formatViUnitPrice(line?.unit_price) : ""}
                     </td>
 
                     <td className="receipt-money-cell">
