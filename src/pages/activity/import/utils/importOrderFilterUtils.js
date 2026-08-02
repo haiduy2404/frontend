@@ -1,5 +1,5 @@
 export const getDefaultImportOrderFilters = () => ({
-  time_type: "this_month",
+  time_type: "last_3_months",
   start_date: "",
   end_date: "",
   status: "",
@@ -15,11 +15,11 @@ const formatDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-export const getMonthDateRange = (date = new Date()) => {
+export const getLast3MonthsDateRange = (date = new Date()) => {
   const year = date.getFullYear();
   const month = date.getMonth();
 
-  const startDate = new Date(year, month, 1);
+  const startDate = new Date(year, month - 2, 1);
   const endDate = new Date(year, month + 1, 0);
 
   return {
@@ -67,8 +67,8 @@ export const getQuarterDateRange = (
 
 export const buildImportOrderFilterParams = (filters = {}) => {
   const dateParams =
-    filters.time_type === "this_month"
-      ? getMonthDateRange()
+    filters.time_type === "last_3_months"
+      ? getLast3MonthsDateRange()
       : filters.time_type === "custom"
       ? {
           ...(filters.start_date ? { start_date: filters.start_date } : {}),

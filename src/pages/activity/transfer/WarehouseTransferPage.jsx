@@ -27,7 +27,7 @@ export default function WarehouseTransferPage() {
   const [transfers, setTransfers] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
-  const [timeRange, setTimeRange] = useState("month");
+  const [timeRange, setTimeRange] = useState("last_3_months");
   const [pageSize, setPageSize] = useState(20);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
   const [rejecting, setRejecting] = useState(false);
@@ -139,12 +139,24 @@ export default function WarehouseTransferPage() {
 
   const loadTransfers = async () => {
     try {
-      const data = await getWarehouseTransfersPageable({
+      const params = {
         search: keyword,
         status: status || undefined,
-        time_range: timeRange,
         page_size: pageSize,
-      });
+      };
+
+      if (timeRange === "last_3_months") {
+        const now = new Date();
+        const startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+        params.start_date = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
+        params.end_date = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+      } else {
+        params.time_range = timeRange;
+      }
+
+      const data = await getWarehouseTransfersPageable(params);
 
       const results = unwrapList(data);
       setTransfers(results);
@@ -290,7 +302,7 @@ export default function WarehouseTransferPage() {
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
           >
-            <option value="month">Thời gian: Tháng này</option>
+            <option value="last_3_months">Thời gian: 3 tháng gần nhất</option>
             <option value="today">Hôm nay</option>
             <option value="week">Tuần này</option>
             <option value="all">Tất cả</option>

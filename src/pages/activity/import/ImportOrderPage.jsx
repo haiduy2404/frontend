@@ -690,7 +690,7 @@ const isApproveButtonDisabled =
               value={filters.time_type}
               onChange={handleTimeTypeChange}
             >
-              <option value="this_month">Tháng này</option>
+              <option value="last_3_months">3 tháng gần nhất</option>
               <option value="quarter_1">Quý 1</option>
               <option value="quarter_2">Quý 2</option>
               <option value="quarter_3">Quý 3</option>
