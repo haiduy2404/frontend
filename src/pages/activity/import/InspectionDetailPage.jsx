@@ -60,26 +60,48 @@ function InspectionDetailPage() {
 
   const unwrapData = (response) => response?.data || response;
 
-  const parseNumber = (value) => {
+  // Parse số giống ImportOrderDetailPage.
+  const parseNumber = (value, options = {}) => {
+    const { viThousands = false } = options;
+
     if (value === null || value === undefined || value === "") return 0;
 
-    if (typeof value === "number") return value;
+    if (typeof value === "number") {
+      return Number.isNaN(value) ? 0 : value;
+    }
 
     const text = String(value).trim();
 
+    if (!text) return 0;
+
+    let normalized = text;
+
     if (text.includes(",")) {
-      return Number(text.replace(/\./g, "").replace(",", ".")) || 0;
+      // Dạng VN: 60.000,00 / 100.500,000
+      normalized = text.replace(/\./g, "").replace(",", ".");
+    } else if (viThousands && /^\d{1,3}(\.\d{3})+$/.test(text)) {
+      // Dạng hàng nghìn VN: 300.000 / 1.250.000
+      normalized = text.replace(/\./g, "");
+    } else if ((text.match(/\./g) || []).length > 1) {
+      // Dạng VN nhiều dấu chấm: 3.015.000 / 11.000.000
+      normalized = text.replace(/\./g, "");
+    } else {
+      // Dạng decimal chuẩn từ backend: 30.000 / 51000.000
+      normalized = text;
     }
 
-    return Number(text) || 0;
+    const number = Number(normalized);
+
+    return Number.isNaN(number) ? 0 : number;
   };
 
-  const formatViNumber = (value, fractionDigits = 2) => {
-    const number = Number(value || 0);
+  // Hiển thị số lượng giống ImportOrderDetailPage.
+  const formatViQuantity = (value) => {
+    const number = parseNumber(value);
 
     return number.toLocaleString("vi-VN", {
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 5,
     });
   };
 
@@ -184,20 +206,11 @@ const fetchReceiptDetail = async (receiptCode) => {
               item.unit ||
               "",
 
-            original_quantity: formatViNumber(
-              documentQuantity,
-              2
-            ),
+            original_quantity: formatViQuantity(documentQuantity),
 
-            accepted_quantity: formatViNumber(
-              acceptedQuantity,
-              2
-            ),
+            accepted_quantity: formatViQuantity(acceptedQuantity),
 
-            rejected_quantity: formatViNumber(
-              rejectedQuantity,
-              2
-            ),
+            rejected_quantity: formatViQuantity(rejectedQuantity),
           };
         })
       : [];
@@ -256,12 +269,35 @@ const fetchReceiptDetail = async (receiptCode) => {
 
         const originalQuantity = parseNumber(item.original_quantity);
         const acceptedQuantity = parseNumber(value);
-        const rejectedQuantity = originalQuantity - acceptedQuantity;
 
         return {
           ...item,
           accepted_quantity: value,
-          rejected_quantity: formatViNumber(rejectedQuantity, 2),
+
+          // FE chỉ thực hiện phép trừ.
+          // Việc kiểm tra accepted + rejected = original do backend xử lý.
+          rejected_quantity: formatViQuantity(
+            originalQuantity - acceptedQuantity
+          ),
+        };
+      })
+    );
+  };
+
+  const handleBlurAcceptedQuantity = (rowId) => {
+    setDetailRows((prev) =>
+      prev.map((item) => {
+        if (item.id !== rowId) return item;
+
+        const originalQuantity = parseNumber(item.original_quantity);
+        const acceptedQuantity = parseNumber(item.accepted_quantity);
+
+        return {
+          ...item,
+          accepted_quantity: formatViQuantity(acceptedQuantity),
+          rejected_quantity: formatViQuantity(
+            originalQuantity - acceptedQuantity
+          ),
         };
       })
     );
@@ -303,41 +339,6 @@ const handleSave = async (isComplete = false) => {
     return;
   }
 
-  const invalidRow = detailRows.find((item) => {
-    const documentQuantity = parseNumber(
-      item.original_quantity
-    );
-
-    const acceptedQuantity = parseNumber(
-      item.accepted_quantity
-    );
-
-    const rejectedQuantity = parseNumber(
-      item.rejected_quantity
-    );
-
-    return (
-      acceptedQuantity < 0 ||
-      rejectedQuantity < 0 ||
-      Math.abs(
-        acceptedQuantity +
-          rejectedQuantity -
-          documentQuantity
-      ) > 0.00001
-    );
-  });
-
-  if (invalidRow) {
-    alert(
-      `Số lượng kiểm nghiệm của mã ${
-        invalidRow.goods_code ||
-        invalidRow.goods_name ||
-        ""
-      } không hợp lệ. Tổng số lượng đạt và không đạt phải bằng số lượng theo chứng từ.`
-    );
-
-    return;
-  }
 
   if (isComplete) {
     const confirmed = window.confirm(
@@ -642,7 +643,7 @@ const handleSave = async (isComplete = false) => {
                     <td>{item.unit_name || "-"}</td>
 
                     <td className="number-col">
-                      {item.original_quantity || "0,00"}
+                      {item.original_quantity || "0,000"}
                     </td>
 
                     <td>
@@ -652,6 +653,7 @@ const handleSave = async (isComplete = false) => {
                         onChange={(e) =>
                           handleChangeAcceptedQuantity(item.id, e.target.value)
                         }
+                        onBlur={() => handleBlurAcceptedQuantity(item.id)}
                         disabled={
                           isPrintMode ||
                           !canUpdateInspection ||
@@ -662,7 +664,7 @@ const handleSave = async (isComplete = false) => {
                     </td>
 
                     <td className="number-col">
-                      {item.rejected_quantity || "0,00"}
+                      {item.rejected_quantity || "0,000"}
                     </td>
                   </tr>
                 ))}

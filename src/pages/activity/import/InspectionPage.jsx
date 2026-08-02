@@ -33,6 +33,55 @@ function InspectionPage() {
   const [filters, setFilters] = useState(getDefaultImportOrderFilters());
 
   const unwrapData = (response) => response?.data || response;
+
+  // Parse số giống ImportOrderDetailPage.
+  const parseNumber = (value, options = {}) => {
+    const { viThousands = false } = options;
+
+    if (value === null || value === undefined || value === "") return 0;
+
+    if (typeof value === "number") {
+      return Number.isNaN(value) ? 0 : value;
+    }
+
+    const text = String(value).trim();
+
+    if (!text) return 0;
+
+    let normalized = text;
+
+    if (text.includes(",")) {
+      // Dạng VN: 60.000,00 / 100.500,000
+      normalized = text.replace(/\./g, "").replace(",", ".");
+    } else if (viThousands && /^\d{1,3}(\.\d{3})+$/.test(text)) {
+      // Dạng hàng nghìn VN: 300.000 / 1.250.000
+      normalized = text.replace(/\./g, "");
+    } else if ((text.match(/\./g) || []).length > 1) {
+      // Dạng VN nhiều dấu chấm: 3.015.000 / 11.000.000
+      normalized = text.replace(/\./g, "");
+    } else {
+      // Dạng decimal chuẩn từ backend: 30.000 / 51000.000
+      normalized = text;
+    }
+
+    const number = Number(normalized);
+
+    return Number.isNaN(number) ? 0 : number;
+  };
+
+  // Hiển thị số lượng giống ImportOrderDetailPage.
+  const formatViQuantity = (value, emptyValue = "-") => {
+    if (value === null || value === undefined || value === "") {
+      return emptyValue;
+    }
+
+    const number = parseNumber(value);
+
+    return number.toLocaleString("vi-VN", {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 5,
+    });
+  };
   const formatDate = (value) => {
     if (!value) return "-";
 
@@ -391,7 +440,7 @@ const fetchInspections = async (customParams = {}) => {
                 null;
 
                 const inspectionCode = getInspectionCodeFromReceiptCode(receiptCode);
-                const executionStatus =getInspectionExecutionStatus(row);
+                const executionStatus = getInspectionExecutionStatus(row);
 
                 return (
                 <tr
@@ -535,24 +584,19 @@ const fetchInspections = async (customParams = {}) => {
 
                     {!detailLoading &&
                         detailRows.map((item, index) => {
-                    const formatQuantity = (value) => {
-                      if (value === null || value === undefined || value === "") return "-";
+                    const documentQuantity = formatViQuantity(
+                      item.original_quantity ??
+                        item.request_quantity ??
+                        item.requested_quantity
+                    );
 
-                      const number = Number(value);
+                    const acceptedQuantity = formatViQuantity(
+                      item.accepted_quantity
+                    );
 
-                      if (Number.isNaN(number)) return value;
-
-                      return number.toLocaleString("vi-VN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      });
-                    };
-
-                    const documentQuantity = formatQuantity(item.original_quantity);
-
-                    const acceptedQuantity = formatQuantity(item.accepted_quantity);
-
-                    const rejectedQuantity = formatQuantity(item.rejected_quantity);
+                    const rejectedQuantity = formatViQuantity(
+                      item.rejected_quantity
+                    );
 
                         return (
                         <tr key={item.inventory_id || item.goods_id || index}>
