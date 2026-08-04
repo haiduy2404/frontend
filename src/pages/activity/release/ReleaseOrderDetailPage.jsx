@@ -771,9 +771,8 @@ const evaluateQuantityExpression = (value) => {
     });
   };
 
-  const handleRequestedQuantityEnter = (event, rowId) => {
+  const handleRequestedQuantityKeyDown = (event, rowId) => {
   if (
-    event.key !== "Enter" ||
     event.nativeEvent?.isComposing ||
     event.ctrlKey ||
     event.altKey ||
@@ -782,12 +781,55 @@ const evaluateQuantityExpression = (value) => {
     return;
   }
 
-  // Shift + Enter vẫn quay lại ô trước
+  // Mũi tên xuống: chuyển sang ô SL yêu cầu của dòng kế tiếp,
+  // không thêm dòng mới.
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+
+    const currentIndex = items.findIndex(
+      (item) => String(item.id) === String(rowId)
+    );
+    const nextItem = items[currentIndex + 1];
+
+    if (!nextItem) return;
+
+    const isValid = handleRequestedQuantityBlur(
+      rowId,
+      event.currentTarget.value
+    );
+
+    if (!isValid) {
+      event.currentTarget.focus();
+      event.currentTarget.select();
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      const nextQuantityInput =
+        enterNavigationRef.current?.querySelector(
+          `[data-requested-quantity-row-id="${String(nextItem.id)}"]`
+        );
+
+      if (!nextQuantityInput) return;
+
+      nextQuantityInput.focus();
+      nextQuantityInput.select();
+    });
+
+    return;
+  }
+
+  if (event.key !== "Enter") {
+    return;
+  }
+
+  // Shift + Enter vẫn quay lại ô trước.
   if (event.shiftKey) {
     handleEnterMoveNext(event);
     return;
   }
 
+  // Enter: kiểm tra SL yêu cầu rồi thêm một dòng mới ngay bên dưới.
   event.preventDefault();
 
   const isValid = handleRequestedQuantityBlur(
@@ -839,7 +881,7 @@ const evaluateQuantityExpression = (value) => {
       }
     });
   });
-  };
+};
 
   const handleDeleteRow = (rowId) => {
     setItems((prev) => {
@@ -1766,8 +1808,9 @@ const evaluateQuantityExpression = (value) => {
                         )
                       }
                       data-enter-next="true"
+                      data-requested-quantity-row-id={String(item.id)}
                       onKeyDown={(e) =>
-                        handleRequestedQuantityEnter(e, item.id)
+                        handleRequestedQuantityKeyDown(e, item.id)
                       }
                       disabled={isPrintMode}
                     />

@@ -45,6 +45,7 @@ import WarehouseTransferPrintPage from "./pages/activity/transfer/WarehouseTrans
 import GoodsUnitPage from "./pages/good_unit/GoodsUnitPage";
 import TransferRequestPage from "./pages/tools/TransferRequestPage";
 import MoneyTransferRequestPrintPage from "./pages/tools/MoneyTransferRequestPrintPage";
+import ReleaseReportPage from "./pages/report/ReleaseReportPage";
 
 import "./styles/auth.css";
 
@@ -111,7 +112,16 @@ function App() {
                 path="report/stock-card"
                 element={<TheKhoExportPage />}
               />
-              
+
+              <Route
+                path="report/release"
+                element={
+                  <RequireRole roles={["view_report"]}>
+                    <ReleaseReportPage />
+                  </RequireRole>
+                }
+              />
+
               <Route
                 path="report/beginning-inventory"
                 element={<BeginningInventoryPage />}

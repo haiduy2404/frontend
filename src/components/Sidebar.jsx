@@ -233,7 +233,7 @@ const Sidebar = () => {
                   </NavLink>
 
                   <NavLink
-                    to="/dashboard/report/export"
+                    to="/dashboard/report/release"
                     className={({ isActive }) =>
                       isActive ? "report-link active" : "report-link"
                     }
