@@ -21,6 +21,7 @@ import {
   RiEdit2Line,
   RiDeleteBin6Line,
   RiCheckboxCircleLine,
+  RiCloseCircleLine,
   RiLoader4Line,
 } from "react-icons/ri";
 
@@ -31,6 +32,7 @@ import {
 
 function ImportOrderPage() {
   const { canDo } = useAuth();
+  const canDeleteAdmin = canDo("delete_warehouse_admin");
   const LIST_PAGE_STATE_KEY = "import-order-page-state";
   const [selectedId, setSelectedId] = useState(() => {
     const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
@@ -62,6 +64,7 @@ function ImportOrderPage() {
   const [selectedReceiptDetail, setSelectedReceiptDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const [openActionId, setOpenActionId] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
   const [filters, setFilters] = useState(() => {
@@ -132,6 +135,9 @@ const filteredDetailRows = useMemo(() => {
 
  const selectedRow = filteredImportOrders.find((item) => item.id === selectedId);
 
+ const isWaitingDeliveryStatus = (status) =>
+  status === "WAITING_DELIVERY" || status === "CANCELLED";
+
  const getReceiptStatusText = (status) => {
   switch (status) {
     case "WAITING_DELIVERY":
@@ -140,6 +146,8 @@ const filteredDetailRows = useMemo(() => {
       return "Đã nhận hàng";
     case "COMPLETED":
       return "Đã hoàn thành";
+    case "CANCELLED":
+      return "Chờ nhận hàng";
     default:
       return "-";
   }
@@ -343,11 +351,11 @@ const fetchImportOrders = async (customParams = {}) => {
     );
 
 const handleApproveReceipts = async (rows) => {
-  if (completing) return;
+  if (completing || rejecting) return;
 
   const approvalRows = Array.isArray(rows)
     ? rows.filter(
-        (row) => row?.status === "WAITING_DELIVERY"
+        (row) => isWaitingDeliveryStatus(row?.status)
       )
     : [];
 
@@ -457,6 +465,86 @@ const handleApproveReceipts = async (rows) => {
   }
 };
 
+  const handleRejectReceipt = async (receipt) => {
+  if (rejecting || completing) return;
+
+  if (!canDeleteAdmin) {
+    alert(
+      'Bạn cần quyền "delete_warehouse_admin" để từ chối phiếu đã hoàn thành'
+    );
+    return;
+  }
+
+  if (!receipt?.id) {
+    alert("Vui lòng chọn phiếu nhập kho cần từ chối");
+    return;
+  }
+
+  if (receipt.status !== "COMPLETED") {
+    alert("Chỉ được từ chối phiếu ở trạng thái Đã hoàn thành");
+    return;
+  }
+
+  const receiptCode =
+    receipt.code || receipt.invoice_code || receipt.invoice_no || receipt.id;
+
+  const confirmed = window.confirm(
+    `Bạn có chắc chắn muốn từ chối phiếu ${receiptCode} không?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setRejecting(true);
+
+    // Đợi React hiển thị vòng loading và nội dung nút.
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      });
+    });
+
+    // Loading ngẫu nhiên từ 0,7 giây đến 1,5 giây.
+    const randomLoadingTime =
+      Math.floor(Math.random() * (1500 - 700 + 1)) + 700;
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, randomLoadingTime)
+    );
+
+    await updateWarehouseReceiptStatus(receipt.id, {
+      status: "CANCELLED",
+    });
+
+    setSelectedIds([]);
+    setSelectedId(null);
+    setSelectedReceiptDetail(null);
+    setDetailRows([]);
+    setPage(1);
+
+    await fetchImportOrders({
+      page: 1,
+    });
+
+    alert(
+      `Từ chối phiếu ${receiptCode} thành công. Phiếu đã chuyển về Chờ nhận hàng.`
+    );
+  } catch (error) {
+    console.error(
+      "REJECT WAREHOUSE RECEIPT ERROR:",
+      error.response?.data || error
+    );
+
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.detail ||
+        `Không thể từ chối phiếu ${receiptCode}`
+    );
+  } finally {
+    setRejecting(false);
+  }
+};
+
   const handleDeleteReceipt = async (row) => {
   const confirmed = window.confirm(
     `Bạn có chắc muốn xóa phiếu ${row.code || row.invoice_code || ""} không?`
@@ -477,8 +565,8 @@ const handleApproveReceipts = async (rows) => {
 };
 
 const waitingDeliveryRows =
-  filteredImportOrders.filter(
-    (row) => row.status === "WAITING_DELIVERY"
+  filteredImportOrders.filter((row) =>
+    isWaitingDeliveryStatus(row.status)
   );
 
 const isAllChecked =
@@ -508,7 +596,7 @@ const handleToggleAll = (e) => {
 const handleToggleOne = (e, row) => {
   e.stopPropagation();
 
-  if (row.status !== "WAITING_DELIVERY") {
+  if (!isWaitingDeliveryStatus(row.status)) {
     return;
   }
 
@@ -690,18 +778,32 @@ const handleToggleOne = (e, row) => {
   .filter(
     (row) =>
       row &&
-      row.status === "WAITING_DELIVERY"
+      isWaitingDeliveryStatus(row.status)
   );
 
 const approvalRows =
   selectedApprovalRows.length > 0
     ? selectedApprovalRows
-    : selectedRow?.status === "WAITING_DELIVERY"
+    : isWaitingDeliveryStatus(selectedRow?.status)
     ? [selectedRow]
     : [];
 
 const isApproveButtonDisabled =
-  completing || approvalRows.length === 0;
+  completing || rejecting || approvalRows.length === 0;
+
+const rejectReceipt =
+  selectedIds.length === 1
+    ? filteredImportOrders.find((row) => row.id === selectedIds[0]) || null
+    : selectedIds.length === 0
+    ? selectedRow
+    : null;
+
+const isRejectButtonDisabled =
+  rejecting ||
+  completing ||
+  selectedIds.length > 1 ||
+  !rejectReceipt ||
+  rejectReceipt.status !== "COMPLETED";
 
   return (
     <div className="warehouse-import-page">
@@ -766,7 +868,13 @@ const isApproveButtonDisabled =
           {canDo("update_warehouse_receipt") && (
             <button
               className="edit-btn"
-              disabled={selectedIds.length > 1 || !selectedRow || selectedRow.status === "COMPLETED"}
+              disabled={
+                completing ||
+                rejecting ||
+                selectedIds.length > 1 ||
+                !selectedRow ||
+                selectedRow.status === "COMPLETED"
+              }
               title={selectedIds.length > 1 ? "Chỉ chỉnh sửa được 1 phiếu tại một thời điểm" : ""}
               onClick={() => {
                 if (!selectedRow) {
@@ -829,10 +937,38 @@ const isApproveButtonDisabled =
   </button>
 )}
 
+          {canDeleteAdmin && (
+            <button
+              type="button"
+              className="delete-toolbar-btn"
+              disabled={isRejectButtonDisabled}
+              onClick={() => handleRejectReceipt(rejectReceipt)}
+              title={
+                rejectReceipt && rejectReceipt.status !== "COMPLETED"
+                  ? "Chỉ được từ chối phiếu đã hoàn thành"
+                  : selectedIds.length > 1
+                  ? "Chỉ được từ chối 1 phiếu tại một thời điểm"
+                  : ""
+              }
+            >
+              {rejecting ? (
+                <RiLoader4Line className="import-action-loading-icon" />
+              ) : (
+                <RiCloseCircleLine />
+              )}
+
+              <span>{rejecting ? "Đang từ chối..." : "Từ chối"}</span>
+            </button>
+          )}
+
           {canDo("delete_warehouse_receipt") && (
             <button
               className="delete-toolbar-btn"
-              disabled={!selectedRow && selectedIds.length === 0}
+              disabled={
+                completing ||
+                rejecting ||
+                (!selectedRow && selectedIds.length === 0)
+              }
               onClick={() => {
                 if (selectedIds.length > 1) {
                   handleDeleteSelectedReceipts();
@@ -885,6 +1021,7 @@ const isApproveButtonDisabled =
                   checked={isAllChecked}
                   disabled={
                     completing ||
+                    rejecting ||
                     waitingDeliveryRows.length === 0
                   }
                   title="Chọn tất cả phiếu Chờ nhận hàng"
@@ -918,10 +1055,11 @@ const isApproveButtonDisabled =
                     checked={selectedIds.includes(row.id)}
                     disabled={
                       completing ||
-                      row.status !== "WAITING_DELIVERY"
+                      rejecting ||
+                      !isWaitingDeliveryStatus(row.status)
                     }
                     title={
-                      row.status !== "WAITING_DELIVERY"
+                      !isWaitingDeliveryStatus(row.status)
                         ? "Chỉ phiếu Chờ nhận hàng mới được chọn"
                         : ""
                     }
@@ -1227,7 +1365,10 @@ const isApproveButtonDisabled =
         disabled={
           importOrders.find(
             (item) => item.id === openActionId
-          )?.status !== "WAITING_DELIVERY"
+          ) &&
+          !isWaitingDeliveryStatus(
+            importOrders.find((item) => item.id === openActionId)?.status
+          )
         }
         onClick={() => {
           const row = importOrders.find(
