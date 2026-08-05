@@ -636,3 +636,165 @@
     transform: rotate(360deg);
   }
 }
+
+.release-print-signer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.5);
+  box-sizing: border-box;
+}
+
+.release-print-signer-modal {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.release-print-signer-header {
+  min-height: 54px;
+  padding: 0 18px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.release-print-signer-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 17px;
+}
+
+.release-print-signer-header button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 25px;
+  cursor: pointer;
+}
+
+.release-print-signer-body {
+  max-height: calc(100vh - 190px);
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.release-print-signer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.release-print-signer-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.release-print-signer-field label {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.release-print-signer-field label span {
+  color: #dc2626;
+}
+
+.release-print-signer-field select {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.release-print-signer-field select:focus {
+  border-color: #2563eb;
+}
+
+.release-print-signer-field small {
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.release-print-signer-loading {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #475569;
+}
+
+.release-signer-loading-icon {
+  font-size: 21px;
+  animation: release-signer-spin 0.8s linear infinite;
+}
+
+.release-print-signer-footer {
+  min-height: 62px;
+  padding: 0 18px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.release-signer-cancel-btn,
+.release-signer-confirm-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.release-signer-cancel-btn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.release-signer-confirm-btn {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.release-signer-confirm-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@keyframes release-signer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 650px) {
+  .release-print-signer-grid {
+    grid-template-columns: 1fr;
+  }
+}

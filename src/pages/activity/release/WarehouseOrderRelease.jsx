@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import "../../../styles/WarehouseOrderRelease.css";
+import { getUserNames } from "../../../services/authService";
 import {
   getReleaseOrderByCode,
   updateReleaseOrder,
@@ -15,6 +16,80 @@ import {
   RiLoader4Line,
 } from "react-icons/ri";
 
+const EMPTY_RELEASE_SIGNERS = {
+  cungTieu: "",
+  thuKho: "",
+  phongKHVT: "",
+  giamDoc: "",
+};
+
+const normalizePosition = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const RELEASE_SIGNER_DEFINITIONS = {
+  cungTieu: {
+    key: "cungTieu",
+    label: "PT cung tiêu",
+    match: (position) => position.includes("cung tieu"),
+  },
+
+  thuKho: {
+    key: "thuKho",
+    label: "Thủ kho",
+    match: (position) => position.startsWith("thu kho"),
+  },
+
+  phongKHVT: {
+    key: "phongKHVT",
+    label: "Phòng KHVT",
+    match: (position) =>
+      position === "tp khvt" ||
+      position.includes("phong khvt") ||
+      position.includes("truong phong khvt"),
+  },
+
+  giamDoc: {
+    key: "giamDoc",
+    label: "Giám đốc",
+    match: (position) => position.includes("giam doc"),
+  },
+};
+
+const PRINT_SIGNER_KEYS = {
+  industrial: [
+    "cungTieu",
+    "thuKho",
+    "phongKHVT",
+    "giamDoc",
+  ],
+
+  operation: [
+    "cungTieu",
+    "thuKho",
+    "phongKHVT",
+    "giamDoc",
+  ],
+
+  processing: [
+    "thuKho",
+    "cungTieu",
+  ],
+};
+
+const PRINT_FORM_NAMES = {
+  industrial: "A4 Công nghiệp",
+  operation: "A5 Vận dụng",
+  processing: "A5 Chế biến",
+};
+
 function WarehouseOrderRelease() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -23,17 +98,167 @@ function WarehouseOrderRelease() {
   const [searchParams] = useSearchParams();
   const isPrintMode = searchParams.get("mode") === "print";
   const [printForm, setPrintForm] = useState("industrial");
-  const handlePrint = () => {
-    const releaseCode = headerData.code || id;
+  const [showPrintSignerModal, setShowPrintSignerModal] =
+  useState(false);
 
-    const printRoutes = {
-      industrial: `/dashboard/activity/export/release-print/${releaseCode}`,
-      operation: `/dashboard/activity/export/release-print-a5/${releaseCode}`,
-      processing: `/dashboard/activity/export/release-print-processing/${releaseCode}`,
-    };
+  const [signerUsers, setSignerUsers] = useState([]);
+  const [signerUsersLoading, setSignerUsersLoading] =
+    useState(false);
 
-    navigate(printRoutes[printForm]);
+  const [printSigners, setPrintSigners] = useState(
+    EMPTY_RELEASE_SIGNERS
+  );
+const extractUserList = (response) => {
+  const payload = response?.data ?? response;
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.results)) {
+    return payload.results;
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  if (Array.isArray(payload?.data?.results)) {
+    return payload.data.results;
+  }
+
+  return [];
+};
+
+const activeSignerFields = (
+  PRINT_SIGNER_KEYS[printForm] || []
+).map((key) => RELEASE_SIGNER_DEFINITIONS[key]);
+
+const loadSignerUsers = async () => {
+  try {
+    setSignerUsersLoading(true);
+
+    const response = await getUserNames();
+
+    const users = extractUserList(response)
+      .filter((user) => {
+        const fullName = String(
+          user?.full_name || ""
+        ).trim();
+
+        return (
+          fullName &&
+          !fullName.toLowerCase().includes("test")
+        );
+      })
+      .sort((a, b) =>
+        String(a.full_name).localeCompare(
+          String(b.full_name),
+          "vi"
+        )
+      );
+
+    setSignerUsers(users);
+  } catch (error) {
+    console.error(
+      "LOAD RELEASE SIGNERS ERROR:",
+      error.response?.data || error
+    );
+
+    setSignerUsers([]);
+
+    alert(
+      error.response?.data?.message ||
+        "Không tải được danh sách người ký"
+    );
+  } finally {
+    setSignerUsersLoading(false);
+  }
+};
+
+const getUsersBySignerField = (field) => {
+  return signerUsers.filter((user) => {
+    const position = normalizePosition(
+      user.position?.name ||
+        user.position_name ||
+        user.position ||
+        ""
+    );
+
+    return field.match(position);
+  });
+};
+
+const handleChangePrintSigner = (key, fullName) => {
+  setPrintSigners((previous) => ({
+    ...previous,
+    [key]: fullName,
+  }));
+};
+
+const handleOpenPrintSignerModal = async () => {
+  const releaseCode = headerData.code || id;
+
+  if (!releaseCode) {
+    alert("Không tìm thấy mã phiếu xuất kho");
+    return;
+  }
+
+  setPrintSigners({
+    ...EMPTY_RELEASE_SIGNERS,
+  });
+
+  setShowPrintSignerModal(true);
+
+  await loadSignerUsers();
+};
+
+const handleConfirmPrint = () => {
+  const missingField = activeSignerFields.find(
+    (field) =>
+      !String(printSigners[field.key] || "").trim()
+  );
+
+  if (missingField) {
+    alert(`Vui lòng chọn ${missingField.label}`);
+    return;
+  }
+
+  const releaseCode = headerData.code || id;
+
+  const printRoutes = {
+    industrial:
+      `/dashboard/activity/export/release-print/${releaseCode}`,
+
+    operation:
+      `/dashboard/activity/export/release-print-a5/${releaseCode}`,
+
+    processing:
+      `/dashboard/activity/export/release-print-processing/${releaseCode}`,
   };
+
+  const printState = {
+    signerCungTieu:
+      printSigners.cungTieu.trim(),
+
+    signerThuKho:
+      printSigners.thuKho.trim(),
+
+    signerPhongKHVT:
+      printSigners.phongKHVT.trim(),
+
+    signerGiamDoc:
+      printSigners.giamDoc.trim(),
+
+    printForm,
+  };
+
+  setShowPrintSignerModal(false);
+
+  navigate(printRoutes[printForm], {
+    state: printState,
+  });
+};
   const canSaveActual =
     canDo("update_actual_released_quantity") ||
     canDo("update_warehouse_release");
@@ -592,9 +817,12 @@ function WarehouseOrderRelease() {
                   <option value="operation">In giấy A5 (Vận dụng)</option>
                   <option value="processing">In giấy A5 (Chế biến)</option>
                 </select>
-                <button className="print-footer-btn" onClick={handlePrint}>
-                    <RiPrinterLine />
-                    In
+                <button
+                  className="print-footer-btn"
+                  onClick={handleOpenPrintSignerModal}
+                >
+                  <RiPrinterLine />
+                  In
                 </button>
                 </>
             )}
@@ -626,6 +854,104 @@ function WarehouseOrderRelease() {
                 </button>
             )}
         </div>
+        {showPrintSignerModal && (
+  <div className="release-print-signer-overlay">
+    <div className="release-print-signer-modal">
+      <div className="release-print-signer-header">
+        <h3>
+          Chọn người ký – {PRINT_FORM_NAMES[printForm]}
+        </h3>
+
+        <button
+          type="button"
+          onClick={() => setShowPrintSignerModal(false)}
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="release-print-signer-body">
+        {signerUsersLoading ? (
+          <div className="release-print-signer-loading">
+            <RiLoader4Line className="release-signer-loading-icon" />
+            <span>Đang tải danh sách người ký...</span>
+          </div>
+        ) : (
+          <div className="release-print-signer-grid">
+            {activeSignerFields.map((field) => {
+              const users = getUsersBySignerField(field);
+
+              return (
+                <div
+                  className="release-print-signer-field"
+                  key={field.key}
+                >
+                  <label>
+                    {field.label}
+                    <span> *</span>
+                  </label>
+
+                  <select
+                    value={printSigners[field.key]}
+                    onChange={(event) =>
+                      handleChangePrintSigner(
+                        field.key,
+                        event.target.value
+                      )
+                    }
+                  >
+                    <option value="">
+                      Chọn {field.label.toLowerCase()}
+                    </option>
+
+                    {users.map((user) => (
+                      <option
+                        key={
+                          user.id ||
+                          user.username ||
+                          `${field.key}-${user.full_name}`
+                        }
+                        value={user.full_name}
+                      >
+                        {user.full_name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {users.length === 0 && (
+                    <small>
+                      Không có người dùng thuộc position này
+                    </small>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="release-print-signer-footer">
+        <button
+          type="button"
+          className="release-signer-cancel-btn"
+          onClick={() => setShowPrintSignerModal(false)}
+        >
+          Hủy
+        </button>
+
+        <button
+          type="button"
+          className="release-signer-confirm-btn"
+          onClick={handleConfirmPrint}
+          disabled={signerUsersLoading}
+        >
+          <RiPrinterLine />
+          Đồng ý in
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

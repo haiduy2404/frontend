@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+  useLocation,
+} from "react-router-dom";
 import "../../../styles/ReleasePrintPageA5.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getReleaseOrderByCode } from "../../../services/releaseOrderService";
@@ -12,6 +17,15 @@ function ReleasePrintPageA5() {
 
   const [release, setRelease] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const location = useLocation();
+
+  const {
+    signerCungTieu = "",
+    signerThuKho = "",
+    signerPhongKHVT = "",
+    signerGiamDoc = "",
+  } = location.state || {};
 
   const unwrapData = (res) => res?.data || res;
 
@@ -234,12 +248,12 @@ function ReleasePrintPageA5() {
       </div>
 
       <div className="release-print-signer-name-row-a5">
+        <div>{signerCungTieu}</div>
+        <div>{signerThuKho}</div>
         <div></div>
         <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
+        <div>{signerPhongKHVT}</div>
+        <div>{signerGiamDoc}</div>
       </div>
     </>
   );

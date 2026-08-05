@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+  useLocation,
+} from "react-router-dom";
 import "../../../styles/ReleasePrintPage.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import {
@@ -13,6 +17,14 @@ function ReleasePrintPage() {
 
   const [release, setRelease] = useState(null);
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
+
+  const {
+    signerCungTieu = "",
+    signerThuKho = "",
+    signerPhongKHVT = "",
+    signerGiamDoc = "",
+  } = location.state || {};
 
   const unwrapData = (res) => res?.data || res;
 
@@ -389,12 +401,12 @@ const buildPrintPayload = () => ({
       </div>
 
       <div className="release-print-signer-name-row">
+        <div>{signerCungTieu}</div>
+        <div>{signerThuKho}</div>
         <div></div>
         <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
+        <div>{signerPhongKHVT}</div>
+        <div>{signerGiamDoc}</div>
       </div>
     </>
   );
