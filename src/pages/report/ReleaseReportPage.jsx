@@ -793,7 +793,7 @@ export default function ReleaseReportPage() {
                             onClick={() => {
                               if (view.releaseCode) {
                                 window.location.assign(
-                                  `/dashboard/activity/export/order-detail/${encodeURIComponent(view.releaseCode)}?mode=view`
+                                  `/dashboard/activity/export/order-detail/${encodeURIComponent(view.releaseCode)}?mode=print`
                                 );
                               }
                             }}
