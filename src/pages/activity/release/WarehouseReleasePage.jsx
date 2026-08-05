@@ -37,7 +37,7 @@ function WarehouseReleasePage() {
   const canInputActualQuantity = canDo("update_actual_released_quantity");
   const canUseReleaseActualPage = canUpdateRelease || canInputActualQuantity;
   const canDelete = canDo("delete_warehouse_release");
-  const canDeleteAdmin = canDo("delete_warehouse_admin");
+  const canDeleteAdmin = canDo("delete_warehouse_release_admin");
   const [searchParams] = useSearchParams();
   const isPrintMode = searchParams.get("mode") === "print";
   const [releaseOrders, setReleaseOrders] = useState([]);

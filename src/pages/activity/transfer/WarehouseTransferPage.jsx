@@ -23,7 +23,7 @@ export default function WarehouseTransferPage() {
   const canUpdate = canDo("update_warehouse_transfer");
   const canDelete = canDo("delete_warehouse_transfer");
   const canCreate = canDo("create_warehouse_transfer");
-  const canDeleteAdmin = canDo("delete_warehouse_admin");
+  const canDeleteAdmin = canDo("delete_warehouse_transfer_admin");
   const [transfers, setTransfers] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");

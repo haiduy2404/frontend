@@ -32,7 +32,7 @@ import {
 
 function ImportOrderPage() {
   const { canDo } = useAuth();
-  const canDeleteAdmin = canDo("delete_warehouse_admin");
+  const canDeleteAdmin = canDo("delete_warehouse_import_admin");
   const LIST_PAGE_STATE_KEY = "import-order-page-state";
   const [selectedId, setSelectedId] = useState(() => {
     const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
