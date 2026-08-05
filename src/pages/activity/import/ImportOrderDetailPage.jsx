@@ -39,6 +39,46 @@ const EMPTY_RECEIPT_SIGNERS = {
   giamDoc: "",
 };
 
+const IMPORT_RECEIPT_SIGNERS_STORAGE_KEY =
+  "import-receipt-signers-session";
+
+const getStoredImportReceiptSelection = () => {
+  try {
+    const rawValue = sessionStorage.getItem(
+      IMPORT_RECEIPT_SIGNERS_STORAGE_KEY
+    );
+
+    if (!rawValue) {
+      return {
+        signers: { ...EMPTY_RECEIPT_SIGNERS },
+        attachedDocumentNumber: "",
+      };
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+
+    return {
+      signers: {
+        ...EMPTY_RECEIPT_SIGNERS,
+        ...(parsedValue?.signers || {}),
+      },
+      attachedDocumentNumber: String(
+        parsedValue?.attachedDocumentNumber || ""
+      ),
+    };
+  } catch (error) {
+    console.error(
+      "READ IMPORT RECEIPT SIGNERS STORAGE ERROR:",
+      error
+    );
+
+    return {
+      signers: { ...EMPTY_RECEIPT_SIGNERS },
+      attachedDocumentNumber: "",
+    };
+  }
+};
+
 const normalizePosition = (value) =>
   String(value || "")
     .normalize("NFD")
@@ -127,10 +167,38 @@ function ImportOrderDetailPage() {
     const [receiptUsersLoading, setReceiptUsersLoading] =
       useState(false);
     const [receiptSigners, setReceiptSigners] = useState(
-      EMPTY_RECEIPT_SIGNERS
+      () => getStoredImportReceiptSelection().signers
     );
-    const [receiptAttachedDocumentNumber, setReceiptAttachedDocumentNumber] =
-      useState("");
+
+    const [
+      receiptAttachedDocumentNumber,
+      setReceiptAttachedDocumentNumber,
+    ] = useState(
+      () =>
+        getStoredImportReceiptSelection()
+          .attachedDocumentNumber
+    );
+
+    useEffect(() => {
+  try {
+    sessionStorage.setItem(
+      IMPORT_RECEIPT_SIGNERS_STORAGE_KEY,
+      JSON.stringify({
+        signers: receiptSigners,
+        attachedDocumentNumber:
+          receiptAttachedDocumentNumber,
+      })
+    );
+  } catch (error) {
+    console.error(
+      "SAVE IMPORT RECEIPT SIGNERS STORAGE ERROR:",
+      error
+    );
+  }
+}, [
+  receiptSigners,
+  receiptAttachedDocumentNumber,
+]);
     const [showAddGoodsModal, setShowAddGoodsModal] = useState(false);
     const [deletedItems, setDeletedItems] = useState([]);
     const [companyId, setCompanyId] = useState(null);

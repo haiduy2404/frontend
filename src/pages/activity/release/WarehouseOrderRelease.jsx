@@ -23,6 +23,35 @@ const EMPTY_RELEASE_SIGNERS = {
   giamDoc: "",
 };
 
+const RELEASE_SIGNERS_STORAGE_KEY =
+  "warehouse-release-signers-session";
+
+const getStoredReleaseSigners = () => {
+  try {
+    const rawValue = sessionStorage.getItem(
+      RELEASE_SIGNERS_STORAGE_KEY
+    );
+
+    if (!rawValue) {
+      return { ...EMPTY_RELEASE_SIGNERS };
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+
+    return {
+      ...EMPTY_RELEASE_SIGNERS,
+      ...(parsedValue || {}),
+    };
+  } catch (error) {
+    console.error(
+      "READ RELEASE SIGNERS STORAGE ERROR:",
+      error
+    );
+
+    return { ...EMPTY_RELEASE_SIGNERS };
+  }
+};
+
 const normalizePosition = (value) =>
   String(value || "")
     .normalize("NFD")
@@ -105,9 +134,24 @@ function WarehouseOrderRelease() {
   const [signerUsersLoading, setSignerUsersLoading] =
     useState(false);
 
-  const [printSigners, setPrintSigners] = useState(
-    EMPTY_RELEASE_SIGNERS
-  );
+const [printSigners, setPrintSigners] = useState(
+  getStoredReleaseSigners
+);
+
+useEffect(() => {
+  try {
+    sessionStorage.setItem(
+      RELEASE_SIGNERS_STORAGE_KEY,
+      JSON.stringify(printSigners)
+    );
+  } catch (error) {
+    console.error(
+      "SAVE RELEASE SIGNERS STORAGE ERROR:",
+      error
+    );
+  }
+}, [printSigners]);
+
 const extractUserList = (response) => {
   const payload = response?.data ?? response;
 
