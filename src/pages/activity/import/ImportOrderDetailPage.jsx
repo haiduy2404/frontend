@@ -1606,7 +1606,14 @@ const loadReceiptSignerUsers = async () => {
 
     const response = await getUserNames();
     const users = extractUserList(response)
-      .filter((user) => String(user?.full_name || "").trim())
+      .filter((user) => {
+      const fullName = String(user?.full_name || "").trim();
+
+      return (
+        fullName &&
+        !fullName.toLowerCase().includes("test")
+      );
+    })
       .sort((a, b) =>
         String(a.full_name).localeCompare(
           String(b.full_name),
