@@ -153,6 +153,26 @@ function WarehouseReleasePage() {
     });
   };
 
+  const formatDateOnly = (value) => {
+    if (!value) return "-";
+
+    const text = String(value).trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+      const [year, month, day] = text.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) {
+      return text;
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return text;
+
+    return date.toLocaleDateString("vi-VN");
+  };
+
   const formatDateTime = (value) => {
     if (!value) return "-";
 
@@ -946,7 +966,7 @@ const handleSplitterPointerDown = (event) => {
                 </th>
                 <th>Số lệnh XK</th>
                 <th>Tình trạng</th>
-                <th>Ngày xuất kho</th>
+                <th>Ngày tháng năm XK</th>
                 <th>Kho xuất</th>
                 <th>Đơn vị lĩnh vật tư</th>
                 <th>Đối tượng xuất kho</th>
@@ -1000,7 +1020,7 @@ const handleSplitterPointerDown = (event) => {
                     </td>
 
                     <td>{getReleaseStatusText(row.status)}</td>
-                    <td>{row.release_date || "-"}</td>
+                    <td>{formatDateOnly(row.release_date)}</td>
                     <td>
                       {row.warehouse_name ||
                         row.warehouse?.name ||

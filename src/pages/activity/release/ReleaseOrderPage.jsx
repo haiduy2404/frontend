@@ -466,6 +466,26 @@ const handleTimeTypeChange = (e) => {
     }
   };
 
+  const formatDateOnly = (value) => {
+    if (!value) return "-";
+
+    const text = String(value).trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+      const [year, month, day] = text.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) {
+      return text;
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return text;
+
+    return date.toLocaleDateString("vi-VN");
+  };
+
   const formatDateTime = (value) => {
     if (!value) return "-";
 
@@ -704,6 +724,7 @@ const resetPaneSize = () => {
                   />
                 </th>
                 <th>Số phiếu XK</th>
+                <th>Ngày tháng năm XK</th>
                 <th>Tình trạng thực hiện</th>
                 <th>Đơn vị lĩnh vật tư</th>
                 <th>Đối tượng xuất kho</th>
@@ -717,13 +738,13 @@ const resetPaneSize = () => {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={9}>Đang tải danh sách phiếu xuất kho...</td>
+                  <td colSpan={10}>Đang tải danh sách phiếu xuất kho...</td>
                 </tr>
               )}
 
               {!loading && releaseOrders.length === 0 && (
                 <tr>
-                  <td colSpan={9}>Không có dữ liệu phiếu xuất kho</td>
+                  <td colSpan={10}>Không có dữ liệu phiếu xuất kho</td>
                 </tr>
               )}
 
@@ -761,6 +782,7 @@ const resetPaneSize = () => {
                       {row.code || row.release_code || "-"}
                     </td>
 
+                    <td>{formatDateOnly(row.release_date)}</td>
                     <td>{getReleaseStatusText(row.status)}</td>
                     <td>{row.receiver_unit?.name || "-"}</td>
                     <td>{row.release_target?.name || "-"}</td>
