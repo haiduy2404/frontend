@@ -28,6 +28,63 @@ import {
   RiLoader4Line,
   RiPrinterLine,
 } from "react-icons/ri";
+import { getUserNames } from "../../../services/authService";
+
+const EMPTY_RECEIPT_SIGNERS = {
+  cungTieu: "",
+  thuKho: "",
+  vatLieuVien: "",
+  phoPhongKHVT: "",
+  truongPhongKHVT: "",
+  giamDoc: "",
+};
+
+const normalizePosition = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const RECEIPT_SIGNER_FIELDS = [
+  {
+    key: "cungTieu",
+    label: "PT cung tiêu",
+    match: (position) => position.includes("cung tieu"),
+  },
+  {
+    key: "thuKho",
+    label: "Thủ kho",
+    required: true,
+    match: (position) => position.startsWith("thu kho"),
+  },
+  {
+    key: "vatLieuVien",
+    label: "Vật liệu viên",
+    match: (position) => position.includes("vat lieu vien"),
+  },
+  {
+    key: "phoPhongKHVT",
+    label: "Phó phòng KHVT",
+    match: (position) => position.includes("pho phong khvt"),
+  },
+  {
+    key: "truongPhongKHVT",
+    label: "Trưởng phòng KHVT",
+    match: (position) =>
+      position === "tp khvt" ||
+      position.includes("truong phong khvt"),
+  },
+  {
+    key: "giamDoc",
+    label: "Giám đốc",
+    match: (position) => position === "giam doc",
+  },
+];
 
 function ImportOrderDetailPage() {
     const navigate = useNavigate();
@@ -66,7 +123,12 @@ function ImportOrderDetailPage() {
     const [transferBankName, setTransferBankName] = useState("");
     const [transferBankAccountNumber, setTransferBankAccountNumber] = useState("");
     const [showReceiptPrintModal, setShowReceiptPrintModal] = useState(false);
-    const [receiptWarehouseKeeper, setReceiptWarehouseKeeper] = useState("");
+    const [receiptUsers, setReceiptUsers] = useState([]);
+    const [receiptUsersLoading, setReceiptUsersLoading] =
+      useState(false);
+    const [receiptSigners, setReceiptSigners] = useState(
+      EMPTY_RECEIPT_SIGNERS
+    );
     const [receiptAttachedDocumentNumber, setReceiptAttachedDocumentNumber] =
       useState("");
     const [showAddGoodsModal, setShowAddGoodsModal] = useState(false);
@@ -1516,48 +1578,142 @@ const handleOpenTransferPrint = () => {
   setShowPrintReasonModal(true);
 };
 
-  const handleOpenReceiptPrint = () => {
-    if (!canPrintReceipt) {
-      alert("Bạn không có quyền in phiếu nhập kho");
-      return;
-    }
+const extractUserList = (response) => {
+  const payload = response?.data ?? response;
 
-    if (!id || id === "new") {
-      alert("Cần lưu phiếu trước khi in phiếu nhập kho");
-      return;
-    }
+  if (Array.isArray(payload)) {
+    return payload;
+  }
 
-    setReceiptWarehouseKeeper("");
-    setReceiptAttachedDocumentNumber("");
-    setShowReceiptPrintModal(true);
-  };
+  if (Array.isArray(payload?.results)) {
+    return payload.results;
+  }
 
-  const handleConfirmReceiptPrint = () => {
-    if (!receiptWarehouseKeeper.trim()) {
-      alert("Vui lòng nhập người thủ kho");
-      return;
-    }
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
 
-    const printState = {
-      signerThuKho: receiptWarehouseKeeper.trim(),
-      attachedDocumentNumber: receiptAttachedDocumentNumber.trim(),
-    };
+  if (Array.isArray(payload?.data?.results)) {
+    return payload.data.results;
+  }
 
-    const hasVat = items.some(
-      (item) => Number(item.vat || 0) > 0
+  return [];
+};
+
+const loadReceiptSignerUsers = async () => {
+  try {
+    setReceiptUsersLoading(true);
+
+    const response = await getUserNames();
+    const users = extractUserList(response)
+      .filter((user) => String(user?.full_name || "").trim())
+      .sort((a, b) =>
+        String(a.full_name).localeCompare(
+          String(b.full_name),
+          "vi"
+        )
+      );
+
+    setReceiptUsers(users);
+  } catch (error) {
+    console.error(
+      "LOAD RECEIPT SIGNER USERS ERROR:",
+      error.response?.data || error
     );
 
-    if (hasVat) {
-      navigate(`/dashboard/activity/import/order/${id}/receipt-print-vat`, {
-        state: printState,
-      });
-      return;
-    }
+    setReceiptUsers([]);
 
-    navigate(`/dashboard/activity/import/order/${id}/receipt-print-no-vat`, {
-      state: printState,
-    });
+    alert(
+      error.response?.data?.message ||
+        "Không tải được danh sách người ký"
+    );
+  } finally {
+    setReceiptUsersLoading(false);
+  }
+};
+
+const getUsersBySignerField = (field) => {
+  return receiptUsers.filter((user) => {
+    const userPosition = normalizePosition(
+      user.position?.name ||
+        user.position_name ||
+        user.position ||
+        ""
+    );
+
+    return field.match(userPosition);
+  });
+};
+
+const handleChangeReceiptSigner = (key, fullName) => {
+  setReceiptSigners((previous) => ({
+    ...previous,
+    [key]: fullName,
+  }));
+};
+
+const handleOpenReceiptPrint = async () => {
+  if (!canPrintReceipt) {
+    alert("Bạn không có quyền in phiếu nhập kho");
+    return;
+  }
+
+  if (!id || id === "new") {
+    alert("Cần lưu phiếu trước khi in phiếu nhập kho");
+    return;
+  }
+
+  setReceiptSigners({
+    ...EMPTY_RECEIPT_SIGNERS,
+  });
+
+  setReceiptAttachedDocumentNumber("");
+  setShowReceiptPrintModal(true);
+
+  await loadReceiptSignerUsers();
+};
+
+const handleConfirmReceiptPrint = () => {
+  if (!receiptSigners.thuKho.trim()) {
+    alert("Vui lòng chọn người thủ kho");
+    return;
+  }
+
+  const printState = {
+    signerCungTieu: receiptSigners.cungTieu.trim(),
+    signerThuKho: receiptSigners.thuKho.trim(),
+    signerVatLieuVien: receiptSigners.vatLieuVien.trim(),
+    signerPhoPhongKHVT: receiptSigners.phoPhongKHVT.trim(),
+    signerTruongPhongKHVT:
+      receiptSigners.truongPhongKHVT.trim(),
+    signerGiamDoc: receiptSigners.giamDoc.trim(),
+
+    attachedDocumentNumber:
+      receiptAttachedDocumentNumber.trim(),
   };
+
+  const hasVat = items.some(
+    (item) => Number(item.vat || 0) > 0
+  );
+
+  if (hasVat) {
+    navigate(
+      `/dashboard/activity/import/order/${id}/receipt-print-vat`,
+      {
+        state: printState,
+      }
+    );
+
+    return;
+  }
+
+  navigate(
+    `/dashboard/activity/import/order/${id}/receipt-print-no-vat`,
+    {
+      state: printState,
+    }
+  );
+};
 
   const handleSelectTransferBank = (bankId) => {
     setTransferBankId(bankId);
@@ -2433,9 +2589,10 @@ const handleOpenTransferPrint = () => {
       </div>
           {showReceiptPrintModal && (
             <div className="print-reason-modal-overlay">
-              <div className="print-reason-modal">
+              <div className="print-reason-modal receipt-signer-modal">
                 <div className="print-reason-modal-header">
-                  <h3>Người thủ kho</h3>
+                  <h3>Chọn người ký phiếu nhập kho</h3>
+
                   <button
                     type="button"
                     onClick={() => setShowReceiptPrintModal(false)}
@@ -2445,21 +2602,82 @@ const handleOpenTransferPrint = () => {
                 </div>
 
                 <div className="print-reason-modal-body">
-                  <label>Người thủ kho</label>
-                  <input
-                    value={receiptWarehouseKeeper}
-                    onChange={(e) => setReceiptWarehouseKeeper(e.target.value)}
-                    placeholder="Nhập tên người thủ kho"
-                  />
+                  {receiptUsersLoading ? (
+                    <div className="receipt-signer-loading">
+                      <RiLoader4Line className="loading-icon" />
+                      <span>Đang tải danh sách người ký...</span>
+                    </div>
+                  ) : (
+                    <div className="receipt-signer-grid">
+                      {RECEIPT_SIGNER_FIELDS.map((field) => {
+                        const users = getUsersBySignerField(field);
 
-                  <label>Số chứng từ kèm theo</label>
-                  <input
-                    value={receiptAttachedDocumentNumber}
-                    onChange={(e) =>
-                      setReceiptAttachedDocumentNumber(e.target.value)
-                    }
-                    placeholder="Nhập số chứng từ kèm theo"
-                  />
+                        return (
+                          <div
+                            className="receipt-signer-field"
+                            key={field.key}
+                          >
+                            <label>
+                              {field.label}
+
+                              {field.required && (
+                                <span className="receipt-required">
+                                  {" "}*
+                                </span>
+                              )}
+                            </label>
+
+                            <select
+                              value={receiptSigners[field.key]}
+                              onChange={(event) =>
+                                handleChangeReceiptSigner(
+                                  field.key,
+                                  event.target.value
+                                )
+                              }
+                            >
+                              <option value="">
+                                Chọn {field.label.toLowerCase()}
+                              </option>
+
+                              {users.map((user) => (
+                                <option
+                                  key={
+                                    user.id ||
+                                    user.username ||
+                                    `${field.key}-${user.full_name}`
+                                  }
+                                  value={user.full_name}
+                                >
+                                  {user.full_name}
+                                </option>
+                              ))}
+                            </select>
+
+                            {users.length === 0 && (
+                              <small className="receipt-no-user">
+                                Không có người dùng thuộc position này
+                              </small>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="receipt-document-field">
+                    <label>Số chứng từ kèm theo</label>
+
+                    <input
+                      value={receiptAttachedDocumentNumber}
+                      onChange={(event) =>
+                        setReceiptAttachedDocumentNumber(
+                          event.target.value
+                        )
+                      }
+                      placeholder="Nhập số chứng từ kèm theo"
+                    />
+                  </div>
                 </div>
 
                 <div className="print-reason-modal-footer">
@@ -2475,7 +2693,9 @@ const handleOpenTransferPrint = () => {
                     type="button"
                     className="print-reason-confirm-btn"
                     onClick={handleConfirmReceiptPrint}
+                    disabled={receiptUsersLoading}
                   >
+                    <RiPrinterLine />
                     Đồng ý in
                   </button>
                 </div>

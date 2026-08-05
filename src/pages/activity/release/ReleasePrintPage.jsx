@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../../../styles/ReleasePrintPage.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
-import { getReleaseOrderByCode } from "../../../services/releaseOrderService";
+import {
+  getReleaseOrderByCode,
+  updateReleaseOrder,
+} from "../../../services/releaseOrderService";
 
 function ReleasePrintPage() {
   const navigate = useNavigate();
@@ -12,6 +15,10 @@ function ReleasePrintPage() {
   const [loading, setLoading] = useState(false);
 
   const unwrapData = (res) => res?.data || res;
+
+  const isPrinted =
+    release?.is_printed === true ||
+    Number(release?.is_printed) === 1;
 
   const parseNumber = (value) => {
     const number = Number(value || 0);
@@ -38,6 +45,90 @@ function ReleasePrintPage() {
     const [year, month, day] = dateOnly.split("-");
     return `Ngày ${day} tháng ${month} năm ${year}`;
   };
+
+const handlePrint = async () => {
+  if (!release?.id) {
+    alert("Không tìm thấy ID phiếu xuất kho");
+    return;
+  }
+
+  if (isPrinted) {
+    const confirmed = window.confirm(
+      "Phiếu này đã được in. Bạn có muốn in phiếu thêm lần nữa không?"
+    );
+
+    if (!confirmed) return;
+
+    printWithPageSize(
+      PAGE_SIZE.A4_PORTRAIT.width,
+      PAGE_SIZE.A4_PORTRAIT.height
+    );
+
+    return;
+  }
+
+  try {
+    const payload = buildPrintPayload();
+
+    await updateReleaseOrder(release.id, payload);
+
+    setRelease((previousRelease) => ({
+      ...previousRelease,
+      is_printed: true,
+    }));
+
+    printWithPageSize(
+      PAGE_SIZE.A4_PORTRAIT.width,
+      PAGE_SIZE.A4_PORTRAIT.height
+    );
+  } catch (error) {
+    console.error(
+      "UPDATE RELEASE PRINT STATUS ERROR:",
+      error.response?.data || error
+    );
+
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Không cập nhật được trạng thái đã in"
+    );
+  }
+};
+
+const buildPrintPayload = () => ({
+  terms: release?.terms || null,
+  release_date: release?.release_date,
+  warehouse_id:
+    release?.warehouse_id ||
+    release?.warehouse?.id ||
+    null,
+
+  receiver_unit:
+    release?.receiver_unit?.name ||
+    release?.receiver_unit_name ||
+    release?.receiver_unit ||
+    null,
+
+  release_target:
+    release?.release_target?.name ||
+    release?.release_target_name ||
+    release?.release_target ||
+    null,
+
+  contract_number: release?.contract_number || null,
+  description: release?.description || null,
+
+  is_printed: true,
+
+  items: (release?.items || []).map((item) => ({
+    item_id: item.item_id || item.id,
+    goods_id: item.goods_id,
+    goods_unit_id: item.goods_unit_id || null,
+    requested_quantity: parseNumber(item.requested_quantity),
+    actual_quantity: parseNumber(item.actual_quantity),
+    is_delete: false,
+  })),
+});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -324,14 +415,15 @@ function ReleasePrintPage() {
         </button>
 
         <button
-          onClick={() =>
-            printWithPageSize(
-              PAGE_SIZE.A4_PORTRAIT.width,
-              PAGE_SIZE.A4_PORTRAIT.height
-            )
+          type="button"
+          className={
+            isPrinted
+              ? "release-print-button release-print-button-printed"
+              : "release-print-button"
           }
+          onClick={handlePrint}
         >
-          In
+          {isPrinted ? "Đã in" : "In"}
         </button>
       </div>
 

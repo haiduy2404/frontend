@@ -286,3 +286,30 @@
     box-sizing: border-box !important;
   }
 }
+
+.release-print-button {
+  min-width: 80px;
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.release-print-button:hover {
+  background: #1d4ed8;
+}
+
+.release-print-button-printed {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.release-print-button-printed:hover {
+  background: #b91c1c;
+}

@@ -13,11 +13,17 @@ function ImportReceiptPrintVatForm() {
   const [receipt, setReceipt] = useState(null);
   const [loading, setLoading] = useState(false);
   const [metadataMap, setMetadataMap] = useState({});
-
   const location = useLocation();
-  const signerThuKhoFromInput = location.state?.signerThuKho || "";
-  const attachedDocumentNumber =
-    location.state?.attachedDocumentNumber || "";
+
+  const {
+    signerCungTieu: signerCungTieuFromInput = "",
+    signerThuKho: signerThuKhoFromInput = "",
+    signerVatLieuVien: signerVatLieuVienFromInput = "",
+    signerPhoPhongKHVT: signerPhoPhongKHVTFromInput = "",
+    signerTruongPhongKHVT: signerTruongPhongKHVTFromInput = "",
+    signerGiamDoc: signerGiamDocFromInput = "",
+    attachedDocumentNumber = "",
+  } = location.state || {};
   const normalizeKey = (value) => {
     return String(value || "").trim().toLowerCase();
   };
@@ -49,12 +55,29 @@ function ImportReceiptPrintVatForm() {
     fetchMetadata();
   }, []);
 
-  const signerThuKhoNhapKho = getMetadataValue("THỦ KHO_NHẬP KHO");
-  const signerNguoiLapPhieu = signerThuKhoNhapKho;
-  const signerThuKho = signerThuKhoFromInput;
-  const signerPhongKhvt = getMetadataValue("PHÒNG KHVT");
-  const signerKeToanTruong = getMetadataValue("KẾ TOÁN TRƯỞNG");
-  const signerGiamDoc = "";
+  const signerThuKhoNhapKho =
+  getMetadataValue("THỦ KHO_NHẬP KHO");
+
+const signerNguoiLapPhieu =
+  signerVatLieuVienFromInput ||
+  signerCungTieuFromInput ||
+  signerThuKhoNhapKho;
+
+const signerThuKho =
+  signerThuKhoFromInput ||
+  getMetadataValue("THỦ KHO");
+
+const signerPhongKhvt =
+  signerTruongPhongKHVTFromInput ||
+  signerPhoPhongKHVTFromInput ||
+  getMetadataValue("PHÒNG KHVT");
+
+const signerKeToanTruong =
+  getMetadataValue("KẾ TOÁN TRƯỞNG");
+
+const signerGiamDoc =
+  signerGiamDocFromInput ||
+  getMetadataValue("GIÁM ĐỐC");
 
   const formatReceiptDateText = (value) => {
     if (!value) return "Ngày      tháng      năm";
@@ -556,38 +579,50 @@ const numberToVietnameseText = (value) => {
             </div>
 
             <div className="receipt-signature-row">
-            <div className="receipt-signature-item">
+              <div className="receipt-signature-item">
                 <strong>NGƯỜI LẬP PHIẾU</strong>
                 <span>(Ký, họ tên)</span>
-            </div>
 
-            <div className="receipt-signature-item">
+                <div className="receipt-signer-name">
+                  {signerNguoiLapPhieu}
+                </div>
+              </div>
+
+              <div className="receipt-signature-item">
                 <strong>THỦ KHO</strong>
                 <span>(Ký, họ tên)</span>
-            </div>
 
-            <div className="receipt-signature-item">
+                <div className="receipt-signer-name">
+                  {signerThuKho}
+                </div>
+              </div>
+
+              <div className="receipt-signature-item">
                 <strong>PHÒNG KHVT</strong>
                 <span>(Ký, họ tên)</span>
-            </div>
 
-            <div className="receipt-signature-item">
+                <div className="receipt-signer-name">
+                  {signerPhongKhvt}
+                </div>
+              </div>
+
+              <div className="receipt-signature-item">
                 <strong>KẾ TOÁN TRƯỞNG</strong>
                 <span>(Ký, họ tên)</span>
-            </div>
 
-            <div className="receipt-signature-item">
+                <div className="receipt-signer-name">
+                  {signerKeToanTruong}
+                </div>
+              </div>
+
+              <div className="receipt-signature-item">
                 <strong>GIÁM ĐỐC</strong>
                 <span>(Ký, họ tên, đóng dấu)</span>
-            </div>
-            </div>
 
-            <div className="receipt-signer-name-row">
-              <div>{signerNguoiLapPhieu}</div>
-              <div>{signerThuKho}</div>
-              <div>{signerPhongKhvt}</div>
-              <div>{signerKeToanTruong}</div>
-              <div>{signerGiamDoc}</div>
+                <div className="receipt-signer-name">
+                  {signerGiamDoc}
+                </div>
+              </div>
             </div>
           </>
           )}
@@ -759,14 +794,6 @@ const numberToVietnameseText = (value) => {
                       <strong>GIÁM ĐỐC</strong>
                       <span>(Ký, họ tên, đóng dấu)</span>
                   </div>
-                  </div>
-
-                  <div className="receipt-signer-name-row">
-                    <div>{signerNguoiLapPhieu}</div>
-                    <div>{signerThuKho}</div>
-                    <div>{signerPhongKhvt}</div>
-                    <div>{signerKeToanTruong}</div>
-                    <div>{signerGiamDoc}</div>
                   </div>
                 </>
               )}
