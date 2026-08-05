@@ -254,6 +254,22 @@
   font-weight: 700;
 }
 
+.release-report-link-button {
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: #2563eb;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+
+.release-report-link-button:hover {
+  text-decoration: underline;
+}
+
 .release-report-goods-name {
   min-width: 220px;
   white-space: normal !important;

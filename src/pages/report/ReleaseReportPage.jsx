@@ -792,8 +792,10 @@ export default function ReleaseReportPage() {
                             className="release-report-link-button"
                             onClick={() => {
                               if (view.releaseCode) {
-                                window.location.assign(
-                                  `/dashboard/activity/export/order-detail/${encodeURIComponent(view.releaseCode)}?mode=print`
+                                window.open(
+                                  `/dashboard/activity/export/order-detail/${encodeURIComponent(view.releaseCode)}?mode=print`,
+                                  "_blank",
+                                  "noopener,noreferrer"
                                 );
                               }
                             }}
