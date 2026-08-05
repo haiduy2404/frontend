@@ -1670,14 +1670,13 @@ const handleOpenReceiptPrint = async () => {
     return;
   }
 
-  setReceiptSigners({
-    ...EMPTY_RECEIPT_SIGNERS,
-  });
-
-  setReceiptAttachedDocumentNumber("");
+  // Chỉ mở modal, không reset tên đã chọn
   setShowReceiptPrintModal(true);
 
-  await loadReceiptSignerUsers();
+  // Chỉ gọi API lần đầu khi chưa có danh sách user
+  if (receiptUsers.length === 0) {
+    await loadReceiptSignerUsers();
+  }
 };
 
 const handleConfirmReceiptPrint = () => {

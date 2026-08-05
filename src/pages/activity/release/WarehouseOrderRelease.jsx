@@ -204,13 +204,13 @@ const handleOpenPrintSignerModal = async () => {
     return;
   }
 
-  setPrintSigners({
-    ...EMPTY_RELEASE_SIGNERS,
-  });
-
+  // Mở modal nhưng không xóa những tên đã chọn
   setShowPrintSignerModal(true);
 
-  await loadSignerUsers();
+  // Chỉ tải danh sách người dùng ở lần mở đầu tiên
+  if (signerUsers.length === 0) {
+    await loadSignerUsers();
+  }
 };
 
 const handleConfirmPrint = () => {
