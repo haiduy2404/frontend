@@ -125,7 +125,7 @@ function ReleasePrintPage() {
   // PHÂN TRANG
   // ============================================================
 
-  const ROWS_PER_PAGE = 25;
+  const ROWS_PER_PAGE = 20;
   const MIN_DISPLAY_ROWS = 15;
 
   const pages = useMemo(() => {
