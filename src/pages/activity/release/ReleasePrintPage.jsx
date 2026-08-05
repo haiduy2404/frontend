@@ -8,7 +8,7 @@ import "../../../styles/ReleasePrintPage.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import {
   getReleaseOrderByCode,
-  updateReleaseOrder,
+  updateReleasePrinted,
 } from "../../../services/releaseOrderService";
 
 function ReleasePrintPage() {
@@ -80,9 +80,7 @@ const handlePrint = async () => {
   }
 
   try {
-    const payload = buildPrintPayload();
-
-    await updateReleaseOrder(release.id, payload);
+    await updateReleasePrinted(release.id, true);
 
     setRelease((previousRelease) => ({
       ...previousRelease,
@@ -95,7 +93,7 @@ const handlePrint = async () => {
     );
   } catch (error) {
     console.error(
-      "UPDATE RELEASE PRINT STATUS ERROR:",
+      "UPDATE RELEASE PRINTED ERROR:",
       error.response?.data || error
     );
 
@@ -106,41 +104,6 @@ const handlePrint = async () => {
     );
   }
 };
-
-const buildPrintPayload = () => ({
-  terms: release?.terms || null,
-  release_date: release?.release_date,
-  warehouse_id:
-    release?.warehouse_id ||
-    release?.warehouse?.id ||
-    null,
-
-  receiver_unit:
-    release?.receiver_unit?.name ||
-    release?.receiver_unit_name ||
-    release?.receiver_unit ||
-    null,
-
-  release_target:
-    release?.release_target?.name ||
-    release?.release_target_name ||
-    release?.release_target ||
-    null,
-
-  contract_number: release?.contract_number || null,
-  description: release?.description || null,
-
-  is_printed: true,
-
-  items: (release?.items || []).map((item) => ({
-    item_id: item.item_id || item.id,
-    goods_id: item.goods_id,
-    goods_unit_id: item.goods_unit_id || null,
-    requested_quantity: parseNumber(item.requested_quantity),
-    actual_quantity: parseNumber(item.actual_quantity),
-    is_delete: false,
-  })),
-});
 
   useEffect(() => {
     const fetchData = async () => {

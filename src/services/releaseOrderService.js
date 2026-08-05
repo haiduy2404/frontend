@@ -77,6 +77,19 @@ export const updateWarehouseReleaseStatus = (releaseId, action) => {
   );
 };
 
+export const updateReleasePrinted = async (
+  releaseId,
+  isPrinted = true
+) => {
+  const response = await axiosInstance.patch(
+    `/inventory/warehouse-releases/${releaseId}/printed`,
+    {
+      is_printed: isPrinted,
+    }
+  );
+
+  return response.data;
+};
 
 export default {
   getReleaseOrdersPageable,
@@ -89,4 +102,5 @@ export default {
   completeReleaseOrder,
   cancelReleaseOrder,
   updateWarehouseReleaseStatus,
+  updateReleasePrinted,
 };
