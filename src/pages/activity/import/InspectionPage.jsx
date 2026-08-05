@@ -6,6 +6,10 @@ import {
   getWarehouseReceiptsPageable,
   getWarehouseReceiptByCode,
 } from "../../../services/warehouseReceiptService";
+import {
+  getStoredListPageState,
+  saveStoredListPageState,
+} from "../../../utils/listPageStateStorage";
 
 import {
   getDefaultImportOrderFilters,
@@ -16,9 +20,16 @@ import { RiEdit2Line } from "react-icons/ri";
 
 function InspectionPage() {
   const navigate = useNavigate();
+  const LIST_PAGE_STATE_KEY = "inspection-page-state";
 
-  const [selectedId, setSelectedId] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedId, setSelectedId] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.selectedId || null;
+  });
+  const [selectedIds, setSelectedIds] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return Array.isArray(stored.selectedIds) ? stored.selectedIds : [];
+  });
   const [inspections, setInspections] = useState([]);
   const [detailRows, setDetailRows] = useState([]);
   const [selectedReceiptDetail, setSelectedReceiptDetail] = useState(null);
@@ -26,13 +37,38 @@ function InspectionPage() {
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [search, setSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.search || "";
+  });
+  const [page, setPage] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPage = Number(stored.page);
+    return Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPageSize = Number(stored.pageSize);
+    return Number.isFinite(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 30;
+  });
   const [total, setTotal] = useState(0);
-  const [filters, setFilters] = useState(getDefaultImportOrderFilters());
+  const [filters, setFilters] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.filters || getDefaultImportOrderFilters();
+  });
 
   const unwrapData = (response) => response?.data || response;
+
+  useEffect(() => {
+    saveStoredListPageState(LIST_PAGE_STATE_KEY, {
+      search,
+      page,
+      pageSize,
+      filters,
+      selectedId,
+      selectedIds,
+    });
+  }, [filters, page, pageSize, search, selectedId, selectedIds]);
 
   // Parse số giống ImportOrderDetailPage.
   const parseNumber = (value, options = {}) => {
@@ -205,14 +241,23 @@ const fetchInspections = async (customParams = {}) => {
       const results = Array.isArray(data?.results) ? data.results : [];
 
       setInspections(results);
-      setSelectedIds([]);
+      const activeSelectedIds = (selectedIds || []).filter((id) =>
+        results.some((row) => row.id === id)
+      );
+      setSelectedIds(activeSelectedIds);
       setTotal(data?.total || results.length);
 
       if (results.length > 0) {
-        const firstRow = results[0];
+        const matchedSelectedRow = results.find((row) => row.id === selectedId);
 
-        setSelectedId(firstRow.id);
-        fetchInspectionDetail(firstRow.code);
+        if (matchedSelectedRow) {
+          setSelectedId(matchedSelectedRow.id);
+          fetchInspectionDetail(matchedSelectedRow.code);
+        } else {
+          const firstRow = results[0];
+          setSelectedId(firstRow.id);
+          fetchInspectionDetail(firstRow.code);
+        }
       } else {
         setSelectedId(null);
         setDetailRows([]);

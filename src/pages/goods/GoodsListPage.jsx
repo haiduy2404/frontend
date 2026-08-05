@@ -5,15 +5,40 @@ import { getGoods, deleteGoods } from "../../services/goodsService";
 import GoodsFormModal from "../../components/GoodsFormModal";
 import GoodsImportModal from "../../components/GoodsImportModal";
 import { useAuth } from "../../contexts/AuthContext";
+import {
+  getStoredListPageState,
+  saveStoredListPageState,
+} from "../../utils/listPageStateStorage";
 
 function GoodsListPage() {
+  const LIST_PAGE_STATE_KEY = "goods-list-page-state";
   const [goodsList, setGoodsList] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [stockStatus, setStockStatus] = useState("all");
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [selectedIds, setSelectedIds] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return Array.isArray(stored.selectedIds) ? stored.selectedIds : [];
+  });
+  const [stockStatus, setStockStatus] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.stockStatus || "all";
+  });
+  const [search, setSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.search || "";
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.debouncedSearch || "";
+  });
+  const [page, setPage] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPage = Number(stored.page);
+    return Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPageSize = Number(stored.pageSize);
+    return Number.isFinite(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 30;
+  });
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -21,6 +46,17 @@ function GoodsListPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingGoods, setEditingGoods] = useState(null);
   const { canDo } = useAuth();
+
+  useEffect(() => {
+    saveStoredListPageState(LIST_PAGE_STATE_KEY, {
+      search,
+      debouncedSearch,
+      stockStatus,
+      page,
+      pageSize,
+      selectedIds,
+    });
+  }, [debouncedSearch, page, pageSize, search, selectedIds, stockStatus]);
 
   const fetchGoods = async (
     keyword = debouncedSearch,
@@ -45,6 +81,10 @@ function GoodsListPage() {
         : [];
 
       setGoodsList(results);
+      const activeSelectedIds = (selectedIds || []).filter((id) =>
+        results.some((item) => item.id === id)
+      );
+      setSelectedIds(activeSelectedIds);
       setTotal(payload?.total ?? payload?.count ?? results.length);
       setTotalPages(
         payload?.total_pages ??

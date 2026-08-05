@@ -16,6 +16,10 @@ import {
 } from "./utils/warehouseReleaseFilterUtils";
 
 import { getWarehouses } from "../../../services/warehouseService";
+import {
+  getStoredListPageState,
+  saveStoredListPageState,
+} from "../../../utils/listPageStateStorage";
 
 import {
   RiEdit2Line,
@@ -27,6 +31,7 @@ import {
 function WarehouseReleasePage() {
   const navigate = useNavigate();
   const { canDo } = useAuth();
+  const LIST_PAGE_STATE_KEY = "warehouse-release-page-state";
 
   const canUpdateRelease = canDo("update_warehouse_release");
   const canInputActualQuantity = canDo("update_actual_released_quantity");
@@ -36,8 +41,14 @@ function WarehouseReleasePage() {
   const [searchParams] = useSearchParams();
   const isPrintMode = searchParams.get("mode") === "print";
   const [releaseOrders, setReleaseOrders] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedId, setSelectedId] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.selectedId || null;
+  });
+  const [selectedIds, setSelectedIds] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return Array.isArray(stored.selectedIds) ? stored.selectedIds : [];
+  });
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [detailRows, setDetailRows] = useState([]);
   const [detailSearch, setDetailSearch] = useState("");
@@ -51,20 +62,49 @@ function WarehouseReleasePage() {
 
   const [warehouses, setWarehouses] = useState([]);
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.search || "";
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.debouncedSearch || "";
+  });
 
-  const [filters, setFilters] = useState(getDefaultWarehouseReleaseFilters());
+  const [filters, setFilters] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.filters || getDefaultWarehouseReleaseFilters();
+  });
 
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [rejecting, setRejecting] = useState(false);
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [page, setPage] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPage = Number(stored.page);
+    return Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPageSize = Number(stored.pageSize);
+    return Number.isFinite(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 30;
+  });
   const [total, setTotal] = useState(0);
 
   const unwrapData = (response) => response?.data || response;
+  useEffect(() => {
+    saveStoredListPageState(LIST_PAGE_STATE_KEY, {
+      search,
+      debouncedSearch,
+      page,
+      pageSize,
+      filters,
+      selectedId,
+      selectedIds,
+    });
+  }, [debouncedSearch, filters, page, pageSize, search, selectedId, selectedIds]);
+
   const filteredDetailRows = useMemo(() => {
     const keyword = detailSearch.trim().toLowerCase();
 

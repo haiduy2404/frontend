@@ -11,6 +11,10 @@ import {
   deleteWarehouseReceipt,
 } from "../../../services/warehouseReceiptService";
 import { calculateImportOrderTotals } from "../../../utils/importOrderTotals";
+import {
+  getStoredListPageState,
+  saveStoredListPageState,
+} from "../../../utils/listPageStateStorage";
 
 import {
   RiAddLine,
@@ -27,13 +31,31 @@ import {
 
 function ImportOrderPage() {
   const { canDo } = useAuth();
-  const [selectedId, setSelectedId] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const LIST_PAGE_STATE_KEY = "import-order-page-state";
+  const [selectedId, setSelectedId] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.selectedId || null;
+  });
+  const [selectedIds, setSelectedIds] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return Array.isArray(stored.selectedIds) ? stored.selectedIds : [];
+  });
   const [importOrders, setImportOrders] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [search, setSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.search || "";
+  });
+  const [page, setPage] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPage = Number(stored.page);
+    return Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPageSize = Number(stored.pageSize);
+    return Number.isFinite(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 30;
+  });
   const [total, setTotal] = useState(0);
   const [detailSearch, setDetailSearch] = useState("");
   const [detailRows, setDetailRows] = useState([]);
@@ -42,7 +64,10 @@ function ImportOrderPage() {
   const [completing, setCompleting] = useState(false);
   const [openActionId, setOpenActionId] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
-  const [filters, setFilters] = useState(getDefaultImportOrderFilters());
+  const [filters, setFilters] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.filters || getDefaultImportOrderFilters();
+  });
 
   // Kích thước vùng danh sách phía trên. null = dùng tỷ lệ mặc định trong CSS.
   const [topPaneHeight, setTopPaneHeight] = useState(null);
@@ -54,6 +79,17 @@ function ImportOrderPage() {
 
  const unwrapData = (response) => response?.data || response;
  const navigate = useNavigate();
+
+ useEffect(() => {
+  saveStoredListPageState(LIST_PAGE_STATE_KEY, {
+    search,
+    page,
+    pageSize,
+    filters,
+    selectedId,
+    selectedIds,
+  });
+ }, [filters, page, pageSize, search, selectedId, selectedIds]);
 
  const filteredImportOrders = useMemo(() => {
   const keyword = search.trim().toLowerCase();
@@ -184,13 +220,20 @@ const fetchImportOrders = async (customParams = {}) => {
     const results = Array.isArray(data?.results) ? data.results : [];
 
     setImportOrders(results);
-    setSelectedIds([]);
+    const activeSelectedIds = (selectedIds || []).filter((id) =>
+      results.some((row) => row.id === id)
+    );
+    setSelectedIds(activeSelectedIds);
     setTotal(data?.total || results.length);
 
     if (results.length > 0) {
-      const firstRow = results[0];
+      const matchedSelectedRow = results.find((row) => row.id === selectedId);
 
-      if (!selectedId) {
+      if (matchedSelectedRow) {
+        setSelectedId(matchedSelectedRow.id);
+        fetchImportOrderDetail(matchedSelectedRow.code);
+      } else {
+        const firstRow = results[0];
         setSelectedId(firstRow.id);
         fetchImportOrderDetail(firstRow.code);
       }

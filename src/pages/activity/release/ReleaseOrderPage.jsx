@@ -22,20 +22,45 @@ import {
   getDefaultWarehouseReleaseFilters,
   buildWarehouseReleaseFilterParams,
 } from "./utils/warehouseReleaseFilterUtils";
+import {
+  getStoredListPageState,
+  saveStoredListPageState,
+} from "../../../utils/listPageStateStorage";
 
 function ReleaseOrderPage() {
   const { canDo } = useAuth();
   const navigate = useNavigate();
+  const LIST_PAGE_STATE_KEY = "release-order-page-state";
 
-  const [selectedId, setSelectedId] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedId, setSelectedId] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.selectedId || null;
+  });
+  const [selectedIds, setSelectedIds] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return Array.isArray(stored.selectedIds) ? stored.selectedIds : [];
+  });
   const [releaseOrders, setReleaseOrders] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [search, setSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.search || "";
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.debouncedSearch || "";
+  });
+  const [page, setPage] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPage = Number(stored.page);
+    return Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPageSize = Number(stored.pageSize);
+    return Number.isFinite(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 30;
+  });
   const [total, setTotal] = useState(0);
 
   const [detailRows, setDetailRows] = useState([]);
@@ -51,7 +76,22 @@ function ReleaseOrderPage() {
   const resizeStartRef = useRef(null);
 
   const unwrapData = (response) => response?.data || response;
-  const [filters, setFilters] = useState(getDefaultWarehouseReleaseFilters());
+  const [filters, setFilters] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.filters || getDefaultWarehouseReleaseFilters();
+  });
+
+  useEffect(() => {
+    saveStoredListPageState(LIST_PAGE_STATE_KEY, {
+      search,
+      debouncedSearch,
+      page,
+      pageSize,
+      filters,
+      selectedId,
+      selectedIds,
+    });
+  }, [debouncedSearch, filters, page, pageSize, search, selectedId, selectedIds]);
 
   const selectedRow = releaseOrders.find((item) => item.id === selectedId);
 
@@ -173,13 +213,22 @@ function ReleaseOrderPage() {
       const results = Array.isArray(data?.results) ? data.results : [];
 
       setReleaseOrders(results);
-      setSelectedIds([]);
+      const activeSelectedIds = (selectedIds || []).filter((id) =>
+        results.some((row) => row.id === id)
+      );
+      setSelectedIds(activeSelectedIds);
       setTotal(data?.total || data?.count || results.length);
 
       if (results.length > 0) {
-        const firstRow = results[0];
+        const matchedSelectedRow = results.find((row) => row.id === selectedId);
 
-        if (!selectedId) {
+        if (matchedSelectedRow) {
+          setSelectedId(matchedSelectedRow.id);
+          fetchReleaseOrderDetail(
+            matchedSelectedRow.code || matchedSelectedRow.release_code
+          );
+        } else {
+          const firstRow = results[0];
           setSelectedId(firstRow.id);
           fetchReleaseOrderDetail(firstRow.code || firstRow.release_code);
         }

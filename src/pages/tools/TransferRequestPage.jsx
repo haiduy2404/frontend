@@ -18,6 +18,10 @@ import {
   getMoneyTransferRequestById,
   getMoneyTransferRequests,
 } from "../../services/moneyTransferRequestService";
+import {
+  getStoredListPageState,
+  saveStoredListPageState,
+} from "../../utils/listPageStateStorage";
 
 const unwrapData = (response) => response?.data || response;
 const formatMoney = (value) => {
@@ -59,6 +63,7 @@ const getStatusLabel = (status) =>
 function TransferRequestPage() {
   const navigate = useNavigate();
   const { canDo } = useAuth();
+  const LIST_PAGE_STATE_KEY = "transfer-request-page-state";
 
   const handlePrintRequest = (requestId) => {
     if (!requestId) {
@@ -80,18 +85,53 @@ function TransferRequestPage() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [companyTaxCode, setCompanyTaxCode] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [search, setSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.search || "";
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.debouncedSearch || "";
+  });
+  const [companyTaxCode, setCompanyTaxCode] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.companyTaxCode || "";
+  });
+  const [dateFrom, setDateFrom] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.dateFrom || "";
+  });
+  const [dateTo, setDateTo] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.dateTo || "";
+  });
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [page, setPage] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPage = Number(stored.page);
+    return Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPageSize = Number(stored.pageSize);
+    return Number.isFinite(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 30;
+  });
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   const [formConfig, setFormConfig] = useState(null);
+
+  useEffect(() => {
+    saveStoredListPageState(LIST_PAGE_STATE_KEY, {
+      search,
+      debouncedSearch,
+      companyTaxCode,
+      dateFrom,
+      dateTo,
+      page,
+      pageSize,
+    });
+  }, [companyTaxCode, dateFrom, dateTo, debouncedSearch, page, pageSize, search]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

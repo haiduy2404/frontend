@@ -13,22 +13,44 @@ import { getWarehouses } from "../../services/warehouseService";
 import StockBalanceImportModal from "../../components/StockBalanceImportModal";
 
 import { useAuth } from "../../contexts/AuthContext";
+import {
+  getStoredListPageState,
+  saveStoredListPageState,
+} from "../../utils/listPageStateStorage";
 
 function OpeningStockPage() {
   const { canDo, isWarehouseRestricted } = useAuth();
+  const LIST_PAGE_STATE_KEY = "opening-stock-page-state";
   const getRowKey = (item) => `${item.goods_id}_${item.warehouse_id}`;
   const [openingStocks, setOpeningStocks] = useState([]);
   const resizingRef = useRef(null);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [search, setSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.search || "";
+  });
+  const [debouncedSearch, setDebouncedSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.debouncedSearch || "";
+  });
+  const [page, setPage] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPage = Number(stored.page);
+    return Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPageSize = Number(stored.pageSize);
+    return Number.isFinite(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 30;
+  });
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [showImportModal, setShowImportModal] = useState(false);
 
   const [warehouses, setWarehouses] = useState([]);
-  const [selectedWarehouse, setSelectedWarehouse] = useState(null);
+  const [selectedWarehouse, setSelectedWarehouse] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.selectedWarehouse || null;
+  });
   const [warehouseSearch, setWarehouseSearch] = useState("");
   const [warehouseDropdownOpen, setWarehouseDropdownOpen] = useState(false);
   const warehouseBoxRef = useRef(null);
@@ -45,6 +67,16 @@ function OpeningStockPage() {
   ];
 
   const [showSettingModal, setShowSettingModal] = useState(false);
+
+  useEffect(() => {
+    saveStoredListPageState(LIST_PAGE_STATE_KEY, {
+      search,
+      debouncedSearch,
+      page,
+      pageSize,
+      selectedWarehouse,
+    });
+  }, [debouncedSearch, page, pageSize, search, selectedWarehouse]);
 
   const [columns, setColumns] = useState(() => {
     const saved = localStorage.getItem("openingStockColumns");

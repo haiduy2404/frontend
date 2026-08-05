@@ -6,22 +6,49 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { RiEdit2Line } from "react-icons/ri";
 import { RiMore2Fill, RiPauseCircleLine, RiPlayCircleLine } from "react-icons/ri";
 import { useAuth } from "../../contexts/AuthContext";
+import {
+  getStoredListPageState,
+  saveStoredListPageState,
+} from "../../utils/listPageStateStorage";
 
 function StockListPage() {
+  const LIST_PAGE_STATE_KEY = "stock-list-page-state";
   const [warehouses, setWarehouses] = useState([]);
-  const [search, setSearch] = useState("");
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [search, setSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.search || "";
+  });
+  const [selectedIds, setSelectedIds] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return Array.isArray(stored.selectedIds) ? stored.selectedIds : [];
+  });
   const [editingWarehouseId, setEditingWarehouseId] = useState(null);
   const fileInputRef = useRef(null);
   const [activeRowId, setActiveRowId] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPage = Number(stored.page);
+    return Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  });
   const [totalPages, setTotalPages] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    const parsedPageSize = Number(stored.pageSize);
+    return Number.isFinite(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 20;
+  });
   const [total, setTotal] = useState(0);
   const { canDo, isWarehouseRestricted } = useAuth();
 
+  useEffect(() => {
+    saveStoredListPageState(LIST_PAGE_STATE_KEY, {
+      search,
+      page,
+      pageSize,
+      selectedIds,
+    });
+  }, [page, pageSize, search, selectedIds]);
 
   const handleExcelClick = () => {
   fileInputRef.current.click();
@@ -103,6 +130,10 @@ const fetchWarehouses = async (
       : [];
 
     setWarehouses(results);
+    const activeSelectedIds = (selectedIds || []).filter((id) =>
+      results.some((warehouse) => warehouse.id === id)
+    );
+    setSelectedIds(activeSelectedIds);
     setTotal(payload?.total ?? results.length);
     setTotalPages(payload?.total_pages ?? 1);
   } catch (error) {
