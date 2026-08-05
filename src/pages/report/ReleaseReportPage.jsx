@@ -522,17 +522,14 @@ export default function ReleaseReportPage() {
         "goods.unit_name",
       ]),
       receiverUnitName: firstValue(row, [
-        "release_target",
-        "release_target_name",
-        "target_name",
-        "release_target.name",
+        "receiver_unit.name",
+        "receiver_unit_name",
+        "receiver_unit",
       ]),
       releaseTargetName: firstValue(row, [
-        "goods_name",
-        "goods.name",
-        "release_target_name",
-        "target_name",
         "release_target.name",
+        "release_target_name",
+        "release_target",
       ]),
       quantity,
       averagePrice,
@@ -789,7 +786,23 @@ export default function ReleaseReportPage() {
                       <td className="release-report-center">{rowNumber}</td>
 
                       <td className="release-report-code">
-                        {view.releaseCode || "—"}
+                        {view.releaseCode ? (
+                          <button
+                            type="button"
+                            className="release-report-link-button"
+                            onClick={() => {
+                              if (view.releaseCode) {
+                                window.location.assign(
+                                  `/dashboard/activity/export/order-detail/${encodeURIComponent(view.releaseCode)}?mode=view`
+                                );
+                              }
+                            }}
+                          >
+                            {view.releaseCode}
+                          </button>
+                        ) : (
+                          "—"
+                        )}
                       </td>
 
                       <td>{formatDate(view.releaseDate)}</td>
