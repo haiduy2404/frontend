@@ -258,16 +258,6 @@ const handleOpenPrintSignerModal = async () => {
 };
 
 const handleConfirmPrint = () => {
-  const missingField = activeSignerFields.find(
-    (field) =>
-      !String(printSigners[field.key] || "").trim()
-  );
-
-  if (missingField) {
-    alert(`Vui lòng chọn ${missingField.label}`);
-    return;
-  }
-
   const releaseCode = headerData.code || id;
 
   const printRoutes = {
@@ -282,17 +272,21 @@ const handleConfirmPrint = () => {
   };
 
   const printState = {
-    signerCungTieu:
-      printSigners.cungTieu.trim(),
+    signerCungTieu: String(
+      printSigners.cungTieu || ""
+    ).trim(),
 
-    signerThuKho:
-      printSigners.thuKho.trim(),
+    signerThuKho: String(
+      printSigners.thuKho || ""
+    ).trim(),
 
-    signerPhongKHVT:
-      printSigners.phongKHVT.trim(),
+    signerPhongKHVT: String(
+      printSigners.phongKHVT || ""
+    ).trim(),
 
-    signerGiamDoc:
-      printSigners.giamDoc.trim(),
+    signerGiamDoc: String(
+      printSigners.giamDoc || ""
+    ).trim(),
 
     printForm,
   };
@@ -930,10 +924,7 @@ const handleConfirmPrint = () => {
                   className="release-print-signer-field"
                   key={field.key}
                 >
-                  <label>
-                    {field.label}
-                    <span> *</span>
-                  </label>
+                  <label>{field.label}</label>
 
                   <select
                     value={printSigners[field.key]}
