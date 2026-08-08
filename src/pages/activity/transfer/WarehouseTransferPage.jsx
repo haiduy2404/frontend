@@ -55,14 +55,21 @@ export default function WarehouseTransferPage() {
       currentId === transferId ? null : transferId
     );
   };
+
+  const isPendingTransferStatus = (status) =>
+    status === "PENDING" || status === "CANCELLED";
+
   const getTransferStatusText = (status) => {
     switch (status) {
       case "PENDING":
         return "Đang điều chuyển";
+
       case "COMPLETED":
         return "Đã hoàn thành";
+
       case "CANCELLED":
         return "Đang điều chuyển";
+
       default:
         return "-";
     }
@@ -80,7 +87,7 @@ export default function WarehouseTransferPage() {
       return;
     }
 
-    if (transfer.status !== "PENDING") {
+    if (!isPendingTransferStatus(transfer.status)) {
       alert("Chỉ được hoàn thành phiếu đang điều chuyển");
       return;
     }
@@ -243,7 +250,7 @@ export default function WarehouseTransferPage() {
 
       await updateWarehouseTransferStatus(
         transfer.id,
-        "pending"
+          "cancel"
       );
 
       setSelectedTransfer(null);
@@ -318,17 +325,20 @@ export default function WarehouseTransferPage() {
                 <button
                   type="button"
                   className="edit-btn"
-                  disabled={!selectedRow || selectedRow.status !== "PENDING"}
+                  disabled={
+                    !selectedRow ||
+                    !isPendingTransferStatus(selectedRow.status)
+                  }
                   onClick={() => {
                     if (!selectedRow) {
                       alert("Vui lòng chọn phiếu cần chỉnh sửa");
                       return;
                     }
 
-                    if (selectedRow.status !== "PENDING") {
-                      alert("Chỉ được chỉnh sửa phiếu đang điều chuyển.");
-                      return;
-                    }
+                  if (!isPendingTransferStatus(selectedRow.status)) {
+                    alert("Chỉ được chỉnh sửa phiếu đang điều chuyển.");
+                    return;
+                  }
 
                     handleOpenEdit(selectedRow);
                   }}
@@ -375,7 +385,7 @@ export default function WarehouseTransferPage() {
                     completing ||
                     rejecting ||
                     !selectedRow ||
-                    selectedRow.status !== "PENDING"
+                    !isPendingTransferStatus(selectedRow.status)
                   }
                   onClick={() => handleComplete(selectedRow)}
                 >
