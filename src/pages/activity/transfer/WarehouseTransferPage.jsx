@@ -62,7 +62,7 @@ export default function WarehouseTransferPage() {
       case "COMPLETED":
         return "Đã hoàn thành";
       case "CANCELLED":
-        return "Đã từ chối";
+        return "Đang điều chuyển";
       default:
         return "-";
     }
@@ -243,13 +243,13 @@ export default function WarehouseTransferPage() {
 
       await updateWarehouseTransferStatus(
         transfer.id,
-        "cancel"
+        "pending"
       );
 
       setSelectedTransfer(null);
       await loadTransfers();
 
-      alert(`Từ chối phiếu ${transferCode} thành công.`);
+      alert(`Đưa phiếu ${transferCode} về trạng thái đang điều chuyển thành công.`);
     } catch (error) {
       console.error(
         "REJECT TRANSFER ERROR:",
@@ -312,7 +312,6 @@ export default function WarehouseTransferPage() {
             <option value="">Tình trạng thực hiện: Tất cả</option>
             <option value="PENDING">Đang điều chuyển</option>
             <option value="COMPLETED">Đã hoàn thành</option>
-            <option value="CANCELLED">Đã từ chối</option>
           </select>
             <div className="toolbar-spacer" />
               {canUpdate && (
