@@ -16,6 +16,28 @@ import {
 import { getWarehouses } from "../../../services/warehouseService";
 import { getOpeningStocks } from "../../../services/openingStockService";
 
+const getTodayDate = () => {
+  const today = new Date();
+
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(today.getDate()).padStart(2, "0")}`;
+};
+
+const normalizeTransferDate = (value) => {
+  if (!value) return getTodayDate();
+
+  const dateOnly = String(value).split("T")[0];
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateOnly)) {
+    const [day, month, year] = dateOnly.split("/");
+    return `${year}-${month}-${day}`;
+  }
+
+  return dateOnly;
+};
+
 export default function WarehouseTransferDetailPage() {
   const navigate = useNavigate();
   const { code } = useParams();
@@ -89,6 +111,7 @@ export default function WarehouseTransferDetailPage() {
   const [form, setForm] = useState({
     id: null,
     transfer_code: "",
+    transfer_date: getTodayDate(),
     reason: "",
     from_warehouse_id: "",
     to_warehouse_id: "",
@@ -228,6 +251,7 @@ export default function WarehouseTransferDetailPage() {
             setForm({
             id: data.id,
             transfer_code: data.code || "",
+            transfer_date: normalizeTransferDate(data.transfer_date),
             reason: data.description || data.reason || "",
             from_warehouse_id: data.source_warehouse_id || "",
             to_warehouse_id: data.destination_warehouse_id || "",
@@ -533,7 +557,7 @@ export default function WarehouseTransferDetailPage() {
     return {
         source_warehouse_id: form.from_warehouse_id,
         destination_warehouse_id: form.to_warehouse_id,
-        transfer_date: new Date().toISOString().split("T")[0],
+        transfer_date: form.transfer_date || getTodayDate(),
         reason: form.reason || null,
         reference: form.reference || null,
         status,
@@ -564,6 +588,7 @@ export default function WarehouseTransferDetailPage() {
     setForm({
       id: null,
       transfer_code: "",
+      transfer_date: getTodayDate(),
       reason: "",
       from_warehouse_id: "",
       to_warehouse_id: "",
@@ -714,6 +739,20 @@ export default function WarehouseTransferDetailPage() {
               <div className="form-group">
                 <label>Địa chỉ kho nhập</label>
                 <input value={form.to_warehouse_address} disabled />
+              </div>
+
+              <div className="form-group full">
+                <label>Ngày điều chuyển</label>
+                <input
+                  type="date"
+                  data-enter-next="true"
+                  onKeyDown={handleEnterMoveNext}
+                  disabled={isViewMode}
+                  value={form.transfer_date}
+                  onChange={(e) =>
+                    handleFormChange("transfer_date", e.target.value)
+                  }
+                />
               </div>
 
               <div className="form-group full">
