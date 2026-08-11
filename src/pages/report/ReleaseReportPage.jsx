@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getReleaseReportPageable } from "../../services/releaseReportService";
 import { getWarehouses } from "../../services/warehouseService";
 import { getReleaseReferencesPageable } from "../../services/releaseOrderService";
+import ReportExcelExportButton from "../../components/ReportExcelExportButton";
+import { REPORT_RELEASE } from "../../services/reportExportService";
 import "../../styles/ReleaseReportPage.css";
 
 const INITIAL_FILTERS = {
@@ -436,6 +438,20 @@ export default function ReleaseReportPage() {
     setHasViewedReport(true);
   };
 
+  // Chỉ gửi field có giá trị: BE bỏ qua field rỗng, nhưng gửi chuỗi rỗng cho
+  // start_date sẽ bị serializer báo lỗi định dạng ngày.
+  const buildExportFilters = useCallback(() => {
+    const payload = {};
+
+    Object.entries(appliedFilters).forEach(([key, value]) => {
+      if (typeof value === "string" ? value.trim() : value) {
+        payload[key] = typeof value === "string" ? value.trim() : value;
+      }
+    });
+
+    return payload;
+  }, [appliedFilters]);
+
   const handleReset = () => {
     setFilters(INITIAL_FILTERS);
     setAppliedFilters(INITIAL_FILTERS);
@@ -689,6 +705,16 @@ export default function ReleaseReportPage() {
             >
               Đặt lại
             </button>
+
+            {/* Xuất theo appliedFilters (bộ lọc ĐANG hiển thị), không phải
+                filters đang gõ dở — nếu không, file tải về khác bảng trên màn
+                hình mà user không hiểu vì sao. */}
+            <ReportExcelExportButton
+              report={REPORT_RELEASE}
+              getFilters={buildExportFilters}
+              disabled={!hasViewedReport || loading}
+              fileName="bao-cao-xuat-kho.xlsx"
+            />
           </div>
         </div>
       </form>

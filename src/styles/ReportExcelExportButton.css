@@ -1,0 +1,74 @@
+.report-export {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.report-export-button {
+  min-width: 132px;
+  height: 40px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 7px;
+  color: #ffffff;
+  background: #128a4b;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.report-export-button:hover:not(:disabled) {
+  background: #0d6f3c;
+  transform: translateY(-1px);
+}
+
+.report-export-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.report-export-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+}
+
+.report-export-progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #e3e8ef;
+  overflow: hidden;
+}
+
+.report-export-progress-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #128a4b;
+  transition: width 0.25s ease;
+}
+
+.report-export-progress-text {
+  color: #4a5566;
+  font-size: 12px;
+}
+
+.report-export-done {
+  color: #128a4b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.report-export-error {
+  max-width: 260px;
+  color: #c0392b;
+  font-size: 12px;
+  font-weight: 600;
+}

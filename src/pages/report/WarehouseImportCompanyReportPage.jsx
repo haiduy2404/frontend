@@ -11,6 +11,8 @@ import "../../styles/WarehouseImportCompanyReportPage.css";
 import { getWarehouseReceiptByCode } from "../../services/warehouseReceiptService";
 import { getWarehouseReceiptCompanySummary } from "../../services/warehouseReceiptReportService";
 import { getCompanies } from "../../services/companyService";
+import ReportExcelExportButton from "../../components/ReportExcelExportButton";
+import { REPORT_RECEIPT_SUMMARY } from "../../services/reportExportService";
 import { useAuth } from "../../contexts/AuthContext";
 
 function WarehouseImportCompanyReportPage() {
@@ -128,23 +130,31 @@ function WarehouseImportCompanyReportPage() {
   }, []);
 
 
+  // Dùng chung cho việc xem báo cáo và xuất Excel: một chỗ dựng payload duy
+  // nhất thì file tải về không thể lệch bộ lọc với bảng đang xem.
+  const buildReportPayload = useCallback((customFilters = filters) => {
+    const payload = {};
+
+    if (customFilters.start_date) {
+      payload.start_date = customFilters.start_date;
+    }
+
+    if (customFilters.end_date) {
+      payload.end_date = customFilters.end_date;
+    }
+
+    if (customFilters.companyIds?.length > 0) {
+      payload.list_company = customFilters.companyIds;
+    }
+
+    return payload;
+  }, [filters]);
+
   const fetchReport = async (customFilters = filters) => {
     try {
         setReportLoading(true);
 
-        const payload = {};
-
-        if (customFilters.start_date) {
-            payload.start_date = customFilters.start_date;
-        }
-
-        if (customFilters.end_date) {
-            payload.end_date = customFilters.end_date;
-        }
-
-        if (customFilters.companyIds.length > 0) {
-            payload.list_company = customFilters.companyIds;
-        }
+        const payload = buildReportPayload(customFilters);
 
         const response = await getWarehouseReceiptCompanySummary(payload);
         const data = unwrapData(response);
@@ -634,6 +644,13 @@ const handleToggleChartMetric = (metricKey) => {
           >
             Đặt lại
           </button>
+
+          <ReportExcelExportButton
+            report={REPORT_RECEIPT_SUMMARY}
+            getFilters={buildReportPayload}
+            disabled={reportLoading}
+            fileName="bao-cao-nhap-kho.xlsx"
+          />
         </div>
       </div>
 
