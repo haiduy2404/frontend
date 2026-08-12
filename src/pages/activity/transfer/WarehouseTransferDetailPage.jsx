@@ -435,31 +435,42 @@ export default function WarehouseTransferDetailPage() {
     });
   };
 
-    const handleDeleteRow = (rowId) => {
+  const handleDeleteRow = (rowId) => {
     setRows((prev) => {
-        const deletedRow = prev.find((item) => item.row_id === rowId);
+      const deletedRow = prev.find(
+        (item) => String(item.row_id) === String(rowId)
+      );
 
-        if (deletedRow?.inventory_id) {
+      if (!deletedRow) return prev;
+
+      // Dòng đã tồn tại ở BE => có item_id
+      // Phải gửi lại với is_delete = true
+      if (deletedRow.item_id) {
         setDeletedRows((old) => {
-            const existed = old.some(
-            (item) => String(item.inventory_id) === String(deletedRow.inventory_id)
-            );
+          const existed = old.some(
+            (item) =>
+              String(item.item_id) ===
+              String(deletedRow.item_id)
+          );
 
-            if (existed) return old;
+          if (existed) return old;
 
-            return [
+          return [
             ...old,
             {
-                ...deletedRow,
-                is_delete: true,
+              ...deletedRow,
+              is_delete: true,
             },
-            ];
+          ];
         });
-        }
+      }
 
-        return prev.filter((item) => item.row_id !== rowId);
+      // Dòng mới chưa lưu BE thì chỉ cần xóa khỏi FE
+      return prev.filter(
+        (item) => String(item.row_id) !== String(rowId)
+      );
     });
-    };
+  };
 
 
   const handleRowChange = (rowId, field, value) => {
