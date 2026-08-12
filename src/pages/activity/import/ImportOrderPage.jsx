@@ -48,6 +48,11 @@ function ImportOrderPage() {
     const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
     return stored.search || "";
   });
+
+  const [debouncedSearch, setDebouncedSearch] = useState(() => {
+    const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
+    return stored.debouncedSearch || "";
+  });
   const [page, setPage] = useState(() => {
     const stored = getStoredListPageState(LIST_PAGE_STATE_KEY, {});
     const parsedPage = Number(stored.page);
@@ -83,37 +88,25 @@ function ImportOrderPage() {
  const unwrapData = (response) => response?.data || response;
  const navigate = useNavigate();
 
- useEffect(() => {
-  saveStoredListPageState(LIST_PAGE_STATE_KEY, {
-    search,
+  useEffect(() => {
+    saveStoredListPageState(LIST_PAGE_STATE_KEY, {
+      search,
+      debouncedSearch,
+      page,
+      pageSize,
+      filters,
+      selectedId,
+      selectedIds,
+    });
+  }, [
+    debouncedSearch,
+    filters,
     page,
     pageSize,
-    filters,
+    search,
     selectedId,
     selectedIds,
-  });
- }, [filters, page, pageSize, search, selectedId, selectedIds]);
-
- const filteredImportOrders = useMemo(() => {
-  const keyword = search.trim().toLowerCase();
-
-  if (!keyword) {
-    return importOrders;
-  }
-
-  return importOrders.filter((row) => {
-    const invoiceCode = String(
-      row.invoice_code || row.invoice_no || ""
-    ).toLowerCase();
-
-    const receiptCode = String(row.code || "").toLowerCase();
-
-    return (
-      invoiceCode.includes(keyword) ||
-      receiptCode.includes(keyword)
-    );
-  });
-}, [importOrders, search]);
+  ]);
 
 const filteredDetailRows = useMemo(() => {
   const keyword = detailSearch.trim().toLowerCase();
@@ -133,8 +126,9 @@ const filteredDetailRows = useMemo(() => {
   });
 }, [detailRows, detailSearch]);
 
- const selectedRow = filteredImportOrders.find((item) => item.id === selectedId);
-
+const selectedRow = importOrders.find(
+  (item) => item.id === selectedId
+);
  const isWaitingDeliveryStatus = (status) =>
   status === "WAITING_DELIVERY" || status === "CANCELLED";
 
@@ -260,8 +254,17 @@ const fetchImportOrders = async (customParams = {}) => {
 };
 
     useEffect(() => {
+      const timer = setTimeout(() => {
+        setPage(1);
+        setDebouncedSearch(search);
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }, [search]);
+
+    useEffect(() => {
       fetchImportOrders();
-    }, [page, pageSize]);
+    }, [page, pageSize, debouncedSearch]);
 
     const parseMoney = (value) => {
       if (value === null || value === undefined || value === "") return 0;
@@ -565,7 +568,7 @@ const handleApproveReceipts = async (rows) => {
 };
 
 const waitingDeliveryRows =
-  filteredImportOrders.filter((row) =>
+  importOrders.filter((row) =>
     isWaitingDeliveryStatus(row.status)
   );
 
@@ -771,7 +774,7 @@ const handleToggleOne = (e, row) => {
 
   const selectedApprovalRows = selectedIds
   .map((selectedRowId) =>
-    filteredImportOrders.find(
+    importOrders.find(
       (row) => row.id === selectedRowId
     )
   )
@@ -793,7 +796,7 @@ const isApproveButtonDisabled =
 
 const rejectReceipt =
   selectedIds.length === 1
-    ? filteredImportOrders.find((row) => row.id === selectedIds[0]) || null
+    ? importOrders.find((row) => row.id === selectedIds[0]) || null
     : selectedIds.length === 0
     ? selectedRow
     : null;
@@ -1041,7 +1044,7 @@ const isRejectButtonDisabled =
             </thead>
 
             <tbody>
-              {filteredImportOrders.map((row) => (
+              {importOrders.map((row) => (
                 <tr
                   key={row.id}
                   className={selectedId === row.id ? "selected" : ""}
@@ -1116,7 +1119,7 @@ const isRejectButtonDisabled =
               <option value={100}>100</option>
             </select>
             <strong>
-                {filteredImportOrders.length > 0 ? 1 : 0} - {filteredImportOrders.length}
+              {importOrders.length > 0 ? 1 : 0} - {importOrders.length}
             </strong>
 
             <button disabled={page <= 1} onClick={() => setPage((prev) => prev - 1)}>
