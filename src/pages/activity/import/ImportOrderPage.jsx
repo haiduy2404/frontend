@@ -809,15 +809,15 @@ const isRejectButtonDisabled =
     <div className="warehouse-import-page">
       <div className="warehouse-import-toolbar">
         <div className="warehouse-import-filters">
-          <input
-            className="warehouse-import-search"
-            placeholder="🔍  Tìm kiếm số hóa đơn"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setSelectedIds([]);
-            }}
-          />
+            <input
+              className="warehouse-import-search"
+              placeholder="🔍  Tìm kiếm phiếu nhập kho, ký hiệu hóa đơn"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setSelectedIds([]);
+              }}
+            />
           <select
             className="warehouse-import-time-select"
             name="status"
@@ -1029,6 +1029,7 @@ const isRejectButtonDisabled =
                 />
                 </th>
                 <th>Số phiếu nhập kho</th>
+                <th>Ký hiệu hóa đơn</th>
                 <th>Tình trạng thực hiện</th>
                 <th>Ngày nhập kho</th>
                 <th>Kho nhập</th>
@@ -1068,18 +1069,21 @@ const isRejectButtonDisabled =
                   />
                   </td>
 
-                  <td
-                    className="link-text"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    <td
+                      className="link-text"
+                      onClick={(e) => {
+                        e.stopPropagation();
 
-                      navigate(
-                        `/dashboard/activity/import/order-detail/${row.code || row.id}?mode=print`
-                      );
-                    }}
-                  >
-                    {row.invoice_code || row.invoice_no || row.code || "-"}
-                  </td>
+                        navigate(
+                          `/dashboard/activity/import/order-detail/${row.code || row.id}?mode=print`
+                        );
+                      }}
+                    >
+                      {row.code || "-"}
+                    </td>
+
+                    <td>{row.contract_code || "-"}</td>
+
                     <td>{getReceiptStatusText(row.status)}</td>
                     <td>{row.receipt_date || row.import_date || "-"}</td>
                     <td>{row.warehouse_name || row.warehouse?.name || row.warehouse || "-"}</td>
