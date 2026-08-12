@@ -452,7 +452,11 @@ const evaluateQuantityExpression = (value) => {
       ? units.map((unitItem) => ({
           unit_id: unitItem.unit_id || "",
           unit_name: unitItem.unit_name || "",
-          conversion_ratio: Number(unitItem.conversion_ratio || 1),
+          conversion_ratio:
+          unitItem.conversion_ratio !== null &&
+          unitItem.conversion_ratio !== undefined
+            ? Number(unitItem.conversion_ratio)
+            : null,
           is_default: Boolean(unitItem.is_default),
         }))
       : [];
@@ -678,7 +682,11 @@ const evaluateQuantityExpression = (value) => {
           unit_id: defaultUnit?.unit_id || goods.unit_id || "",
           unit: defaultUnit?.unit_name || goods.unit_name || goods.unit || "",
           unit_options: unitOptions,
-          conversion_ratio: String(defaultUnit?.conversion_ratio || 1),
+          conversion_ratio:
+          defaultUnit?.conversion_ratio !== null &&
+          defaultUnit?.conversion_ratio !== undefined
+            ? String(defaultUnit.conversion_ratio)
+            : "",
         };
       })
     );
@@ -701,9 +709,11 @@ const evaluateQuantityExpression = (value) => {
           ...item,
           unit_id: unitId,
           unit: selectedUnit?.unit_name || item.unit,
-          conversion_ratio: selectedUnit?.conversion_ratio
-            ? String(selectedUnit.conversion_ratio)
-            : "1",
+          conversion_ratio:
+            selectedUnit?.conversion_ratio !== null &&
+            selectedUnit?.conversion_ratio !== undefined
+              ? String(selectedUnit.conversion_ratio)
+              : "",
         };
       })
     );
@@ -1107,8 +1117,17 @@ const evaluateQuantityExpression = (value) => {
                 unit: selectedUnit?.unit_name || line.goods_unit_name || "",
                 unit_options: unitOptions,
                 conversion_ratio:
-                  selectedUnit?.conversion_ratio !== null &&
-                  selectedUnit?.conversion_ratio !== undefined
+                  line.conversion_ratio !== null &&
+                  line.conversion_ratio !== undefined
+                    ? String(line.conversion_ratio)
+                    : line.goods_conversion_ratio !== null &&
+                      line.goods_conversion_ratio !== undefined
+                    ? String(line.goods_conversion_ratio)
+                    : line.unit_conversion_ratio !== null &&
+                      line.unit_conversion_ratio !== undefined
+                    ? String(line.unit_conversion_ratio)
+                    : selectedUnit?.conversion_ratio !== null &&
+                      selectedUnit?.conversion_ratio !== undefined
                     ? String(selectedUnit.conversion_ratio)
                     : "",
                 requested_quantity: formatViNumber(requestedQuantity, 2),
@@ -1220,11 +1239,20 @@ const evaluateQuantityExpression = (value) => {
                           },
                         ],
 
-                  conversion_ratio:
-                    selectedUnit?.conversion_ratio !== null &&
+              conversion_ratio:
+                line.conversion_ratio !== null &&
+                line.conversion_ratio !== undefined
+                  ? String(line.conversion_ratio)
+                  : line.goods_conversion_ratio !== null &&
+                    line.goods_conversion_ratio !== undefined
+                  ? String(line.goods_conversion_ratio)
+                  : line.unit_conversion_ratio !== null &&
+                    line.unit_conversion_ratio !== undefined
+                  ? String(line.unit_conversion_ratio)
+                  : selectedUnit?.conversion_ratio !== null &&
                     selectedUnit?.conversion_ratio !== undefined
-                      ? String(selectedUnit.conversion_ratio)
-                      : "1",
+                  ? String(selectedUnit.conversion_ratio)
+                  : "",
 
                   requested_quantity: formatViNumber(requestedQuantity, 2),
 
@@ -1780,7 +1808,13 @@ const evaluateQuantityExpression = (value) => {
                     <td className="number-col">
                       <input
                         className="table-number-input"
-                        value={item.conversion_ratio || ""}
+                        value={
+                          item.conversion_ratio !== null &&
+                          item.conversion_ratio !== undefined &&
+                          item.conversion_ratio !== ""
+                            ? item.conversion_ratio
+                            : "-"
+                        }
                         readOnly
                         disabled
                       />

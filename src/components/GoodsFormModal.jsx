@@ -94,6 +94,7 @@ function GoodsFormModal({
                 temp_id: unit.id || Date.now() + Math.random(),
                 unit_id: unit.unit_id || "",
                 ratio: unit.conversion_ratio || "",
+                is_existing: true,
               }))
           : [];
 
@@ -137,15 +138,46 @@ function GoodsFormModal({
         temp_id: Date.now() + Math.random(),
         unit_id: "",
         ratio: "",
+        is_existing: false,
       },
     ]);
   };
+  const handleChangePrimaryUnit = (e) => {
+    // Hàng hóa đã tồn tại => KHÔNG cho đổi ĐVT chính
+    if (editingGoodsId) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      unit_id: e.target.value,
+    }));
+  };
 
   const handleRemoveConversionUnit = (tempId) => {
-    setConversionUnits((prev) => prev.filter((item) => item.temp_id !== tempId));
+    const targetUnit = conversionUnits.find(
+      (item) => item.temp_id === tempId
+    );
+
+    if (!targetUnit) return;
+
+    // ĐVT đã lưu => tuyệt đối không cho xóa
+    if (targetUnit.is_existing) return;
+
+    // Chỉ xóa ĐVT vừa thêm mới, chưa lưu
+    setConversionUnits((prev) =>
+      prev.filter((item) => item.temp_id !== tempId)
+    );
   };
 
   const handleChangeConversionUnit = (tempId, field, value) => {
+    const targetUnit = conversionUnits.find(
+      (item) => item.temp_id === tempId
+    );
+
+    if (!targetUnit) return;
+
+    // ĐVT đã lưu => không cho sửa bất kỳ thông tin nào
+    if (targetUnit.is_existing) return;
+
     setConversionUnits((prev) =>
       prev.map((item) =>
         item.temp_id === tempId
@@ -260,11 +292,12 @@ function GoodsFormModal({
             </label>
 
             <div className="primary-unit-row">
-              <select
-                name="unit_id"
-                value={formData.unit_id}
-                onChange={handleChange}
-              >
+            <select
+              name="unit_id"
+              value={formData.unit_id}
+              onChange={handleChangePrimaryUnit}
+              disabled={!!editingGoodsId}
+            >
                 <option value="">
                   {unitLoading ? "Đang tải ĐVT..." : "Chọn ĐVT chính"}
                 </option>
@@ -296,6 +329,7 @@ function GoodsFormModal({
                     <div className="conversion-card-header">
                       <strong>ĐV chuyển đổi {index + 1}</strong>
 
+                    {!item.is_existing && (
                       <button
                         type="button"
                         className="remove-conversion-btn"
@@ -303,6 +337,7 @@ function GoodsFormModal({
                       >
                         ×
                       </button>
+                    )}
                     </div>
 
                     <div className="conversion-grid">
@@ -310,6 +345,7 @@ function GoodsFormModal({
                         <label>Đơn vị</label>
                         <select
                           value={item.unit_id}
+                          disabled={item.is_existing}
                           onChange={(e) =>
                             handleChangeConversionUnit(
                               item.temp_id,
@@ -337,6 +373,7 @@ function GoodsFormModal({
                           min="0"
                           step="any"
                           value={item.ratio}
+                          disabled={item.is_existing}
                           onChange={(e) =>
                             handleChangeConversionUnit(
                               item.temp_id,

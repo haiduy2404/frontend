@@ -637,13 +637,23 @@ const resetPaneSize = () => {
             canDo("update_actual_released_quantity") && (
             <button
               className="edit-btn"
-              disabled={selectedIds.length > 1 || !selectedRow || selectedRow.status === "COMPLETED" || selectedRow.status === "CANCELLED"}
+              disabled={
+                selectedIds.length > 1 ||
+                !selectedRow ||
+                selectedRow.status === "WAIT_TO_APPROVE" ||
+                selectedRow.status === "COMPLETED" ||
+                selectedRow.status === "CANCELLED"
+              }
               title={selectedIds.length > 1 ? "Chỉ chỉnh sửa được 1 phiếu tại một thời điểm" : ""}
               onClick={() => {
                 if (!selectedRow) {
                   alert("Vui lòng chọn phiếu cần chỉnh sửa");
                   return;
                 }
+                  if (selectedRow.status === "WAIT_TO_APPROVE") {
+                    alert("Phiếu đang chờ duyệt, không được chỉnh sửa.");
+                    return;
+                  }
                 if (selectedRow.status === "COMPLETED") {
                   alert("Phiếu đã hoàn thành, không được chỉnh sửa.");
                   return;
