@@ -5,7 +5,7 @@ const BASE = "/inventory/reports";
 
 export const REPORT_RECEIPT_SUMMARY = "receipt-company-summary";
 export const REPORT_RELEASE = "release";
-
+export const REPORT_RECEIPT_DETAIL = "receipt";
 /**
  * Tạo job xuất Excel.
  *

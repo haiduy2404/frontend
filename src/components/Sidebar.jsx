@@ -229,6 +229,18 @@ const Sidebar = () => {
                       setOpenMenu("");
                     }}
                   >
+                    Báo cáo nhập kho theo công ty
+                  </NavLink>
+                  <NavLink
+                    to="/dashboard/report/receipt"
+                    className={({ isActive }) =>
+                      isActive ? "report-link active" : "report-link"
+                    }
+                    onClick={() => {
+                      setActiveMenu("report");
+                      setOpenMenu("");
+                    }}
+                  >
                     Báo cáo nhập kho
                   </NavLink>
 

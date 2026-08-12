@@ -27,6 +27,7 @@ import InspectionPage from "./pages/activity/import/InspectionPage";
 import InspectionDetailPage from "./pages/activity/import/InspectionDetailPage";
 import InspectionPrintPage from "./pages/activity/import/InspectionPrintPage";
 import WarehouseImportCompanyReportPage from "./pages/report/WarehouseImportCompanyReportPage";
+import WarehouseReceiptReportPage from "./pages/report/WarehouseReceiptReportPage";
 import WarehouseImportCompanyChartPage from "./pages/report/WarehouseImportCompanyChartPage";
 import BeginningInventoryPage from "./pages/report/BeginningInventoryPage";
 import NoPermissionPage from "./pages/NoPermissionPage";
@@ -106,6 +107,15 @@ function App() {
               <Route
                 path="report/import-company"
                 element={<WarehouseImportCompanyReportPage />}
+              />
+
+              <Route
+                path="report/receipt"
+                element={
+                  <RequireRole roles={["view_report"]}>
+                    <WarehouseReceiptReportPage />
+                  </RequireRole>
+                }
               />
 
               <Route
