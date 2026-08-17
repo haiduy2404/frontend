@@ -1,0 +1,302 @@
+.recent-activities-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.recent-activities-modal {
+  width: min(1180px, calc(100vw - 48px));
+  height: min(780px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.recent-activities-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.recent-activities-modal-header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 22px;
+}
+
+.recent-activities-modal-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.recent-activities-modal-close {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: #374151;
+  cursor: pointer;
+  font-size: 22px;
+}
+
+.recent-activities-modal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.recent-activities-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recent-activities-filter-tabs button,
+.recent-activities-refresh-btn,
+.recent-activities-pagination button {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.recent-activities-filter-tabs button {
+  padding: 8px 13px;
+  font-weight: 600;
+}
+
+.recent-activities-filter-tabs button.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.recent-activities-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.recent-activities-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+}
+
+.recent-activities-table-shell {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.recent-activities-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: 13px;
+}
+
+.recent-activities-table th,
+.recent-activities-table td {
+  padding: 12px 10px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid #edf0f3;
+  overflow-wrap: anywhere;
+}
+
+.recent-activities-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.recent-activities-table tbody tr:hover {
+  background: #fafcff;
+}
+
+.recent-activities-table .col-stt { width: 58px; }
+.recent-activities-table .col-type { width: 112px; }
+.recent-activities-table .col-code { width: 120px; }
+.recent-activities-table .col-status { width: 130px; }
+.recent-activities-table .col-date { width: 110px; }
+.recent-activities-table .col-goods { width: 105px; }
+.recent-activities-table .col-created { width: 158px; }
+
+.recent-activities-code-cell {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.recent-activities-warehouse-cell {
+  color: #374151;
+}
+
+.recent-activities-type-badge,
+.recent-activities-status-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: normal;
+}
+
+.recent-activities-type-badge.receipt {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.recent-activities-type-badge.release {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.recent-activities-type-badge.transfer {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.recent-activities-status-badge {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.recent-activities-status-badge.status-completed {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.recent-activities-status-badge.status-wait_to_approve,
+.recent-activities-status-badge.status-waiting_delivery,
+.recent-activities-status-badge.status-waiting_release {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.recent-activities-status-badge.status-cancelled {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.recent-activities-state,
+.recent-activities-state-cell {
+  padding: 28px !important;
+  text-align: center !important;
+  color: #6b7280;
+}
+
+.recent-activities-state--error {
+  color: #b91c1c;
+}
+
+.recent-activities-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.recent-activities-page-size,
+.recent-activities-pagination {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.recent-activities-page-size select {
+  min-width: 76px;
+  padding: 7px 9px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.recent-activities-pagination button {
+  width: 36px;
+  height: 34px;
+  font-size: 20px;
+}
+
+.recent-activities-filter-tabs button:disabled,
+.recent-activities-refresh-btn:disabled,
+.recent-activities-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.recent-activities-modal .is-spinning {
+  animation: recent-activities-spin 0.8s linear infinite;
+}
+
+@keyframes recent-activities-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 820px) {
+  .recent-activities-modal-overlay {
+    padding: 10px;
+  }
+
+  .recent-activities-modal {
+    width: calc(100vw - 20px);
+    height: calc(100vh - 20px);
+  }
+
+  .recent-activities-modal-toolbar,
+  .recent-activities-modal-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .recent-activities-toolbar-right,
+  .recent-activities-modal-footer {
+    justify-content: space-between;
+  }
+
+  .recent-activities-table {
+    font-size: 12px;
+  }
+}

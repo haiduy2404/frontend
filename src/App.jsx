@@ -7,6 +7,7 @@ import {
   useNavigate,
   Outlet,
 } from "react-router-dom";
+import DashboardHomePage from "./pages/dashboard/DashboardHomePage";
 import TheKhoExportPage from "./pages/report/TheKhoExportPage";
 import ReleaseOrderPage from "./pages/activity/release/ReleaseOrderPage";
 import ReleaseOrderDetailPage from "./pages/activity/release/ReleaseOrderDetailPage";
@@ -112,6 +113,7 @@ function App() {
             />
 
             <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<DashboardHomePage />} />
               <Route path="stock-manager" element={<div>Trang quản lý kho</div>} />
               <Route path="stock-manager/stock-list" element={<StockListPage />} />
               <Route

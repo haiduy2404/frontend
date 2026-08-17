@@ -18,6 +18,33 @@ const Sidebar = () => {
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-menu">
+        {/* TRANG CHÍNH */}
+        <div
+          className={`sidebar-item ${
+            activeMenu === "home" ? "active-parent" : ""
+          }`}
+        >
+          <NavLink
+            to="/dashboard"
+            end
+            className={({ isActive }) =>
+              isActive
+                ? "sidebar-main-link active-parent"
+                : "sidebar-main-link"
+            }
+            onClick={() => {
+              setActiveMenu("home");
+              setOpenMenu("");
+              setExportOpen(false);
+            }}
+          >
+            <span className="sidebar-icon">🏠</span>
+            {!collapsed && (
+              <span className="sidebar-text">Trang chính</span>
+            )}
+          </NavLink>
+        </div>
+
         {/* QUẢN LÝ KHO */}
             <div
               className={`sidebar-item ${
@@ -25,7 +52,7 @@ const Sidebar = () => {
               }`}
               onClick={() => toggleMenu("warehouse")}
             >
-              <span className="sidebar-icon">🏠</span>
+              <span className="sidebar-icon">📦</span>
               {!collapsed && <span className="sidebar-text">Quản lý kho</span>}
               {!collapsed && (
                 <span className="sidebar-arrow">

@@ -3,13 +3,14 @@ import {
   RiAddLine,
   RiDeleteBin6Line,
   RiInformationLine,
+  RiSettings3Line,
 } from "react-icons/ri";
 import axiosInstance from "../services/authService";
+import { useAuth } from "../contexts/AuthContext";
 import { createGoods, updateGoods, getGoodsDetail } from "../services/goodsService";
 import { getGoodsUnits } from "../services/goodsUnitService";
 import "../styles/GoodsFormModal.css";
 
-const OTHER_GROUP_CODES = ["OTHER", "OTHERS", "KHAC"];
 
 const normalizeGroup = (group) => ({
   ...group,
@@ -32,18 +33,6 @@ const extractGroups = (response) => {
   return [];
 };
 
-const isOtherGroup = (group) => {
-  if (!group) return false;
-
-  const code = String(group.code || "").trim().toUpperCase();
-  const name = String(group.name || "").trim().toLowerCase();
-
-  return (
-    OTHER_GROUP_CODES.includes(code) ||
-    name === "loại khác" ||
-    name === "loai khac"
-  );
-};
 
 function GoodsFormModal({
   editingGoods = null,
@@ -54,6 +43,20 @@ function GoodsFormModal({
   onSuccess,
 }) {
   const incomingGroup = presetGroup || initialGoodsGroup || goodsGroup || null;
+
+  const { canDo } = useAuth();
+  const canManageGoodsConfig = canDo("manage_goods_config");
+
+  const [showWarningConfig, setShowWarningConfig] = useState(false);
+  const [warningConfig, setWarningConfig] = useState({
+    organization_min_quantity: "",
+    organization_max_quantity: "",
+  });
+  const [initialWarningConfig, setInitialWarningConfig] = useState({
+    organization_min_quantity: null,
+    organization_max_quantity: null,
+  });
+  const [warningErrors, setWarningErrors] = useState({});
 
   const [unitList, setUnitList] = useState([]);
   const [unitLoading, setUnitLoading] = useState(false);
@@ -86,9 +89,7 @@ function GoodsFormModal({
     );
   }, [formData.goods_group_id, groupList, incomingGroup]);
 
-  const selectedGroupIsOther = isOtherGroup(selectedGroup);
-  const selectedGroupPrefix =
-    selectedGroup && !selectedGroupIsOther ? selectedGroup.code : "";
+  const selectedGroupPrefix = selectedGroup?.code || "";
 
   const getUnitNameById = (unitId) => {
     return (
@@ -170,9 +171,7 @@ function GoodsFormModal({
     setFormData((prev) => ({
       ...prev,
       goods_group_id: normalizedIncomingGroup.id,
-      code: isOtherGroup(normalizedIncomingGroup)
-        ? ""
-        : normalizedIncomingGroup.code,
+      code: normalizedIncomingGroup.code || "",
     }));
   }, [editingGoodsId, incomingGroup?.id]);
 
@@ -218,6 +217,21 @@ function GoodsFormModal({
           unit_id: defaultUnit?.unit_id || goods.unit_id || "",
         });
 
+        const initialMin = goods.organization_min_quantity ?? null;
+        const initialMax = goods.organization_max_quantity ?? null;
+
+        setWarningConfig({
+          organization_min_quantity:
+            initialMin === null ? "" : String(initialMin),
+          organization_max_quantity:
+            initialMax === null ? "" : String(initialMax),
+        });
+
+        setInitialWarningConfig({
+          organization_min_quantity: initialMin,
+          organization_max_quantity: initialMax,
+        });
+
         setConversionUnits(conversionUnitList);
       } catch (error) {
         console.error("GET GOODS DETAIL ERROR:", error.response?.data || error);
@@ -261,7 +275,7 @@ function GoodsFormModal({
       return {
         ...prev,
         goods_group_id: groupId,
-        code: nextGroup && !isOtherGroup(nextGroup) ? nextGroup.code : "",
+        code: nextGroup?.code || "",
       };
     });
   };
@@ -339,6 +353,106 @@ function GoodsFormModal({
     );
   };
 
+  const handleWarningConfigChange = (field, value) => {
+    setWarningConfig((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    setWarningErrors((prev) => ({
+      ...prev,
+      [field]: "",
+      range: "",
+    }));
+  };
+
+  const validateWarningQuantity = (value, label) => {
+    const text = String(value ?? "").trim();
+
+    if (!text) return "";
+
+    if (text.startsWith("-")) {
+      return `${label} không được nhỏ hơn 0`;
+    }
+
+    if (!/^\d+(?:\.\d{1,5})?$/.test(text)) {
+      return `${label} phải là số từ 0 trở lên và tối đa 5 chữ số thập phân`;
+    }
+
+    return "";
+  };
+
+  const validateWarningConfig = () => {
+    if (!canManageGoodsConfig) return true;
+
+    const minText = String(
+      warningConfig.organization_min_quantity ?? ""
+    ).trim();
+    const maxText = String(
+      warningConfig.organization_max_quantity ?? ""
+    ).trim();
+
+    const minError = validateWarningQuantity(
+      minText,
+      "Số lượng tối thiểu"
+    );
+    const maxError = validateWarningQuantity(
+      maxText,
+      "Số lượng tối đa"
+    );
+
+    const nextErrors = {
+      organization_min_quantity: minError,
+      organization_max_quantity: maxError,
+      range: "",
+    };
+
+    if (!minError && !maxError && minText && maxText) {
+      if (Number(minText) > Number(maxText)) {
+        nextErrors.organization_min_quantity =
+          "Số lượng tối thiểu không được lớn hơn số lượng tối đa";
+        nextErrors.range = "min_gt_max";
+      }
+    }
+
+    setWarningErrors(nextErrors);
+
+    return !nextErrors.organization_min_quantity &&
+      !nextErrors.organization_max_quantity;
+  };
+
+  // Theo tài liệu BE:
+  // - không đổi => không gửi field
+  // - xóa trắng giá trị đang có => gửi null
+  // - có số => gửi STRING, tuyệt đối không Number()
+  const appendChangedWarningConfig = (payload) => {
+    if (!canManageGoodsConfig) return;
+
+    [
+      "organization_min_quantity",
+      "organization_max_quantity",
+    ].forEach((field) => {
+      const currentValue = String(warningConfig[field] ?? "").trim();
+      const initialRawValue = initialWarningConfig[field];
+      const initialValue =
+        initialRawValue === null || initialRawValue === undefined
+          ? ""
+          : String(initialRawValue).trim();
+
+      if (currentValue === initialValue) return;
+
+      if (currentValue === "") {
+        // Chỉ gửi null khi trước đó thật sự có định mức.
+        if (initialValue !== "") {
+          payload[field] = null;
+        }
+        return;
+      }
+
+      payload[field] = currentValue;
+    });
+  };
+
   const handleSaveGoods = async () => {
     if (!formData.goods_group_id) {
       alert("Vui lòng chọn Nhóm vật tư");
@@ -347,6 +461,13 @@ function GoodsFormModal({
 
     if (!formData.code.trim() || !formData.name.trim() || !formData.unit_id) {
       alert("Vui lòng nhập đầy đủ Mã hàng, Tên hàng và ĐVT tính");
+      return;
+    }
+
+    if (!validateWarningConfig()) {
+      if (canManageGoodsConfig) {
+        setShowWarningConfig(true);
+      }
       return;
     }
 
@@ -380,6 +501,8 @@ function GoodsFormModal({
       ],
     };
 
+    appendChangedWarningConfig(payload);
+
     try {
       const response = await (editingGoodsId
         ? updateGoods(editingGoodsId, payload)
@@ -395,12 +518,18 @@ function GoodsFormModal({
     } catch (error) {
       console.error("SAVE GOODS ERROR:", error.response?.data || error);
 
-      alert(
+      const apiMessage =
+        error.response?.data?.message ||
+        error.response?.data?.detail ||
         error.response?.data?.code ||
-          error.response?.data?.name ||
-          error.response?.data?.detail ||
-          "Lưu hàng hóa thất bại"
-      );
+        error.response?.data?.name;
+
+      if (error.response?.status === 403 && !apiMessage) {
+        alert("Bạn không có quyền đặt định mức vật tư");
+        return;
+      }
+
+      alert(apiMessage || "Lưu hàng hóa thất bại");
     }
   };
 
@@ -490,10 +619,6 @@ function GoodsFormModal({
 
                     {!editingGoodsId && selectedGroupPrefix && (
                       <div className="field-helper">
-                        <RiInformationLine />
-                        Mã sẽ bắt đầu bằng ký hiệu nhóm{" "}
-                        <strong>{selectedGroupPrefix}</strong>. Hệ thống không tự
-                        sinh số thứ tự.
                       </div>
                     )}
                   </div>
@@ -677,16 +802,101 @@ function GoodsFormModal({
               </div>
             </div>
           </div>
+
+          {canManageGoodsConfig && showWarningConfig && (
+            <div className="goods-warning-config-panel">
+              <div className="goods-warning-config-header">
+                <div>
+                  <h3>Định mức cảnh báo tồn kho</h3>
+                  <p>
+                    Định mức tính trên tổng tồn của tất cả kho. Chỉ dùng để
+                    cảnh báo, không chặn nhập/xuất kho.
+                  </p>
+                </div>
+              </div>
+
+              <div className="goods-warning-config-grid">
+                <div className="form-group">
+                  <label>Số lượng tối thiểu</label>
+                  <div className="warning-quantity-input">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={warningConfig.organization_min_quantity}
+                      onChange={(e) =>
+                        handleWarningConfigChange(
+                          "organization_min_quantity",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Chưa đặt"
+                    />
+                    <span>{primaryUnitName || "ĐVT chính"}</span>
+                  </div>
+                  {warningErrors.organization_min_quantity && (
+                    <div className="warning-config-error">
+                      {warningErrors.organization_min_quantity}
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Số lượng tối đa</label>
+                  <div className="warning-quantity-input">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={warningConfig.organization_max_quantity}
+                      onChange={(e) =>
+                        handleWarningConfigChange(
+                          "organization_max_quantity",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Chưa đặt"
+                    />
+                    <span>{primaryUnitName || "ĐVT chính"}</span>
+                  </div>
+                  {warningErrors.organization_max_quantity && (
+                    <div className="warning-config-error">
+                      {warningErrors.organization_max_quantity}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="goods-warning-config-note">
+                <RiInformationLine />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="goods-modal-footer">
-          <button type="button" className="cancel-btn" onClick={onClose}>
-            Hủy
-          </button>
+          <div className="goods-modal-footer-left">
+            {canManageGoodsConfig && (
+              <button
+                type="button"
+                className={`warning-config-toggle-btn ${
+                  showWarningConfig ? "warning-config-toggle-btn--active" : ""
+                }`}
+                onClick={() => setShowWarningConfig((prev) => !prev)}
+              >
+                <RiSettings3Line />
+                Điều chỉnh thông số mức cảnh báo khi hàng hóa dưới mức
+              </button>
+            )}
+          </div>
 
-          <button type="button" className="save-btn" onClick={handleSaveGoods}>
-            Lưu
-          </button>
+          <div className="goods-modal-footer-actions">
+            <button type="button" className="cancel-btn" onClick={onClose}>
+              Hủy
+            </button>
+
+            <button type="button" className="save-btn" onClick={handleSaveGoods}>
+              Lưu
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ import {
   getReleaseOrderByCode,
   updateReleaseOrder,
   getReleaseReferencesPageable,
+  checkReleaseDuplicate,
 } from "../../../services/releaseOrderService";
 
 import {
@@ -43,6 +44,9 @@ function ReleaseOrderDetailPage() {
 
   const [releaseId, setReleaseId] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [duplicateWarningData, setDuplicateWarningData] = useState(null);
+  const [duplicatePendingAction, setDuplicatePendingAction] = useState(null);
+  const [duplicateActionLoading, setDuplicateActionLoading] = useState(false);
 
   const [warehouseList, setWarehouseList] = useState([]);
   const [warehouseLoading, setWarehouseLoading] = useState(false);
@@ -959,6 +963,118 @@ const evaluateQuantityExpression = (value) => {
     };
     };
 
+  const checkDuplicateBeforeSave = async () => {
+  const payload = buildReleasePayload();
+
+  const response = await checkReleaseDuplicate({
+    ...payload,
+    ...(!isCreateMode && releaseId
+      ? { exclude_release_id: releaseId }
+      : {}),
+  });
+
+  const data =
+    response?.data?.data ??
+    response?.data ??
+    response ??
+    {};
+
+  return data?.has_warning ? data : null;
+};
+
+const executeSaveDraft = async () => {
+  const payload = buildReleasePayload();
+
+  if (isCreateMode) {
+    await createReleaseOrder(payload);
+  } else {
+    await updateReleaseOrder(releaseId, payload);
+  }
+
+  alert("Lưu lệnh xuất kho thành công");
+  navigate("/dashboard/activity/export/order");
+};
+
+const executeComplete = async () => {
+  const payload = buildReleasePayload();
+
+  let targetId = releaseId;
+
+  if (isCreateMode) {
+    const created = await createReleaseOrder(payload);
+
+    const createdData =
+      created?.data?.data ||
+      created?.data ||
+      created;
+
+    targetId = createdData?.id;
+  } else {
+    await updateReleaseOrder(releaseId, payload);
+  }
+
+  if (targetId) {
+    await submitReleaseOrder(targetId);
+  }
+
+  alert("Trình duyệt lệnh xuất kho thành công");
+  navigate("/dashboard/activity/export/order");
+};
+
+const closeDuplicateWarning = () => {
+  if (duplicateActionLoading) return;
+
+  setDuplicateWarningData(null);
+  setDuplicatePendingAction(null);
+};
+
+const handleConfirmDuplicateAction = async () => {
+  if (!duplicatePendingAction || duplicateActionLoading) return;
+
+  try {
+    setDuplicateActionLoading(true);
+
+    // Không check duplicate lần 2.
+    if (duplicatePendingAction === "save") {
+      await executeSaveDraft();
+    } else {
+      await executeComplete();
+    }
+  } catch (error) {
+    console.error(
+      "CONFIRM DUPLICATE RELEASE ERROR:",
+      error.response?.data || error
+    );
+
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Không thể tiếp tục tạo lệnh xuất kho"
+    );
+  } finally {
+    setDuplicateActionLoading(false);
+  }
+};
+
+const getDuplicateTicketStatusText = (status) => {
+  switch (status) {
+    case "PENDING":
+      return "Nháp";
+    case "WAIT_TO_APPROVE":
+      return "Chờ duyệt";
+    case "WAITING_RELEASE":
+      return "Chờ xuất kho";
+    case "RELEASED":
+      return "Đã xuất kho";
+    case "COMPLETED":
+      return "Hoàn thành";
+    case "CANCELLED":
+      return "Đã hủy";
+    default:
+      return status || "—";
+  }
+};
+
   const validateBeforeSubmit = () => {
     if (!headerData.release_date) {
       alert("Vui lòng nhập ngày xuất kho");
@@ -1008,61 +1124,59 @@ const evaluateQuantityExpression = (value) => {
     return true;
   };
 
-    const handleSaveDraft = async () => {
-    try {
-        if (!validateBeforeSubmit()) return;
+const handleSaveDraft = async () => {
+  try {
+    if (!validateBeforeSubmit()) return;
 
-        const payload = buildReleasePayload();
+    const duplicateData = await checkDuplicateBeforeSave();
 
-        if (isCreateMode) {
-        await createReleaseOrder(payload);
-        } else {
-        await updateReleaseOrder(releaseId, payload);
-        }
-
-        alert("Lưu lệnh xuất kho thành công");
-        navigate("/dashboard/activity/export/order");
-    } catch (error) {
-        console.error("SAVE RELEASE ORDER ERROR:", error.response?.data || error);
-        alert(
-        error.response?.data?.message ||
-            error.response?.data?.detail ||
-            "Lưu lệnh xuất kho thất bại"
-        );
+    if (duplicateData) {
+      setDuplicateWarningData(duplicateData);
+      setDuplicatePendingAction("save");
+      return;
     }
-    };
 
-    const handleComplete = async () => {
-    try {
-        if (!validateBeforeSubmit()) return;
+    await executeSaveDraft();
+  } catch (error) {
+    console.error(
+      "SAVE RELEASE ORDER ERROR:",
+      error.response?.data || error
+    );
 
-        const payload = buildReleasePayload();
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Lưu lệnh xuất kho thất bại"
+    );
+  }
+};
 
-        let targetId = releaseId;
+const handleComplete = async () => {
+  try {
+    if (!validateBeforeSubmit()) return;
 
-        if (isCreateMode) {
-          const created = await createReleaseOrder(payload);
-          const createdData = created?.data?.data || created?.data || created;
-          targetId = createdData?.id;
-        } else {
-          await updateReleaseOrder(releaseId, payload);
-        }
+    const duplicateData = await checkDuplicateBeforeSave();
 
-        if (targetId) {
-        await submitReleaseOrder(targetId);
-        }
-
-        alert("Trình duyệt lệnh xuất kho thành công");
-        navigate("/dashboard/activity/export/order");
-    } catch (error) {
-        console.error("SUBMIT RELEASE ORDER ERROR:", error.response?.data || error);
-        alert(
-        error.response?.data?.message ||
-            error.response?.data?.detail ||
-            "Trình duyệt lệnh xuất kho thất bại"
-        );
+    if (duplicateData) {
+      setDuplicateWarningData(duplicateData);
+      setDuplicatePendingAction("complete");
+      return;
     }
-    };
+
+    await executeComplete();
+  } catch (error) {
+    console.error(
+      "SUBMIT RELEASE ORDER ERROR:",
+      error.response?.data || error
+    );
+
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.detail ||
+        "Trình duyệt lệnh xuất kho thất bại"
+    );
+  }
+};
 
     const fetchReleaseDetail = async (releaseCode) => {
     if (!releaseCode || releaseCode === "new") return;
@@ -1919,6 +2033,137 @@ const evaluateQuantityExpression = (value) => {
         </div>
         )}
       </div>
+
+      {duplicateWarningData?.has_warning && (
+        <div className="release-duplicate-modal-overlay">
+          <div className="release-duplicate-modal">
+            <div className="release-duplicate-modal-header">
+              <div>
+                <h3>Cảnh báo vật tư đã xuất gần đây</h3>
+
+                <p>
+                  Đối tượng xuất kho:{" "}
+                  <strong>
+                    {duplicateWarningData.release_target || "—"}
+                  </strong>
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="release-duplicate-modal-close"
+                onClick={closeDuplicateWarning}
+                disabled={duplicateActionLoading}
+              >
+                <RiCloseLine />
+              </button>
+            </div>
+
+            <div className="release-duplicate-modal-note">
+              Các vật tư dưới đây đã được xuất trong{" "}
+              <strong>{duplicateWarningData.window_days || 7} ngày gần đây</strong>
+              {" "}({duplicateWarningData.window_from} -{" "}
+              {duplicateWarningData.window_to})
+            </div>
+
+            <div className="release-duplicate-table-wrap">
+              <table className="release-duplicate-table">
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Mã VT</th>
+                    <th>Tên vật tư</th>
+                    <th>Số lần</th>
+                    <th>Phiếu đã xuất gần đây</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {(duplicateWarningData.warnings || []).map(
+                    (warning, index) => (
+                      <tr key={warning.goods_id || index}>
+                        <td>{index + 1}</td>
+
+                        <td>
+                          <strong>{warning.goods_code || "—"}</strong>
+                        </td>
+
+                        <td>{warning.goods_name || "—"}</td>
+
+                        <td>
+                          {warning.occurrences ??
+                            warning.tickets?.length ??
+                            0}
+                        </td>
+
+                        <td>
+                          <div className="release-duplicate-ticket-list">
+                            {(warning.tickets || []).map((ticket) => (
+                              <div
+                                className="release-duplicate-ticket"
+                                key={ticket.release_id || ticket.code}
+                              >
+                                <div className="release-duplicate-ticket-main">
+                                  <strong>{ticket.code || "—"}</strong>
+
+                                  <span>{ticket.release_date || "—"}</span>
+
+                                  <span>
+                                    {ticket.quantity || "—"}{" "}
+                                    {ticket.unit_name || ""}
+                                  </span>
+                                </div>
+
+                                <div className="release-duplicate-ticket-sub">
+                                  <span>
+                                    Kho: {ticket.warehouse_code || "—"}
+                                  </span>
+
+                                  <span>
+                                    Đơn vị lĩnh: {ticket.receiver_unit || "—"}
+                                  </span>
+
+                                  <span>
+                                    {getDuplicateTicketStatusText(ticket.status)}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="release-duplicate-modal-footer">
+              <button
+                type="button"
+                className="release-duplicate-cancel-btn"
+                onClick={closeDuplicateWarning}
+                disabled={duplicateActionLoading}
+              >
+                Hủy
+              </button>
+
+              <button
+                type="button"
+                className="release-duplicate-complete-btn"
+                onClick={handleConfirmDuplicateAction}
+                disabled={duplicateActionLoading}
+              >
+                {duplicateActionLoading
+                  ? "Đang xử lý..."
+                  : duplicatePendingAction === "save"
+                  ? "Lưu tạm"
+                  : "Hoàn thành"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="import-order-detail-footer">
         <button

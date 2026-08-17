@@ -21,7 +21,6 @@ import {
 
 const LIST_PAGE_STATE_KEY = "goods-list-page-state";
 const ALL_GROUP_KEY = "__all__";
-const OTHER_GROUP_KEY = "__other__";
 
 const getGroupId = (group) => group?.id ?? group?.group_id ?? null;
 
@@ -110,29 +109,21 @@ function GoodsListPage() {
 
   const { canDo } = useAuth();
 
-  const otherGroup = useMemo(() => {
-    return (
-      groups.find((group) => {
-        const code = String(group?.code || "").trim().toUpperCase();
-        const name = String(group?.name || "").trim().toLowerCase();
-        return code === "OTHER" || name === "loại khác" || name === "loai khac";
-      }) || null
-    );
-  }, [groups]);
-
   const selectedGroup = useMemo(() => {
     if (selectedGroupKey === ALL_GROUP_KEY) return null;
-    if (selectedGroupKey === OTHER_GROUP_KEY) return otherGroup;
 
-    return groups.find((group) => String(group.id) === String(selectedGroupKey)) || null;
-  }, [groups, otherGroup, selectedGroupKey]);
+    return (
+      groups.find(
+        (group) => String(group.id) === String(selectedGroupKey)
+      ) || null
+    );
+  }, [groups, selectedGroupKey]);
 
   const visibleGroups = useMemo(() => {
     const keyword = groupSearch.trim().toLowerCase();
 
     return groups
       .filter((group) => {
-        if (otherGroup && String(group.id) === String(otherGroup.id)) return false;
         if (!keyword) return true;
 
         return (
@@ -143,7 +134,7 @@ function GoodsListPage() {
       .sort((a, b) =>
         String(a.code || "").localeCompare(String(b.code || ""), "vi")
       );
-  }, [groups, groupSearch, otherGroup]);
+  }, [groups, groupSearch]);
 
   useEffect(() => {
     saveStoredListPageState(LIST_PAGE_STATE_KEY, {
@@ -242,13 +233,6 @@ function GoodsListPage() {
   }, []);
 
   useEffect(() => {
-    if (selectedGroupKey === OTHER_GROUP_KEY && !otherGroup) {
-      setGoodsList([]);
-      setTotal(0);
-      setTotalPages(1);
-      return;
-    }
-
     fetchGoods(debouncedSearch, page, pageSize, selectedGroup);
   }, [
     debouncedSearch,
@@ -256,7 +240,6 @@ function GoodsListPage() {
     pageSize,
     selectedGroupKey,
     selectedGroup?.id,
-    otherGroup?.id,
   ]);
 
   const handleOpenGroupModal = () => {
@@ -302,14 +285,8 @@ function GoodsListPage() {
   const handleOpenAddModal = () => {
     setEditingGoods(null);
 
-    if (
-      selectedGroupKey !== ALL_GROUP_KEY &&
-      selectedGroupKey !== OTHER_GROUP_KEY &&
-      selectedGroup
-    ) {
+    if (selectedGroupKey !== ALL_GROUP_KEY && selectedGroup) {
       setPresetGroup(selectedGroup);
-    } else if (selectedGroupKey === OTHER_GROUP_KEY && otherGroup) {
-      setPresetGroup(otherGroup);
     } else {
       setPresetGroup(null);
     }
@@ -393,16 +370,14 @@ function GoodsListPage() {
   const selectedGroupTitle =
     selectedGroupKey === ALL_GROUP_KEY
       ? "Tất cả hàng hóa"
-      : selectedGroupKey === OTHER_GROUP_KEY
-      ? "Loại khác"
       : selectedGroup?.name || "Danh mục hàng hóa";
 
   const selectedGroupSubtitle =
     selectedGroupKey === ALL_GROUP_KEY
       ? `${total} vật tư, hàng hóa`
-      : selectedGroupKey === OTHER_GROUP_KEY
-      ? `${total} vật tư, hàng hóa chưa thuộc nhóm mã`
-      : `${selectedGroup?.code || ""}${selectedGroup?.code ? " • " : ""}${total} vật tư, hàng hóa`;
+      : `${selectedGroup?.code || ""}${
+          selectedGroup?.code ? " • " : ""
+        }${total} vật tư, hàng hóa`;
 
   if (!canDo("view_goods")) {
     return (
@@ -489,17 +464,6 @@ function GoodsListPage() {
             )}
 
             <div className="goods-groups-divider" />
-
-            <button
-              type="button"
-              className={`goods-group-item goods-group-item--other ${
-                selectedGroupKey === OTHER_GROUP_KEY ? "active" : ""
-              }`}
-              onClick={() => handleSelectGroup(OTHER_GROUP_KEY)}
-            >
-              <span className="goods-group-other-dot" />
-              <span className="goods-group-item-name">Loại khác</span>
-            </button>
           </div>
         </aside>
 
@@ -608,7 +572,7 @@ function GoodsListPage() {
 
                             {!getGoodsGroupCode(goods) && (
                               <span className="goods-group-name-only">
-                                {getGoodsGroupName(goods) || "Loại khác"}
+                                {getGoodsGroupName(goods) || "-"}
                               </span>
                             )}
                           </div>

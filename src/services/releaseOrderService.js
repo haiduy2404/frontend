@@ -91,6 +91,15 @@ export const updateReleasePrinted = async (
   return response.data;
 };
 
+export const checkReleaseDuplicate = async (payload) => {
+  const response = await axiosInstance.post(
+    "/inventory/warehouse-releases/check-duplicate",
+    payload
+  );
+
+  return response.data;
+};
+
 export default {
   getReleaseOrdersPageable,
   getReleaseOrderByCode,
@@ -103,4 +112,5 @@ export default {
   cancelReleaseOrder,
   updateWarehouseReleaseStatus,
   updateReleasePrinted,
+  checkReleaseDuplicate,
 };
