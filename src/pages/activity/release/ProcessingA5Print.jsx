@@ -5,11 +5,11 @@ import {
   useSearchParams,
   useLocation,
 } from "react-router-dom";
-import "../../../styles/ReleasePrintPageA5_B.css";
+import "../../../styles/ProcessingA5Print.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getReleaseOrderByCode } from "../../../services/releaseOrderService";
 
-function ReleasePrintProcessingPage() {
+function ProcessingA5Print() {
   const navigate = useNavigate();
   const { code } = useParams();
   const [searchParams] = useSearchParams();
@@ -387,4 +387,4 @@ function ReleasePrintProcessingPage() {
   );
 }
 
-export default ReleasePrintProcessingPage;
+export default ProcessingA5Print;

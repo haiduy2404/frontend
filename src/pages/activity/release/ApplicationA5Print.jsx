@@ -9,7 +9,7 @@ import "../../../styles/ReleasePrintPageA5.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getReleaseOrderByCode } from "../../../services/releaseOrderService";
 
-function ReleasePrintPageA5() {
+function ApplicationA5Print() {
   const navigate = useNavigate();
   const { code } = useParams();
   const [searchParams] = useSearchParams();
@@ -369,4 +369,4 @@ function ReleasePrintPageA5() {
   );
 }
 
-export default ReleasePrintPageA5;
+export default ApplicationA5Print;

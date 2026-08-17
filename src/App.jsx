@@ -26,9 +26,9 @@ import ImportReceiptPrintVatForm from "./pages/activity/import/ImportReceiptPrin
 import InspectionPage from "./pages/activity/import/InspectionPage";
 import InspectionDetailPage from "./pages/activity/import/InspectionDetailPage";
 import InspectionPrintPage from "./pages/activity/import/InspectionPrintPage";
-import WarehouseImportCompanyReportPage from "./pages/report/WarehouseImportCompanyReportPage";
+import ReceiptReportPageAcordingCompany from "./pages/report/ReceiptReportPageAcordingCompany";
+import ReceiptReportPageAcordingGoods from "./pages/report/ReceiptReportPageAcordingGoods";
 import WarehouseReceiptReportPage from "./pages/report/WarehouseReceiptReportPage";
-import WarehouseImportCompanyChartPage from "./pages/report/WarehouseImportCompanyChartPage";
 import BeginningInventoryPage from "./pages/report/BeginningInventoryPage";
 import NoPermissionPage from "./pages/NoPermissionPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -38,15 +38,17 @@ import { AuthProvider } from "./contexts/AuthContext";
 import WarehouseReleasePage from "./pages/activity/release/WarehouseReleasePage";
 import WarehouseTransferPage from "./pages/activity/transfer/WarehouseTransferPage";
 import WarehouseTransferDetailPage from "./pages/activity/transfer/WarehouseTransferDetailPage";
-import ReleasePrintPageA4 from "./pages/activity/release/ReleasePrintPageA4";
-import ReleasePrintPageA5 from "./pages/activity/release/ReleasePrintPageA5";
-import ReleasePrintProcessingPage from "./pages/activity/release/ReleasePrintProcessingPage";
+import IndustrialA4Print from "./pages/activity/release/IndustrialA4Print";
+import IndustrialA5Print from "./pages/activity/release/IndustrialA5Print";
+import ApplicationA5Print from "./pages/activity/release/ApplicationA5Print";
+import ProcessingA5Print from "./pages/activity/release/ProcessingA5Print";
 import WarehouseOrderRelease from "./pages/activity/release/WarehouseOrderRelease";
 import WarehouseTransferPrintPage from "./pages/activity/transfer/WarehouseTransferPrintPage";
 import GoodsUnitPage from "./pages/good_unit/GoodsUnitPage";
 import TransferRequestPage from "./pages/tools/TransferRequestPage";
 import MoneyTransferRequestPrintPage from "./pages/tools/MoneyTransferRequestPrintPage";
 import ReleaseReportPage from "./pages/report/ReleaseReportPage";
+import ReleaseReportViewPage from "./pages/report/ReleaseReportViewPage";
 
 import "./styles/auth.css";
 
@@ -80,6 +82,35 @@ function App() {
 
           {/* All authenticated areas live behind ProtectedRoute */}
           <Route element={<ProtectedRoute />}>
+
+            {/* Report result tabs: authenticated but intentionally OUTSIDE DashboardLayout */}
+            <Route
+              path="/warehouse-receipt-report/company"
+              element={
+                <RequireRole roles={["view_report"]}>
+                  <ReceiptReportPageAcordingCompany />
+                </RequireRole>
+              }
+            />
+
+            <Route
+              path="/warehouse-receipt-report/goods"
+              element={
+                <RequireRole roles={["view_report"]}>
+                  <ReceiptReportPageAcordingGoods />
+                </RequireRole>
+              }
+            />
+
+            <Route
+              path="/warehouse-release-report/view"
+              element={
+                <RequireRole roles={["view_report"]}>
+                  <ReleaseReportViewPage />
+                </RequireRole>
+              }
+            />
+
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route path="stock-manager" element={<div>Trang quản lý kho</div>} />
               <Route path="stock-manager/stock-list" element={<StockListPage />} />
@@ -104,11 +135,6 @@ function App() {
                 path="stock-manager/company-list"
                 element={<CompanyListPage />}
               />
-              <Route
-                path="report/import-company"
-                element={<WarehouseImportCompanyReportPage />}
-              />
-
               <Route
                 path="report/receipt"
                 element={
@@ -135,14 +161,6 @@ function App() {
               <Route
                 path="report/beginning-inventory"
                 element={<BeginningInventoryPage />}
-              />
-              <Route
-                path="report/warehouse-import-company-chart"
-                element={
-                  <RequireRole roles={["view_report"]}>
-                    <WarehouseImportCompanyChartPage />
-                  </RequireRole>
-                }
               />
 
               <Route
@@ -244,27 +262,37 @@ function App() {
               />
 
               <Route
-                path="/dashboard/activity/export/release-print/:code"
+                path="/dashboard/activity/export/release-print-industrial-a4/:code"
                 element={
                   <RequireRole roles={["view_warehouse_release"]}>
-                    <ReleasePrintPageA4 />
+                    <IndustrialA4Print />
                   </RequireRole>
-               }
+                }
               />
 
               <Route
-                path="/dashboard/activity/export/release-print-a5/:code"
+                path="/dashboard/activity/export/release-print-industrial-a5/:code"
                 element={
                   <RequireRole roles={["view_warehouse_release"]}>
-                    <ReleasePrintPageA5 />
+                    <IndustrialA5Print />
                   </RequireRole>
-               }
+                }
               />
+
               <Route
-                path="/dashboard/activity/export/release-print-processing/:code"
+                path="/dashboard/activity/export/release-print-application-a5/:code"
                 element={
                   <RequireRole roles={["view_warehouse_release"]}>
-                    <ReleasePrintProcessingPage />
+                    <ApplicationA5Print />
+                  </RequireRole>
+                }
+              />
+
+              <Route
+                path="/dashboard/activity/export/release-print-processing-a5/:code"
+                element={
+                  <RequireRole roles={["view_warehouse_release"]}>
+                    <ProcessingA5Print />
                   </RequireRole>
                 }
               />

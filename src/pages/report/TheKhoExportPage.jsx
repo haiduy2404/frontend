@@ -13,10 +13,12 @@ import {
   RiErrorWarningLine,
   RiFileExcel2Line,
   RiFilePdf2Line,
-  RiRefreshLine,
 } from "react-icons/ri";
+
 import "../../styles/TheKhoExportPage.css";
-import { getGoods } from "../../services/goodsService";
+
+import GoodsFilterModal from "../../components/GoodsFilterModal";
+
 import {
   createTheKhoExport,
   downloadTheKhoExport,
@@ -24,13 +26,19 @@ import {
   readBlobError,
   saveBlobFile,
 } from "../../services/theKhoService";
+
+import { getWarehouses } from "../../services/warehouseService";
 import { useAuth } from "../../contexts/AuthContext";
 
 const STORAGE_KEY = "the_kho_export_job_id";
 const POLLING_DELAY = 2500;
 const MAX_POLLING_ERRORS = 5;
-const MAX_GOODS = 20000;
 const TERMINAL_STATES = ["done", "failed", "cancelled"];
+
+const EMPTY_GOODS_FILTER = {
+  goods_group_ids: [],
+  goods_ids: [],
+};
 
 const getCurrentMonth = () => {
   const now = new Date();
@@ -38,25 +46,45 @@ const getCurrentMonth = () => {
   return `${now.getFullYear()}-${month}`;
 };
 
+const formatPeriodMonth = (value) => {
+  if (!value) return "";
+
+  const [year, month] = String(value).split("-");
+
+  if (!year || !month) return value;
+
+  return `${month}/${year}`;
+};
+
 const unwrapResponseData = (response) => response?.data ?? response;
 
-const getGoodsUnitName = (goods) =>
-  goods?.units?.find((unit) => unit.is_default)?.unit_name ||
-  goods?.units?.[0]?.unit_name ||
-  "-";
+const unwrapWarehouseList = (response) => {
+  const body = response?.data ?? response;
+  const data = body?.data ?? body;
+
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.items)) return data.items;
+
+  return [];
+};
 
 const getStageText = (job) => {
   switch (job?.stage) {
     case "checking":
       return "Đang kiểm tra số liệu…";
+
     case "exporting":
       return `Đang xuất thẻ kho (${job?.processed_goods ?? 0}/${
         job?.total_goods ?? 0
       })`;
+
     case "zipping":
       return "Đang nén file…";
+
     case "done":
       return "Hoàn thành";
+
     default:
       return job?.state === "queued"
         ? "Đang chờ xử lý…"
@@ -89,6 +117,7 @@ const formatBytes = (bytes) => {
   }
 
   const units = ["B", "KB", "MB", "GB"];
+
   const unitIndex = Math.min(
     Math.floor(Math.log(value) / Math.log(1024)),
     units.length - 1
@@ -109,60 +138,194 @@ const getApiErrorMessage = (error, fallbackMessage) =>
 function TheKhoExportPage() {
   const { canDo } = useAuth();
 
-  const [goodsList, setGoodsList] = useState([]);
-  const [selectedGoods, setSelectedGoods] = useState({});
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [stockStatus, setStockStatus] = useState("all");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(100);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loadingGoods, setLoadingGoods] = useState(false);
+  /* =========================
+     THÔNG SỐ XUẤT
+  ========================= */
 
   const [periodMonth, setPeriodMonth] = useState(getCurrentMonth);
   const [formats, setFormats] = useState(["xlsx"]);
+  const periodMonthPickerRef = useRef(null);
+
+  const [warehouseId, setWarehouseId] = useState("");
+  const [warehouses, setWarehouses] = useState([]);
+  const [warehouseSearch, setWarehouseSearch] = useState("");
+  const [warehouseLoading, setWarehouseLoading] = useState(false);
+  const [showWarehouseDropdown, setShowWarehouseDropdown] =
+    useState(false);
+
+  const warehouseDropdownRef = useRef(null);
+  const warehouseSearchTimerRef = useRef(null);
+  const warehouseRequestIdRef = useRef(0);
+
+  /*
+   * Dùng chung contract GoodsFilterModal mới:
+   *
+   * {
+   *   goods_group_ids: [
+   *     {
+   *       goods_group_id: "...",
+   *       choosen_goods: []
+   *     }
+   *   ],
+   *   goods_ids: []
+   * }
+   *
+   * goods_group_ids = [] + goods_ids = []
+   * => BE hiểu là không lọc vật tư / xuất tất cả vật tư.
+   */
+  const [goodsFilter, setGoodsFilter] = useState(EMPTY_GOODS_FILTER);
+  const [showGoodsFilterModal, setShowGoodsFilterModal] = useState(false);
+
   const [creatingExport, setCreatingExport] = useState(false);
   const [downloading, setDownloading] = useState(false);
+
+  /* =========================
+     JOB / POLLING
+  ========================= */
 
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [exportJob, setExportJob] = useState(null);
   const [pollingStopped, setPollingStopped] = useState(false);
   const [connectionErrorCount, setConnectionErrorCount] = useState(0);
 
-  const selectAllRef = useRef(null);
   const pollingTimerRef = useRef(null);
   const pollingFunctionRef = useRef(null);
   const activeJobIdRef = useRef(null);
   const pollingErrorCountRef = useRef(0);
 
-  const selectedIds = useMemo(
-    () => Object.keys(selectedGoods),
-    [selectedGoods]
-  );
-
-  const pageGoodsIds = useMemo(
-    () => goodsList.map((goods) => goods.id).filter(Boolean),
-    [goodsList]
-  );
-
-  const selectedCountOnPage = useMemo(
-    () => pageGoodsIds.filter((id) => Boolean(selectedGoods[id])).length,
-    [pageGoodsIds, selectedGoods]
-  );
-
-  const allPageSelected =
-    pageGoodsIds.length > 0 &&
-    selectedCountOnPage === pageGoodsIds.length;
-
-  const hasPartialPageSelection =
-    selectedCountOnPage > 0 &&
-    selectedCountOnPage < pageGoodsIds.length;
-
   const isJobActive = ["queued", "running"].includes(exportJob?.state);
 
   const canViewReport =
     canDo("view_opening_stock") || canDo("view_report");
+
+  const selectedWarehouse = useMemo(
+    () =>
+      warehouses.find(
+        (warehouse) =>
+          String(warehouse?.id) === String(warehouseId)
+      ) || null,
+    [warehouses, warehouseId]
+  );
+
+  const selectedWarehouseText = selectedWarehouse
+    ? `${selectedWarehouse.code || ""}${
+        selectedWarehouse.code ? " - " : ""
+      }${selectedWarehouse.name || ""}`
+    : "Tất cả kho";
+
+  const selectedGroupCount = goodsFilter.goods_group_ids.length;
+  const standaloneGoodsCount = goodsFilter.goods_ids.length;
+
+  const hasGoodsFilter =
+    selectedGroupCount > 0 || standaloneGoodsCount > 0;
+
+  const goodsFilterText = useMemo(() => {
+    if (!hasGoodsFilter) {
+      return "Tất cả vật tư";
+    }
+
+    const parts = [];
+
+    if (selectedGroupCount > 0) {
+      parts.push(`${selectedGroupCount} nhóm`);
+    }
+
+    if (standaloneGoodsCount > 0) {
+      parts.push(`${standaloneGoodsCount} mã riêng`);
+    }
+
+    return `Đã chọn ${parts.join(" + ")}`;
+  }, [
+    hasGoodsFilter,
+    selectedGroupCount,
+    standaloneGoodsCount,
+  ]);
+
+  /* =========================
+     WAREHOUSE FILTER
+  ========================= */
+
+  const fetchWarehouses = useCallback(async (keyword = "") => {
+    const requestId = ++warehouseRequestIdRef.current;
+
+    try {
+      setWarehouseLoading(true);
+
+      const response = await getWarehouses({
+        search: String(keyword || "").trim(),
+        page: 1,
+        page_size: 100,
+      });
+
+      if (requestId !== warehouseRequestIdRef.current) {
+        return;
+      }
+
+      setWarehouses(unwrapWarehouseList(response));
+    } catch (error) {
+      if (requestId !== warehouseRequestIdRef.current) {
+        return;
+      }
+
+      console.error(
+        "LOAD WAREHOUSES ERROR:",
+        error?.response?.data || error
+      );
+
+      setWarehouses([]);
+    } finally {
+      if (requestId === warehouseRequestIdRef.current) {
+        setWarehouseLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchWarehouses("");
+  }, [fetchWarehouses]);
+
+  useEffect(() => {
+    if (warehouseSearchTimerRef.current) {
+      window.clearTimeout(warehouseSearchTimerRef.current);
+    }
+
+    warehouseSearchTimerRef.current = window.setTimeout(() => {
+      fetchWarehouses(warehouseSearch);
+    }, 500);
+
+    return () => {
+      if (warehouseSearchTimerRef.current) {
+        window.clearTimeout(warehouseSearchTimerRef.current);
+      }
+    };
+  }, [warehouseSearch, fetchWarehouses]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        warehouseDropdownRef.current &&
+        !warehouseDropdownRef.current.contains(event.target)
+      ) {
+        setShowWarehouseDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleSelectWarehouse = (warehouse) => {
+    setWarehouseId(warehouse?.id || "");
+    setWarehouseSearch("");
+    setShowWarehouseDropdown(false);
+  };
+
+  /* =========================
+     POLLING
+  ========================= */
 
   const stopPolling = useCallback(() => {
     if (pollingTimerRef.current) {
@@ -213,6 +376,7 @@ function TheKhoExportPage() {
           activeJobIdRef.current = null;
           localStorage.removeItem(STORAGE_KEY);
           setPollingStopped(true);
+
           setExportJob((previous) => ({
             ...(previous || {}),
             job_id: jobId,
@@ -225,6 +389,7 @@ function TheKhoExportPage() {
                     "Không thể đọc trạng thái job."
                   ),
           }));
+
           return;
         }
 
@@ -249,79 +414,6 @@ function TheKhoExportPage() {
     pollingFunctionRef.current = pollExportJob;
   }, [pollExportJob]);
 
-  const fetchGoods = useCallback(
-    async (
-      keyword = debouncedSearch,
-      pageNumber = page,
-      size = pageSize,
-      status = stockStatus
-    ) => {
-      setLoadingGoods(true);
-
-      try {
-        const response = await getGoods({
-          search: keyword,
-          page: pageNumber,
-          page_size: size,
-          stock_status: status,
-        });
-
-        const payload = response?.data || response;
-        const results = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.results)
-          ? payload.results
-          : [];
-
-        const totalItems =
-          payload?.total ?? payload?.count ?? results.length;
-
-        setGoodsList(results);
-        setTotal(totalItems);
-        setTotalPages(
-          payload?.total_pages ??
-            Math.max(1, Math.ceil(totalItems / size))
-        );
-      } catch (error) {
-        console.error(
-          "GET GOODS ERROR:",
-          error?.response?.data || error
-        );
-        alert("Không tải được danh mục vật tư hàng hóa");
-        setGoodsList([]);
-        setTotal(0);
-        setTotalPages(1);
-      } finally {
-        setLoadingGoods(false);
-      }
-    },
-    [debouncedSearch, page, pageSize, stockStatus]
-  );
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(search.trim());
-    }, 700);
-
-    return () => window.clearTimeout(timer);
-  }, [search]);
-
-  useEffect(() => {
-    fetchGoods(debouncedSearch, page, pageSize, stockStatus);
-  }, [
-    debouncedSearch,
-    fetchGoods,
-    page,
-    pageSize,
-    stockStatus,
-  ]);
-
-  useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = hasPartialPageSelection;
-    }
-  }, [hasPartialPageSelection]);
-
   useEffect(() => {
     const savedJobId = localStorage.getItem(STORAGE_KEY);
 
@@ -330,6 +422,7 @@ function TheKhoExportPage() {
     }
 
     activeJobIdRef.current = savedJobId;
+
     setExportJob({
       job_id: savedJobId,
       state: "queued",
@@ -337,6 +430,7 @@ function TheKhoExportPage() {
       percent: 0,
       warnings: [],
     });
+
     setShowProgressModal(true);
     pollExportJob(savedJobId);
 
@@ -350,62 +444,46 @@ function TheKhoExportPage() {
     [stopPolling]
   );
 
-  const handleToggleGoods = (goods) => {
-    if (!goods?.id) {
-      return;
-    }
+  /* =========================
+     GOODS FILTER MODAL
+  ========================= */
 
-    setSelectedGoods((previous) => {
-      if (previous[goods.id]) {
-        const next = { ...previous };
-        delete next[goods.id];
-        return next;
-      }
+  const handleConfirmGoodsFilter = (value) => {
+    setGoodsFilter({
+      goods_group_ids: Array.isArray(value?.goods_group_ids)
+        ? value.goods_group_ids
+        : [],
 
-      if (Object.keys(previous).length >= MAX_GOODS) {
-        alert(`Chỉ được chọn tối đa ${MAX_GOODS} mã vật tư.`);
-        return previous;
-      }
+      goods_ids: Array.isArray(value?.goods_ids)
+        ? value.goods_ids
+        : [],
+    });
 
-      return {
-        ...previous,
-        [goods.id]: goods,
-      };
+    setShowGoodsFilterModal(false);
+  };
+
+  const handleClearGoodsFilter = () => {
+    setGoodsFilter({
+      goods_group_ids: [],
+      goods_ids: [],
     });
   };
 
-  const handleSelectAllCurrentPage = (event) => {
-    const checked = event.target.checked;
-
-    setSelectedGoods((previous) => {
-      const next = { ...previous };
-
-      if (!checked) {
-        goodsList.forEach((goods) => {
-          if (goods?.id) {
-            delete next[goods.id];
-          }
-        });
-
-        return next;
-      }
-
-      const newIds = goodsList.filter(
-        (goods) => goods?.id && !next[goods.id]
-      );
-
-      if (Object.keys(next).length + newIds.length > MAX_GOODS) {
-        alert(`Chỉ được chọn tối đa ${MAX_GOODS} mã vật tư.`);
-        return previous;
-      }
-
-      newIds.forEach((goods) => {
-        next[goods.id] = goods;
-      });
-
-      return next;
+  const handleResetFilters = () => {
+    setPeriodMonth(getCurrentMonth());
+    setWarehouseId("");
+    setWarehouseSearch("");
+    setGoodsFilter({
+      goods_group_ids: [],
+      goods_ids: [],
     });
+    setFormats(["xlsx"]);
+    setShowWarehouseDropdown(false);
   };
+
+  /* =========================
+     FORMAT
+  ========================= */
 
   const handleToggleFormat = (format) => {
     setFormats((previous) =>
@@ -415,12 +493,11 @@ function TheKhoExportPage() {
     );
   };
 
-  const handleCreateExport = async () => {
-    if (selectedIds.length === 0) {
-      alert("Vui lòng chọn ít nhất một vật tư.");
-      return;
-    }
+  /* =========================
+     CREATE EXPORT
+  ========================= */
 
+  const handleCreateExport = async () => {
     if (!periodMonth) {
       alert("Vui lòng chọn tháng xuất thẻ kho.");
       return;
@@ -439,11 +516,46 @@ function TheKhoExportPage() {
     setCreatingExport(true);
 
     try {
-      const response = await createTheKhoExport({
-        goods_ids: selectedIds,
+      /*
+       * CHỖ THAY ĐỔI QUAN TRỌNG SO VỚI CODE CŨ:
+       *
+       * Không còn gửi danh sách selectedIds lấy từ table pageable.
+       * Gửi thẳng filter theo đúng contract giống báo cáo nhập/xuất:
+       *
+       * goods_group_ids:
+       *   - [] => không lọc theo group / tất cả
+       *   - choosen_goods: [] => toàn bộ group
+       *   - choosen_goods: [id...] => chỉ các mã đó trong group
+       *
+       * goods_ids vẫn giữ để BE hỗ trợ các mã riêng.
+       */
+      const payload = {
         period_month: periodMonth,
+
+        // Không chọn kho => null => toàn bộ kho.
+        // Có chọn kho => đúng kho được chọn.
+        warehouse_id: warehouseId || null,
+
         formats,
-      });
+      };
+
+      // Giống báo cáo nhập/xuất:
+      // chỉ gửi filter vật tư khi người dùng thực sự chọn.
+      if (
+        Array.isArray(goodsFilter.goods_group_ids) &&
+        goodsFilter.goods_group_ids.length > 0
+      ) {
+        payload.goods_group_ids = goodsFilter.goods_group_ids;
+      }
+
+      if (
+        Array.isArray(goodsFilter.goods_ids) &&
+        goodsFilter.goods_ids.length > 0
+      ) {
+        payload.goods_ids = goodsFilter.goods_ids;
+      }
+
+      const response = await createTheKhoExport(payload);
 
       const job = unwrapResponseData(response);
 
@@ -454,10 +566,13 @@ function TheKhoExportPage() {
       const initialJob = {
         ...job,
         percent: Number(job.percent) || 0,
-        warnings: Array.isArray(job.warnings) ? job.warnings : [],
+        warnings: Array.isArray(job.warnings)
+          ? job.warnings
+          : [],
       };
 
       stopPolling();
+
       pollingErrorCountRef.current = 0;
       setConnectionErrorCount(0);
       setPollingStopped(false);
@@ -473,6 +588,7 @@ function TheKhoExportPage() {
         "CREATE THE KHO EXPORT ERROR:",
         error?.response?.data || error
       );
+
       alert(
         getApiErrorMessage(
           error,
@@ -484,6 +600,10 @@ function TheKhoExportPage() {
     }
   };
 
+  /* =========================
+     JOB ACTIONS
+  ========================= */
+
   const handleRetryPolling = () => {
     const jobId = exportJob?.job_id;
 
@@ -494,8 +614,10 @@ function TheKhoExportPage() {
     pollingErrorCountRef.current = 0;
     setConnectionErrorCount(0);
     setPollingStopped(false);
+
     activeJobIdRef.current = jobId;
     localStorage.setItem(STORAGE_KEY, jobId);
+
     pollExportJob(jobId);
   };
 
@@ -514,6 +636,7 @@ function TheKhoExportPage() {
       saveBlobFile(file);
     } catch (error) {
       const status = error?.response?.status;
+
       const message = await readBlobError(
         error,
         "Không thể tải file thẻ kho."
@@ -535,9 +658,9 @@ function TheKhoExportPage() {
     setShowProgressModal(false);
   };
 
-  const handleClearSelection = () => {
-    setSelectedGoods({});
-  };
+  /* =========================
+     PERMISSION
+  ========================= */
 
   if (!canViewReport) {
     return (
@@ -546,6 +669,10 @@ function TheKhoExportPage() {
       </div>
     );
   }
+
+  /* =========================
+     JOB VIEW DATA
+  ========================= */
 
   const progressPercent = Math.min(
     100,
@@ -566,21 +693,182 @@ function TheKhoExportPage() {
 
   const result = exportJob?.result || {};
 
+  /* =========================
+     RENDER
+  ========================= */
+
   return (
     <div className="the-kho-export-page">
       <div className="the-kho-filter-card">
-        <div className="the-kho-filter-grid">
-          <label className="the-kho-field">
+        <div className="the-kho-filter-grid the-kho-filter-grid-stacked">
+          {/* THÁNG THẺ KHO */}
+          <label className="the-kho-field the-kho-field-full">
             <span>Tháng thẻ kho</span>
-            <input
-              type="month"
-              value={periodMonth}
-              onChange={(event) => setPeriodMonth(event.target.value)}
-              disabled={creatingExport}
-            />
+
+            <div className="the-kho-month-picker">
+              <input
+                type="text"
+                value={formatPeriodMonth(periodMonth)}
+                placeholder="MM/YYYY"
+                readOnly
+                onClick={() => {
+                  const picker = periodMonthPickerRef.current;
+
+                  if (!picker || creatingExport) return;
+
+                  if (typeof picker.showPicker === "function") {
+                    picker.showPicker();
+                  } else {
+                    picker.click();
+                  }
+                }}
+                disabled={creatingExport}
+              />
+
+              <input
+                ref={periodMonthPickerRef}
+                type="month"
+                className="the-kho-native-month-input"
+                value={periodMonth}
+                onChange={(event) =>
+                  setPeriodMonth(event.target.value)
+                }
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+            </div>
           </label>
 
-          <div className="the-kho-field">
+          {/* CHỌN KHO - OPTIONAL */}
+          <div className="the-kho-field the-kho-field-full">
+            <span>Chọn kho cần xuất thẻ kho</span>
+
+            <div
+              className="the-kho-warehouse-select"
+              ref={warehouseDropdownRef}
+            >
+              <button
+                type="button"
+                className="the-kho-warehouse-button"
+                onClick={() =>
+                  setShowWarehouseDropdown((previous) => !previous)
+                }
+                disabled={creatingExport}
+              >
+                <span>{selectedWarehouseText}</span>
+                <span>{showWarehouseDropdown ? "▴" : "▾"}</span>
+              </button>
+
+              {showWarehouseDropdown && (
+                <div className="the-kho-warehouse-dropdown">
+                  <div className="the-kho-warehouse-search-wrap">
+                    <input
+                      type="text"
+                      value={warehouseSearch}
+                      placeholder="Tìm theo mã kho hoặc tên kho..."
+                      autoFocus
+                      onChange={(event) =>
+                        setWarehouseSearch(event.target.value)
+                      }
+                    />
+
+                    {warehouseSearch && (
+                      <button
+                        type="button"
+                        title="Xóa tìm kiếm"
+                        onClick={() => setWarehouseSearch("")}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="the-kho-warehouse-list">
+                    <button
+                      type="button"
+                      className={`the-kho-warehouse-option ${
+                        !warehouseId ? "selected" : ""
+                      }`}
+                      onClick={() => handleSelectWarehouse(null)}
+                    >
+                      <strong>Tất cả kho</strong>
+                      <small>
+                        Không chọn kho - xuất thẻ kho toàn bộ kho
+                      </small>
+                    </button>
+
+                    {warehouseLoading && (
+                      <div className="the-kho-warehouse-status">
+                        Đang tìm kho...
+                      </div>
+                    )}
+
+                    {!warehouseLoading &&
+                      warehouses.length === 0 && (
+                        <div className="the-kho-warehouse-status">
+                          Không tìm thấy kho
+                        </div>
+                      )}
+
+                    {!warehouseLoading &&
+                      warehouses.map((warehouse) => (
+                        <button
+                          type="button"
+                          key={warehouse.id}
+                          className={`the-kho-warehouse-option ${
+                            String(warehouse.id) ===
+                            String(warehouseId)
+                              ? "selected"
+                              : ""
+                          }`}
+                          onClick={() =>
+                            handleSelectWarehouse(warehouse)
+                          }
+                        >
+                          <strong>
+                            {warehouse.code || "Không mã"}
+                            {warehouse.name
+                              ? ` - ${warehouse.name}`
+                              : ""}
+                          </strong>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* LỌC MÃ VẬT TƯ */}
+          <div className="the-kho-field the-kho-goods-filter-field the-kho-field-full">
+            <span>Lọc mã vật tư</span>
+
+            <div className="the-kho-goods-filter-control">
+              <button
+                type="button"
+                className="the-kho-goods-filter-btn"
+                onClick={() => setShowGoodsFilterModal(true)}
+                disabled={creatingExport}
+              >
+                {goodsFilterText}
+              </button>
+
+              {hasGoodsFilter && (
+                <button
+                  type="button"
+                  className="the-kho-goods-filter-clear"
+                  title="Bỏ lọc vật tư"
+                  onClick={handleClearGoodsFilter}
+                  disabled={creatingExport}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* ĐỊNH DẠNG */}
+          <div className="the-kho-field the-kho-field-full">
             <span>Định dạng</span>
 
             <div className="the-kho-format-list">
@@ -595,6 +883,7 @@ function TheKhoExportPage() {
                   onChange={() => handleToggleFormat("xlsx")}
                   disabled={creatingExport}
                 />
+
                 <RiFileExcel2Line />
                 Excel
               </label>
@@ -610,35 +899,21 @@ function TheKhoExportPage() {
                   onChange={() => handleToggleFormat("pdf")}
                   disabled={creatingExport}
                 />
+
                 <RiFilePdf2Line />
                 PDF
               </label>
             </div>
           </div>
 
-          <div className="the-kho-export-actions">
-            <div className="the-kho-selected-summary">
-              Đã chọn <strong>{selectedIds.length}</strong>/{MAX_GOODS} mã
-            </div>
-
-            {selectedIds.length > 0 && (
-              <button
-                type="button"
-                className="the-kho-clear-btn"
-                onClick={handleClearSelection}
-                disabled={creatingExport}
-              >
-                Bỏ chọn
-              </button>
-            )}
-
+          {/* ACTION */}
+          <div className="the-kho-export-actions the-kho-export-actions-bottom">
             <button
               type="button"
               className="the-kho-export-btn"
               onClick={handleCreateExport}
               disabled={
                 creatingExport ||
-                selectedIds.length === 0 ||
                 formats.length === 0
               }
             >
@@ -648,199 +923,35 @@ function TheKhoExportPage() {
                 ? "Xem tiến độ"
                 : "Xuất thẻ kho"}
             </button>
+
+            <button
+              type="button"
+              className="the-kho-reset-btn"
+              onClick={handleResetFilters}
+              disabled={creatingExport}
+            >
+              Đặt lại
+            </button>
           </div>
         </div>
       </div>
 
-<div className="the-kho-table-card">
-  <div className="the-kho-table-toolbar">
-    <div className="the-kho-toolbar-left">
-      <input
-        className="the-kho-search"
-        placeholder="🔍  Tìm mã hoặc tên vật tư"
-        value={search}
-        onChange={(event) => {
-          setSearch(event.target.value);
-          setPage(1);
-        }}
-      />
+      {/* CỐ Ý ĐỂ TRỐNG PHẦN DƯỚI.
+          Không còn table goods pageable ở page này.
+          Sau này có thể gắn thêm nội dung khác nếu cần. */}
+      <div className="the-kho-empty-workspace" />
 
-      <div className="the-kho-status-tabs">
-        <button
-          type="button"
-          className={stockStatus === "all" ? "active" : ""}
-          onClick={() => {
-            setStockStatus("all");
-            setPage(1);
-          }}
-        >
-          Tất cả
-        </button>
-
-        <button
-          type="button"
-          className={stockStatus === "out_of_stock" ? "active" : ""}
-          onClick={() => {
-            setStockStatus("out_of_stock");
-            setPage(1);
-          }}
-        >
-          Hết hàng
-        </button>
-      </div>
-    </div>
-
-    <button
-      type="button"
-      className="the-kho-refresh-btn"
-      title="Làm mới danh sách"
-      onClick={() =>
-        fetchGoods(
-          debouncedSearch,
-          page,
-          pageSize,
-          stockStatus
-        )
-      }
-      disabled={loadingGoods}
-    >
-      <RiRefreshLine />
-    </button>
-  </div>
-
-  {/* Phân trang đặt phía trên bảng */}
-  <div className="the-kho-pagination the-kho-pagination-top">
-    <div className="the-kho-pagination-summary">
-      Tổng số: <strong>{total}</strong>
-
-      <span className="the-kho-pagination-divider">|</span>
-
-      Đã chọn: <strong>{selectedIds.length}</strong>
-    </div>
-
-    <div className="the-kho-pagination-controls">
-      <span>Số dòng/trang</span>
-
-      <select
-        value={pageSize}
-        onChange={(event) => {
-          setPageSize(Number(event.target.value));
-          setPage(1);
-        }}
-      >
-        <option value={100}>100</option>
-        <option value={200}>200</option>
-        <option value={300}>300</option>
-        <option value={500}>500</option>
-        <option value={1000}>1000</option>
-      </select>
-
-      <span className="the-kho-page-range">
-        {total === 0 ? 0 : (page - 1) * pageSize + 1}
-        {" - "}
-        {Math.min(page * pageSize, total)}
-        {" / "}
-        {total}
-      </span>
-
-      <span className="the-kho-page-number">
-        Trang {page}/{totalPages}
-      </span>
-
-      <button
-        type="button"
-        title="Trang trước"
-        disabled={page <= 1 || loadingGoods}
-        onClick={() =>
-          setPage((currentPage) => Math.max(1, currentPage - 1))
-        }
-      >
-        ‹
-      </button>
-
-      <button
-        type="button"
-        title="Trang sau"
-        disabled={page >= totalPages || loadingGoods}
-        onClick={() =>
-          setPage((currentPage) =>
-            Math.min(totalPages, currentPage + 1)
-          )
-        }
-      >
-        ›
-      </button>
-    </div>
-  </div>
-
-  <div className="the-kho-table-wrapper">
-    <table className="the-kho-table">
-      <thead>
-        <tr>
-          <th className="the-kho-checkbox-col">
-            <input
-              ref={selectAllRef}
-              type="checkbox"
-              checked={allPageSelected}
-              onChange={handleSelectAllCurrentPage}
-              aria-label="Chọn toàn bộ vật tư trên trang"
-            />
-          </th>
-
-          <th>Mã hàng</th>
-          <th>Tên hàng</th>
-          <th>ĐVT chính</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {loadingGoods && goodsList.length === 0 && (
-          <tr>
-            <td colSpan={4} className="the-kho-empty-row">
-              Đang tải dữ liệu…
-            </td>
-          </tr>
-        )}
-
-        {goodsList.map((goods) => (
-          <tr
-            key={goods.id}
-            className={
-              selectedGoods[goods.id]
-                ? "the-kho-row selected"
-                : "the-kho-row"
-            }
-            onClick={() => handleToggleGoods(goods)}
-          >
-            <td
-              className="the-kho-checkbox-col"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <input
-                type="checkbox"
-                checked={Boolean(selectedGoods[goods.id])}
-                onChange={() => handleToggleGoods(goods)}
-                aria-label={`Chọn ${goods.code || goods.name}`}
-              />
-            </td>
-
-            <td>{goods.code || "-"}</td>
-            <td>{goods.name || "-"}</td>
-            <td>{getGoodsUnitName(goods)}</td>
-          </tr>
-        ))}
-
-        {!loadingGoods && goodsList.length === 0 && (
-          <tr>
-            <td colSpan={4} className="the-kho-empty-row">
-              Không có dữ liệu
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-</div>
+      {showGoodsFilterModal && (
+        <GoodsFilterModal
+          open={showGoodsFilterModal}
+          multiple={true}
+          value={goodsFilter.goods_group_ids}
+          goodsIds={goodsFilter.goods_ids}
+          title="Lọc mã vật tư"
+          onClose={() => setShowGoodsFilterModal(false)}
+          onConfirm={handleConfirmGoodsFilter}
+        />
+      )}
 
       {showProgressModal && exportJob && (
         <div
@@ -863,6 +974,7 @@ function TheKhoExportPage() {
                 <h2 id="the-kho-progress-title">
                   Tiến độ xuất thẻ kho
                 </h2>
+
                 <span
                   className={`the-kho-state-badge state-${
                     exportJob.state || "unknown"
@@ -901,16 +1013,21 @@ function TheKhoExportPage() {
               <div className="the-kho-job-stats">
                 <div>
                   <span>Đã xử lý</span>
+
                   <strong>
                     {exportJob.processed_goods ?? 0}/
-                    {exportJob.total_goods ?? selectedIds.length}
+                    {exportJob.total_goods ?? 0}
                   </strong>
                 </div>
 
                 <div>
                   <span>Thời gian</span>
+
                   <strong>
-                    {Number(exportJob.elapsed_seconds || 0).toFixed(1)} giây
+                    {Number(
+                      exportJob.elapsed_seconds || 0
+                    ).toFixed(1)}{" "}
+                    giây
                   </strong>
                 </div>
               </div>
@@ -919,6 +1036,7 @@ function TheKhoExportPage() {
             {connectionErrorCount > 0 && !pollingStopped && (
               <div className="the-kho-connection-warning">
                 <RiAlertLine />
+
                 Kết nối tạm thời không ổn định. Đang thử lại (
                 {connectionErrorCount}/{MAX_POLLING_ERRORS})…
               </div>
@@ -928,14 +1046,20 @@ function TheKhoExportPage() {
               !TERMINAL_STATES.includes(exportJob.state) && (
                 <div className="the-kho-connection-error">
                   <RiErrorWarningLine />
+
                   <div>
                     <strong>Mất kết nối tới máy chủ</strong>
+
                     <span>
-                      Job vẫn có thể đang chạy. Bấm thử lại để tiếp tục
-                      cập nhật tiến độ.
+                      Job vẫn có thể đang chạy. Bấm thử lại để
+                      tiếp tục cập nhật tiến độ.
                     </span>
                   </div>
-                  <button type="button" onClick={handleRetryPolling}>
+
+                  <button
+                    type="button"
+                    onClick={handleRetryPolling}
+                  >
                     Thử lại
                   </button>
                 </div>
@@ -945,8 +1069,10 @@ function TheKhoExportPage() {
               <div className="the-kho-result-box">
                 <div className="the-kho-result-title">
                   <RiCheckboxCircleLine />
+
                   <div>
                     <strong>Xuất thẻ kho hoàn tất</strong>
+
                     <span>
                       Đã xuất{" "}
                       {result.exported_goods ??
@@ -966,10 +1092,12 @@ function TheKhoExportPage() {
                     <span>Số file</span>
                     <strong>{result.files_written ?? 0}</strong>
                   </div>
+
                   <div>
                     <span>Tên file</span>
                     <strong>{result.zip_name || "-"}</strong>
                   </div>
+
                   <div>
                     <span>Dung lượng</span>
                     <strong>
@@ -986,18 +1114,21 @@ function TheKhoExportPage() {
                     disabled={downloading}
                   >
                     <RiDownload2Line />
-                    {downloading ? "Đang tải…" : "Tải file ZIP"}
+
+                    {downloading
+                      ? "Đang tải…"
+                      : "Tải file ZIP"}
                   </button>
                 ) : (
                   <div className="the-kho-no-download">
-                    Không có file để tải vì tất cả mã được chọn đều bị
-                    chặn.
+                    Không có file để tải vì tất cả mã được chọn
+                    đều bị chặn.
                   </div>
                 )}
 
                 <p className="the-kho-retention-note">
-                  File chỉ được lưu trong 24 giờ. Sau thời gian này cần
-                  xuất lại.
+                  File chỉ được lưu trong 24 giờ. Sau thời gian
+                  này cần xuất lại.
                 </p>
               </div>
             )}
@@ -1005,10 +1136,13 @@ function TheKhoExportPage() {
             {exportJob.state === "failed" && (
               <div className="the-kho-job-error">
                 <RiErrorWarningLine />
+
                 <div>
                   <strong>Xuất thẻ kho thất bại</strong>
+
                   <span>
-                    {exportJob.error || "Không xác định được nguyên nhân."}
+                    {exportJob.error ||
+                      "Không xác định được nguyên nhân."}
                   </span>
                 </div>
               </div>
@@ -1017,9 +1151,12 @@ function TheKhoExportPage() {
             {exportJob.state === "cancelled" && (
               <div className="the-kho-job-error cancelled">
                 <RiAlertLine />
+
                 <div>
                   <strong>Yêu cầu đã bị hủy</strong>
-                  <span>Job xuất thẻ kho không tiếp tục xử lý.</span>
+                  <span>
+                    Job xuất thẻ kho không tiếp tục xử lý.
+                  </span>
                 </div>
               </div>
             )}
@@ -1027,7 +1164,9 @@ function TheKhoExportPage() {
             {warnings.length > 0 && (
               <div className="the-kho-warnings-section">
                 <div className="the-kho-warnings-heading">
-                  <h3>Cảnh báo số liệu ({warnings.length})</h3>
+                  <h3>
+                    Cảnh báo số liệu ({warnings.length})
+                  </h3>
 
                   <div className="the-kho-warning-counts">
                     {blockingWarnings.length > 0 && (
@@ -1035,6 +1174,7 @@ function TheKhoExportPage() {
                         {blockingWarnings.length} chặn xuất
                       </span>
                     )}
+
                     {normalWarnings.length > 0 && (
                       <span className="warning">
                         {normalWarnings.length} cảnh báo
@@ -1046,7 +1186,9 @@ function TheKhoExportPage() {
                 <div className="the-kho-warning-list">
                   {warnings.map((warning, index) => (
                     <div
-                      key={`${warning.goods_id || "warning"}-${index}`}
+                      key={`${
+                        warning.goods_id || "warning"
+                      }-${index}`}
                       className={`the-kho-warning-item ${
                         warning.severity === "blocking"
                           ? "blocking"
@@ -1054,12 +1196,17 @@ function TheKhoExportPage() {
                       }`}
                     >
                       <div className="the-kho-warning-icon">
-                        {warning.severity === "blocking" ? "⛔" : "⚠️"}
+                        {warning.severity === "blocking"
+                          ? "⛔"
+                          : "⚠️"}
                       </div>
 
                       <div className="the-kho-warning-content">
                         <strong>
-                          {[warning.goods_code, warning.goods_name]
+                          {[
+                            warning.goods_code,
+                            warning.goods_name,
+                          ]
                             .filter(Boolean)
                             .join(" - ") || "Cảnh báo"}
                         </strong>
@@ -1069,11 +1216,15 @@ function TheKhoExportPage() {
                         {Array.isArray(warning.details) &&
                           warning.details.length > 0 && (
                             <ul>
-                              {warning.details.map((detail, detailIndex) => (
-                                <li key={`${detail}-${detailIndex}`}>
-                                  {detail}
-                                </li>
-                              ))}
+                              {warning.details.map(
+                                (detail, detailIndex) => (
+                                  <li
+                                    key={`${detail}-${detailIndex}`}
+                                  >
+                                    {detail}
+                                  </li>
+                                )
+                              )}
                             </ul>
                           )}
 
@@ -1095,7 +1246,9 @@ function TheKhoExportPage() {
                 className="the-kho-secondary-btn"
                 onClick={handleCloseProgressModal}
               >
-                {isJobActive ? "Đóng và chạy ngầm" : "Đóng"}
+                {isJobActive
+                  ? "Đóng và chạy ngầm"
+                  : "Đóng"}
               </button>
             </div>
           </div>

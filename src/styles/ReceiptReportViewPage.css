@@ -1,0 +1,519 @@
+.receipt-report-view-page {
+  min-height: 100vh;
+  padding: 20px 24px;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #172033;
+}
+
+.receipt-report-view-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  position: relative;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.receipt-report-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.receipt-report-view-title {
+  text-align: center;
+}
+
+.receipt-report-view-title h1 {
+  margin: 0;
+  color: #12336f;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.receipt-report-toolbar {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+/* Export button positioned at far right of header */
+.receipt-report-export {
+  position: absolute;
+  right: 24px; /* match page padding */
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 1000px) {
+  .receipt-report-export {
+    position: static;
+    transform: none;
+    margin-left: auto;
+  }
+}
+
+.receipt-report-toolbar-info {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+
+.receipt-report-toolbar-info > div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.receipt-report-toolbar-info span {
+  color: #64748b;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.receipt-report-toolbar-info strong {
+  color: #172033;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* =========================
+   TABLE WRAPPER
+========================= */
+
+.receipt-report-view-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.receipt-report-company-table,
+.receipt-report-goods-table,
+.receipt-report-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+.receipt-report-company-table {
+  min-width: 1100px;
+}
+
+.receipt-report-goods-table {
+  min-width: 2400px;
+}
+
+.receipt-report-detail-table {
+  min-width: 900px;
+}
+
+.receipt-report-company-table th,
+.receipt-report-company-table td,
+.receipt-report-goods-table th,
+.receipt-report-goods-table td,
+.receipt-report-detail-table th,
+.receipt-report-detail-table td {
+  height: 38px;
+  padding: 7px 10px;
+  box-sizing: border-box;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.receipt-report-company-table th:last-child,
+.receipt-report-company-table td:last-child,
+.receipt-report-goods-table th:last-child,
+.receipt-report-goods-table td:last-child,
+.receipt-report-detail-table th:last-child,
+.receipt-report-detail-table td:last-child {
+  border-right: 0;
+}
+
+/* =========================
+   TABLE HEADER
+========================= */
+
+.receipt-report-company-table thead th,
+.receipt-report-goods-table thead th,
+.receipt-report-detail-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f4f7fb;
+  color: #27364f;
+  font-weight: 800;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* =========================
+   COMPANY REPORT
+========================= */
+
+.receipt-report-company-group td {
+  background: #eaf3ff;
+  color: #172033;
+  font-weight: 800;
+}
+
+.receipt-report-company-group td:nth-child(2) {
+  text-align: left;
+}
+
+.receipt-report-company-table tbody tr:not(.receipt-report-company-group):not(.receipt-report-grand-total):hover td {
+  background: #f8fbff;
+}
+
+.receipt-report-row-active td {
+  background: #eff6ff !important;
+}
+
+.receipt-report-view-action {
+  width: 50px;
+  text-align: center;
+}
+
+.receipt-report-view-action button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.receipt-report-view-action button:hover {
+  background: #eaf2ff;
+  transform: translateY(-1px);
+}
+
+.receipt-report-grand-total td {
+  background: #fff2c7;
+  color: #172033;
+  font-weight: 800;
+}
+
+/* =========================
+   GOODS REPORT
+========================= */
+
+.receipt-report-goods-table tbody tr:hover td {
+  background: #f8fbff;
+}
+
+.receipt-report-goods-table td {
+  white-space: nowrap;
+}
+
+/* =========================
+   DETAIL SECTION
+========================= */
+
+.receipt-report-detail-section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.receipt-report-detail-title {
+  margin-bottom: 10px;
+  color: #173e82;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.receipt-report-detail-meta {
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  color: #475467;
+  font-size: 13px;
+}
+
+.receipt-report-detail-meta strong {
+  color: #27364f;
+}
+
+.receipt-report-detail-table tbody tr:hover td {
+  background: #f8fbff;
+}
+
+/* =========================
+   EMPTY / LOADING
+========================= */
+
+.receipt-report-view-empty {
+  height: 96px !important;
+  color: #98a2b3;
+  text-align: center !important;
+  font-style: italic;
+}
+
+.receipt-report-view-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* =========================
+   PAGINATION
+========================= */
+
+.receipt-report-view-pagination {
+  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: #475467;
+  font-size: 13px;
+}
+
+.receipt-report-view-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.receipt-report-view-pagination-actions select,
+.receipt-report-view-pagination-actions button {
+  height: 34px;
+  border: 1px solid #d1d9e6;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #344054;
+  font-size: 13px;
+}
+
+.receipt-report-view-pagination-actions select {
+  padding: 0 9px;
+}
+
+.receipt-report-view-pagination-actions button {
+  min-width: 34px;
+  padding: 0 9px;
+  cursor: pointer;
+}
+
+.receipt-report-view-pagination-actions button:hover:not(:disabled) {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.receipt-report-view-pagination-actions button.active {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.receipt-report-view-pagination-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* =========================
+   COMMON
+========================= */
+
+.text-right {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.receipt-report-view-no-permission {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #b42318;
+  font-weight: 700;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 1000px) {
+  .receipt-report-view-page {
+    padding: 16px;
+  }
+
+  .receipt-report-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .receipt-report-toolbar-info {
+    gap: 12px 20px;
+  }
+
+  .receipt-report-view-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .receipt-report-view-page {
+    padding: 12px;
+  }
+
+  .receipt-report-view-title {
+    text-align: left;
+  }
+
+  .receipt-report-view-title h1 {
+    font-size: 21px;
+  }
+
+
+  .receipt-report-toolbar-info {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .receipt-report-toolbar-info > div {
+    justify-content: space-between;
+  }
+
+  .receipt-report-view-pagination-actions {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+.receipt-report-main-toolbar {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #dbe3ee;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+.receipt-report-main-toolbar-title {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.receipt-report-main-toolbar-title strong {
+  color: #172033;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.receipt-report-main-toolbar-title span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.receipt-report-main-toolbar-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid #dbeafe;
+  border-radius: 7px;
+  background: #eff6ff;
+  white-space: nowrap;
+}
+
+.receipt-report-main-toolbar-status span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.receipt-report-main-toolbar-status strong {
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* =========================================================
+   COMPANY WITHOUT RECEIPTS
+========================================================= */
+
+.receipt-report-company-empty-row td {
+  padding: 10px 12px !important;
+  background: #fff7f7 !important;
+  color: #dc2626 !important;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: left !important;
+}
+
+@media (max-width: 700px) {
+  .receipt-report-main-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  height: auto !important;
+  overflow-y: auto !important;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.receipt-report-view-page {
+  min-height: 100vh;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.receipt-report-view-shell {
+  height: auto !important;
+  overflow: visible !important;
+}

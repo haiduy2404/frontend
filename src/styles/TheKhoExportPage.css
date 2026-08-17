@@ -881,3 +881,350 @@
   top: 0;
   z-index: 2;
 }
+
+.the-kho-filter-grid {
+  grid-template-columns:
+    minmax(220px, 0.9fr)
+    minmax(260px, 1fr)
+    minmax(280px, 1.25fr)
+    auto;
+  align-items: end;
+}
+
+.the-kho-goods-filter-field {
+  min-width: 0;
+}
+
+.the-kho-goods-filter-control {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.the-kho-goods-filter-btn {
+  width: 100%;
+  min-width: 220px;
+  height: 42px;
+  padding: 0 13px;
+  overflow: hidden;
+  border: 1px solid #d7dfeb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #344054;
+  font-size: 13px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.the-kho-goods-filter-btn:hover:not(:disabled) {
+  border-color: #8fb3ff;
+  background: #f8fbff;
+}
+
+.the-kho-goods-filter-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.the-kho-goods-filter-clear {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fff7f7;
+  color: #dc2626;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.the-kho-goods-filter-clear:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.the-kho-empty-workspace {
+  min-height: 360px;
+}
+
+@media (max-width: 1100px) {
+  .the-kho-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .the-kho-export-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 680px) {
+  .the-kho-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .the-kho-goods-filter-btn {
+    min-width: 0;
+  }
+}
+
+
+/* =========================================================
+   BỐ CỤC MỚI - XUẤT THẺ KHO
+   ========================================================= */
+
+.the-kho-filter-grid.the-kho-filter-grid-stacked {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.the-kho-filter-grid-stacked .the-kho-field-full {
+  width: 100%;
+  min-width: 0;
+}
+
+.the-kho-filter-grid-stacked .the-kho-field input[type="month"] {
+  width: min(360px, 100%);
+  height: 46px;
+  font-size: 14px;
+}
+
+.the-kho-filter-grid-stacked .the-kho-goods-filter-btn {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+}
+
+.the-kho-filter-grid-stacked .the-kho-format-option {
+  height: 46px;
+}
+
+.the-kho-export-actions-bottom {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.the-kho-export-actions-bottom .the-kho-export-btn,
+.the-kho-export-actions-bottom .the-kho-reset-btn {
+  min-height: 46px;
+}
+
+/* =========================
+   WAREHOUSE SEARCH SELECT
+   ========================= */
+
+.the-kho-warehouse-select {
+  position: relative;
+  width: 100%;
+}
+
+.the-kho-warehouse-button {
+  width: 100%;
+  height: 46px;
+  padding: 0 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #172033;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.the-kho-warehouse-button:hover:not(:disabled) {
+  border-color: #8fb3ff;
+}
+
+.the-kho-warehouse-button:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.the-kho-warehouse-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.the-kho-warehouse-button > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.the-kho-warehouse-dropdown {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  max-height: 360px;
+  overflow: hidden;
+  border: 1px solid #d7dfeb;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+}
+
+.the-kho-warehouse-search-wrap {
+  position: relative;
+  padding: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.the-kho-warehouse-search-wrap input {
+  width: 100%;
+  height: 40px;
+  padding: 0 38px 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  color: #172033;
+}
+
+.the-kho-warehouse-search-wrap input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.the-kho-warehouse-search-wrap > button {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.the-kho-warehouse-list {
+  max-height: 290px;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.the-kho-warehouse-option {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #334155;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.the-kho-warehouse-option:hover {
+  background: #f8fbff;
+}
+
+.the-kho-warehouse-option.selected {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.the-kho-warehouse-option strong {
+  font-size: 13px;
+}
+
+.the-kho-warehouse-option small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.the-kho-warehouse-status {
+  padding: 14px 12px;
+  color: #64748b;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* =========================
+   RESET
+   ========================= */
+
+.the-kho-reset-btn {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.the-kho-reset-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.the-kho-reset-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .the-kho-export-actions-bottom {
+    justify-content: stretch;
+  }
+
+  .the-kho-export-actions-bottom .the-kho-export-btn,
+  .the-kho-export-actions-bottom .the-kho-reset-btn {
+    flex: 1;
+  }
+}
+
+.the-kho-month-picker {
+  position: relative;
+  width: min(360px, 100%);
+}
+
+.the-kho-month-picker > input[type="text"] {
+  width: 100%;
+  height: 46px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #172033;
+  outline: none;
+  cursor: pointer;
+}
+
+.the-kho-month-picker > input[type="text"]:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.the-kho-native-month-input {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  left: 0;
+  bottom: 0;
+}

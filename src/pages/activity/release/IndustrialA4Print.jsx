@@ -4,14 +4,14 @@ import {
   useParams,
   useLocation,
 } from "react-router-dom";
-import "../../../styles/ReleasePrintPage.css";
+import "../../../styles/IndustrialA4Print.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import {
   getReleaseOrderByCode,
   updateReleasePrinted,
 } from "../../../services/releaseOrderService";
 
-function ReleasePrintPage() {
+function IndustrialA4Print() {
   const navigate = useNavigate();
   const { code } = useParams();
 
@@ -256,7 +256,6 @@ const handlePrint = async () => {
               Tên, nhãn hiệu quy cách, phẩm chất vật tư, dụng cụ sản
               phẩm, hàng hóa
             </th>
-
             <th rowSpan={2}>Mã số</th>
             <th rowSpan={2}>Đơn vị tính</th>
 
@@ -265,7 +264,6 @@ const handlePrint = async () => {
             <th rowSpan={2}>Đơn giá</th>
             <th rowSpan={2}>Thành tiền</th>
           </tr>
-
           <tr>
             <th>Yêu cầu</th>
             <th>Thực xuất</th>
@@ -496,4 +494,4 @@ const handlePrint = async () => {
 );
 }
 
-export default ReleasePrintPage;
+export default IndustrialA4Print;

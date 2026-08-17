@@ -218,19 +218,6 @@ const Sidebar = () => {
               >
                 <div className="report-column">
                   <div className="report-title">BÁO CÁO KHO</div>
-
-                  <NavLink
-                    to="/dashboard/report/import-company"
-                    className={({ isActive }) =>
-                      isActive ? "report-link active" : "report-link"
-                    }
-                    onClick={() => {
-                      setActiveMenu("report");
-                      setOpenMenu("");
-                    }}
-                  >
-                    Báo cáo nhập kho theo công ty
-                  </NavLink>
                   <NavLink
                     to="/dashboard/report/receipt"
                     className={({ isActive }) =>
@@ -348,36 +335,7 @@ const Sidebar = () => {
                         Khách hàng / Nhà cung cấp
                       </NavLink>
 
-                      <NavLink
-                        to="/dashboard/stock-manager/employee-list"
-                        className={({ isActive }) =>
-                          isActive ? "category-link active" : "category-link"
-                        }
-                        onClick={() => {
-                          setActiveMenu("category");
-                          setOpenMenu("");
-                        }}
-                      >
-                        Nhân viên
-                      </NavLink>
-
                       <>
-                        <div className="category-title category-title-second">
-                          KHÁC
-                        </div>
-
-                        <NavLink
-                          to="/dashboard/stock-manager/organization-list"
-                          className={({ isActive }) =>
-                            isActive ? "category-link active" : "category-link"
-                          }
-                          onClick={() => {
-                            setActiveMenu("category");
-                            setOpenMenu("");
-                          }}
-                        >
-                          Cơ cấu tổ chức
-                        </NavLink>
                       </>
                   </div>
               </div>

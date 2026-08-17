@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import "../../styles/ReleaseReportPage.css";
 
-import { getReleaseReportPageable } from "../../services/releaseReportService";
 import { getWarehouses } from "../../services/warehouseService";
 import { getReleaseReferencesPageable } from "../../services/releaseOrderService";
-import ReportExcelExportButton from "../../components/ReportExcelExportButton";
-import { REPORT_RELEASE } from "../../services/reportExportService";
-import "../../styles/ReleaseReportPage.css";
+import GoodsFilterModal from "../../components/GoodsFilterModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 const INITIAL_FILTERS = {
   warehouse_id: "",
@@ -16,122 +15,10 @@ const INITIAL_FILTERS = {
   search: "",
 };
 
-const PAGE_SIZE_OPTIONS = [20, 50, 100];
-
-function getByPath(source, path) {
-  return String(path)
-    .split(".")
-    .reduce((value, key) => (value == null ? undefined : value[key]), source);
-}
-
-function firstValue(source, paths, fallback = "") {
-  for (const path of paths) {
-    const value = getByPath(source, path);
-
-    if (value !== undefined && value !== null && value !== "") {
-      return value;
-    }
-  }
-
-  return fallback;
-}
-
-function normalizeNumber(value) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : 0;
-  }
-
-  if (value === null || value === undefined || value === "") {
-    return 0;
-  }
-
-  let normalized = String(value).trim();
-
-  if (/^-?\d{1,3}(\.\d{3})+,\d+$/.test(normalized)) {
-    normalized = normalized.replace(/\./g, "").replace(",", ".");
-  } else if (/^-?\d+,\d+$/.test(normalized)) {
-    normalized = normalized.replace(",", ".");
-  } else {
-    normalized = normalized.replace(/,/g, "");
-  }
-
-  const number = Number(normalized);
-  return Number.isFinite(number) ? number : 0;
-}
-
-function formatQuantity(value) {
-  return new Intl.NumberFormat("vi-VN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 5,
-  }).format(normalizeNumber(value));
-}
-
-function formatMoney(value) {
-  return new Intl.NumberFormat("vi-VN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(normalizeNumber(value));
-}
-
-function formatDate(value) {
-  if (!value) {
-    return "—";
-  }
-
-  const text = String(value).trim();
-
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) {
-    return text;
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    const [year, month, day] = text.split("-");
-    return `${day}/${month}/${year}`;
-  }
-
-  const parsedDate = new Date(text);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return text;
-  }
-
-  return new Intl.DateTimeFormat("vi-VN").format(parsedDate);
-}
-
-function normalizeResponse(responseData) {
-  const payload = responseData?.data ?? responseData ?? {};
-
-  const rows =
-    payload?.items ??
-    payload?.rows ??
-    payload?.content ??
-    payload?.results ??
-    payload?.data ??
-    (Array.isArray(payload) ? payload : []);
-
-  const safeRows = Array.isArray(rows) ? rows : [];
-
-  const total = Number(
-    payload?.total_items ??
-      payload?.total ??
-      payload?.total_elements ??
-      payload?.totalElements ??
-      payload?.count ??
-      safeRows.length
-  );
-
-  return {
-    rows: safeRows,
-    total: Number.isFinite(total) ? total : safeRows.length,
-  };
-}
-
-function extractList(responseData) {
+function unwrapList(responseData) {
   const payload = responseData?.data ?? responseData ?? [];
 
-  if (Array.isArray(payload)) {
-    return payload;
-  }
+  if (Array.isArray(payload)) return payload;
 
   const candidates = [
     payload?.results,
@@ -147,18 +34,14 @@ function extractList(responseData) {
   ];
 
   for (const candidate of candidates) {
-    if (Array.isArray(candidate)) {
-      return candidate;
-    }
+    if (Array.isArray(candidate)) return candidate;
   }
 
   return [];
 }
 
 function normalizeOption(option) {
-  if (option === null || option === undefined) {
-    return { value: "", label: "" };
-  }
+  if (option == null) return { value: "", label: "" };
 
   if (typeof option === "string" || typeof option === "number") {
     return {
@@ -191,95 +74,60 @@ function normalizeOption(option) {
   };
 }
 
-function buildPageItems(currentPage, totalPages) {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
+function ReleaseReportPage() {
+  const { canDo } = useAuth();
 
-  const pages = [1];
-
-  if (currentPage > 4) {
-    pages.push("left-ellipsis");
-  }
-
-  const start = Math.max(2, currentPage - 1);
-  const end = Math.min(totalPages - 1, currentPage + 1);
-
-  for (let page = start; page <= end; page += 1) {
-    pages.push(page);
-  }
-
-  if (currentPage < totalPages - 3) {
-    pages.push("right-ellipsis");
-  }
-
-  pages.push(totalPages);
-  return pages;
-}
-
-export default function ReleaseReportPage() {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState(INITIAL_FILTERS);
 
-  const [rows, setRows] = useState([]);
-  const [totalRows, setTotalRows] = useState(0);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [warehouses, setWarehouses] = useState([]);
+  const [receiverUnits, setReceiverUnits] = useState([]);
+  const [releaseTargets, setReleaseTargets] = useState([]);
 
-  const [hasViewedReport, setHasViewedReport] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const [warehouseList, setWarehouseList] = useState([]);
-  const [receiverUnitList, setReceiverUnitList] = useState([]);
-  const [releaseTargetList, setReleaseTargetList] = useState([]);
   const [warehouseLoading, setWarehouseLoading] = useState(false);
   const [referenceLoading, setReferenceLoading] = useState(false);
 
+  const [selectedGoodsFilter, setSelectedGoodsFilter] = useState({
+    goods_group_ids: [],
+    goods_ids: [],
+  });
+  const [showGoodsFilterModal, setShowGoodsFilterModal] = useState(false);
+
+  const [errorMessage, setErrorMessage] = useState("");
+
   const warehouseOptions = useMemo(
-    () => warehouseList.map(normalizeOption).filter((item) => item.value),
-    [warehouseList]
+    () => warehouses.map(normalizeOption).filter((item) => item.value),
+    [warehouses]
   );
 
   const receiverUnitOptions = useMemo(
-    () => receiverUnitList.map(normalizeOption).filter((item) => item.value),
-    [receiverUnitList]
+    () => receiverUnits.map(normalizeOption).filter((item) => item.value),
+    [receiverUnits]
   );
 
   const releaseTargetOptions = useMemo(
-    () => releaseTargetList.map(normalizeOption).filter((item) => item.value),
-    [releaseTargetList]
-  );
-
-  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-
-  const pageItems = useMemo(
-    () => buildPageItems(page, totalPages),
-    [page, totalPages]
+    () => releaseTargets.map(normalizeOption).filter((item) => item.value),
+    [releaseTargets]
   );
 
   const fetchWarehouses = useCallback(async () => {
-    setWarehouseLoading(true);
-
     try {
+      setWarehouseLoading(true);
+
       const response = await getWarehouses({
         search: "",
         page: 1,
         page_size: 100,
       });
 
-      setWarehouseList(extractList(response));
+      setWarehouses(unwrapList(response));
     } catch (error) {
       console.error(
         "LOAD WAREHOUSE LIST ERROR:",
         error?.response?.data || error
       );
-      setWarehouseList([]);
-      setErrorMessage(
-        error?.response?.data?.message ||
-          error?.response?.data?.detail ||
-          "Không tải được danh sách kho xuất."
-      );
+
+      setWarehouses([]);
+      setErrorMessage("Không tải được danh sách kho xuất.");
     } finally {
       setWarehouseLoading(false);
     }
@@ -287,14 +135,14 @@ export default function ReleaseReportPage() {
 
   const fetchReleaseReferences = useCallback(async (warehouseId) => {
     if (!warehouseId) {
-      setReceiverUnitList([]);
-      setReleaseTargetList([]);
+      setReceiverUnits([]);
+      setReleaseTargets([]);
       return;
     }
 
-    setReferenceLoading(true);
-
     try {
+      setReferenceLoading(true);
+
       const [targetResponse, receiverResponse] = await Promise.all([
         getReleaseReferencesPageable({
           warehouse_id: warehouseId,
@@ -310,20 +158,17 @@ export default function ReleaseReportPage() {
         }),
       ]);
 
-      setReleaseTargetList(extractList(targetResponse));
-      setReceiverUnitList(extractList(receiverResponse));
+      setReleaseTargets(unwrapList(targetResponse));
+      setReceiverUnits(unwrapList(receiverResponse));
     } catch (error) {
       console.error(
         "LOAD RELEASE REFERENCES ERROR:",
         error?.response?.data || error
       );
-      setReceiverUnitList([]);
-      setReleaseTargetList([]);
-      setErrorMessage(
-        error?.response?.data?.message ||
-          error?.response?.data?.detail ||
-          "Không tải được đơn vị lĩnh và đối tượng xuất kho."
-      );
+
+      setReceiverUnits([]);
+      setReleaseTargets([]);
+      setErrorMessage("Không tải được đơn vị lĩnh và đối tượng xuất kho.");
     } finally {
       setReferenceLoading(false);
     }
@@ -336,61 +181,6 @@ export default function ReleaseReportPage() {
   useEffect(() => {
     fetchReleaseReferences(filters.warehouse_id);
   }, [filters.warehouse_id, fetchReleaseReferences]);
-
-  const fetchReport = useCallback(async () => {
-    if (!hasViewedReport) {
-      return;
-    }
-
-    setLoading(true);
-    setErrorMessage("");
-
-    try {
-      const params = {
-        warehouse_id: appliedFilters.warehouse_id,
-        receiver_unit_id: appliedFilters.receiver_unit_id,
-        release_target_id: appliedFilters.release_target_id,
-        start_date: appliedFilters.start_date,
-        end_date: appliedFilters.end_date,
-        page,
-        page_size: pageSize,
-      };
-
-      const searchText = appliedFilters.search.trim();
-
-      if (searchText) {
-        params.search = searchText;
-      }
-
-      const response = await getReleaseReportPageable(params);
-      const normalized = normalizeResponse(response);
-
-      setRows(normalized.rows);
-      setTotalRows(normalized.total);
-    } catch (error) {
-      setRows([]);
-      setTotalRows(0);
-
-      setErrorMessage(
-        error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          error?.message ||
-          "Không tải được dữ liệu báo cáo xuất kho."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [appliedFilters, hasViewedReport, page, pageSize]);
-
-  useEffect(() => {
-    fetchReport();
-  }, [fetchReport]);
-
-  useEffect(() => {
-    if (hasViewedReport && page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [hasViewedReport, page, totalPages]);
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
@@ -415,11 +205,39 @@ export default function ReleaseReportPage() {
   };
 
   const validateFilters = () => {
-    if (filters.start_date && filters.end_date && filters.start_date > filters.end_date) {
-      return "Từ ngày không được lớn hơn đến ngày.";
+    if (
+      filters.start_date &&
+      filters.end_date &&
+      filters.start_date > filters.end_date
+    ) {
+      return "Từ ngày không được lớn hơn Đến ngày.";
     }
 
     return "";
+  };
+
+  const handleConfirmGoods = (value) => {
+    setSelectedGoodsFilter({
+      goods_group_ids: Array.isArray(value?.goods_group_ids)
+        ? value.goods_group_ids
+        : [],
+      goods_ids: Array.isArray(value?.goods_ids)
+        ? value.goods_ids
+        : [],
+    });
+
+    setShowGoodsFilterModal(false);
+  };
+
+  const handleReset = () => {
+    setFilters(INITIAL_FILTERS);
+    setSelectedGoodsFilter({
+      goods_group_ids: [],
+      goods_ids: [],
+    });
+    setReceiverUnits([]);
+    setReleaseTargets([]);
+    setErrorMessage("");
   };
 
   const handleViewReport = (event) => {
@@ -432,129 +250,70 @@ export default function ReleaseReportPage() {
       return;
     }
 
-    setErrorMessage("");
-    setPage(1);
-    setAppliedFilters({ ...filters });
-    setHasViewedReport(true);
-  };
+    const reportConfig = {
+      warehouse_id: filters.warehouse_id || "",
+      receiver_unit_id: filters.receiver_unit_id || "",
+      release_target_id: filters.release_target_id || "",
+      start_date: filters.start_date || "",
+      end_date: filters.end_date || "",
+      search: String(filters.search || "").trim(),
 
-  // Chỉ gửi field có giá trị: BE bỏ qua field rỗng, nhưng gửi chuỗi rỗng cho
-  // start_date sẽ bị serializer báo lỗi định dạng ngày.
-  const buildExportFilters = useCallback(() => {
-    const payload = {};
+      goods_group_ids: selectedGoodsFilter.goods_group_ids,
+      goods_ids: selectedGoodsFilter.goods_ids,
 
-    Object.entries(appliedFilters).forEach(([key, value]) => {
-      if (typeof value === "string" ? value.trim() : value) {
-        payload[key] = typeof value === "string" ? value.trim() : value;
-      }
-    });
-
-    return payload;
-  }, [appliedFilters]);
-
-  const handleReset = () => {
-    setFilters(INITIAL_FILTERS);
-    setAppliedFilters(INITIAL_FILTERS);
-    setRows([]);
-    setTotalRows(0);
-    setPage(1);
-    setPageSize(20);
-    setHasViewedReport(false);
-    setReceiverUnitList([]);
-    setReleaseTargetList([]);
-    setErrorMessage("");
-  };
-
-  const handlePageSizeChange = (event) => {
-    const nextPageSize = Math.min(100, Number(event.target.value) || 20);
-
-    setPageSize(nextPageSize);
-    setPage(1);
-  };
-
-  const getRowView = (row) => {
-    const quantity = firstValue(row, [
-      "actual_quantity",
-      "released_quantity",
-      "release_quantity",
-      "quantity",
-      "completed_quantity",
-    ]);
-
-    const averagePrice = firstValue(row, [
-      "average_price",
-      "average_unit_price",
-      "avg_price",
-      "unit_price",
-    ]);
-
-    const rawAmount = firstValue(row, [
-      "amount",
-      "total_amount",
-      "total_value",
-      "value",
-    ]);
-
-    const amount =
-      rawAmount === ""
-        ? normalizeNumber(quantity) * normalizeNumber(averagePrice)
-        : rawAmount;
-
-    return {
-      releaseCode: firstValue(row, [
-        "warehouse_release_code",
-        "release_code",
-        "release_order_code",
-        "order_code",
-        "code",
-        "release.code",
-      ]),
-      releaseDate: firstValue(row, [
-        "release_date",
-        "date",
-        "release.release_date",
-      ]),
-      warehouseName: firstValue(row, [
-        "warehouse_name",
-        "warehouse.name",
-      ]),
-      goodsCode: firstValue(row, [
-        "goods_code",
-        "material_code",
-        "item_code",
-        "goods.code",
-      ]),
-      goodsName: firstValue(row, [
-        "goods_name",
-        "material_name",
-        "item_name",
-        "goods.name",
-      ]),
-      unitName: firstValue(row, [
-        "default_goods_unit",
-        "goods_unit_name",
-        "unit_name",
-        "uom_name",
-        "goods.unit_name",
-      ]),
-      receiverUnitName: firstValue(row, [
-        "receiver_unit.name",
-        "receiver_unit_name",
-        "receiver_unit",
-      ]),
-      releaseTargetName: firstValue(row, [
-        "release_target.name",
-        "release_target_name",
-        "release_target",
-      ]),
-      quantity,
-      averagePrice,
-      amount,
+      created_at: new Date().toISOString(),
     };
+
+    const reportKey = `warehouse-release-report-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 9)}`;
+
+    try {
+      localStorage.setItem(reportKey, JSON.stringify(reportConfig));
+    } catch (error) {
+      console.error("SAVE RELEASE REPORT CONFIG ERROR:", error);
+      setErrorMessage("Không thể mở báo cáo. Vui lòng thử lại.");
+      return;
+    }
+
+    const url = `/warehouse-release-report/view?reportKey=${encodeURIComponent(
+      reportKey
+    )}`;
+
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const firstRowNumber = totalRows === 0 ? 0 : (page - 1) * pageSize + 1;
-  const lastRowNumber = Math.min(page * pageSize, totalRows);
+  if (!canDo("view_report")) {
+    return (
+      <div className="no-permission-page">
+        Tài khoản không có quyền truy cập báo cáo kho
+      </div>
+    );
+  }
+
+  const selectedGroupCount = selectedGoodsFilter.goods_group_ids.length;
+  const selectedGoodsCount = selectedGoodsFilter.goods_ids.length;
+
+  const hasGoodsFilter =
+    selectedGroupCount > 0 || selectedGoodsCount > 0;
+
+  const goodsFilterLabel = (() => {
+    if (!hasGoodsFilter) {
+      return "Tất cả mã vật tư";
+    }
+
+    const parts = [];
+
+    if (selectedGroupCount > 0) {
+      parts.push(`${selectedGroupCount} nhóm`);
+    }
+
+    if (selectedGoodsCount > 0) {
+      parts.push(`${selectedGoodsCount} mã riêng`);
+    }
+
+    return `Đã chọn ${parts.join(" + ")}`;
+  })();
 
   return (
     <section className="release-report-page">
@@ -565,11 +324,6 @@ export default function ReleaseReportPage() {
           </p>
 
           <h1>Báo cáo xuất kho</h1>
-
-          <p className="release-report-description">
-            Có thể để trống các điều kiện lọc và bấm Xem báo cáo. Dữ liệu chỉ
-            lấy các lệnh xuất kho đã hoàn thành.
-          </p>
         </div>
       </header>
 
@@ -577,144 +331,181 @@ export default function ReleaseReportPage() {
         className="release-report-filter-card"
         onSubmit={handleViewReport}
       >
-        <div className="release-report-filter-grid">
-          <label className="release-report-field">
-            <span>Kho xuất</span>
+        <div className="release-report-filter-grid release-report-filter-grid-stacked">
+          {/* HÀNG 1: TỪ NGÀY / ĐẾN NGÀY */}
+          <div className="release-report-filter-row release-report-filter-row-dates">
+            <label className="release-report-field">
+              <span>Từ ngày</span>
 
-            <select
-              name="warehouse_id"
-              value={filters.warehouse_id}
-              onChange={handleFilterChange}
-              disabled={warehouseLoading}
-            >
-              <option value="">
-                {warehouseLoading
-                  ? "Đang tải danh sách kho..."
-                  : "-- Chọn kho xuất --"}
-              </option>
+              <input
+                type="date"
+                name="start_date"
+                value={filters.start_date}
+                max={filters.end_date || undefined}
+                onChange={handleFilterChange}
+              />
+            </label>
 
-              {warehouseOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+            <label className="release-report-field">
+              <span>Đến ngày</span>
+
+              <input
+                type="date"
+                name="end_date"
+                value={filters.end_date}
+                min={filters.start_date || undefined}
+                onChange={handleFilterChange}
+              />
+            </label>
+          </div>
+
+          {/* HÀNG 2: KHO XUẤT */}
+          <div className="release-report-filter-row">
+            <label className="release-report-field release-report-field-full">
+              <span>Kho xuất</span>
+
+              <select
+                name="warehouse_id"
+                value={filters.warehouse_id}
+                onChange={handleFilterChange}
+                disabled={warehouseLoading}
+              >
+                <option value="">
+                  {warehouseLoading
+                    ? "Đang tải danh sách kho..."
+                    : "-- Tất cả kho xuất --"}
                 </option>
-              ))}
-            </select>
-          </label>
 
-          <label className="release-report-field">
-            <span>Đơn vị lĩnh vật tư</span>
+                {warehouseOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
-            <select
-              name="receiver_unit_id"
-              value={filters.receiver_unit_id}
-              onChange={handleFilterChange}
-              disabled={!filters.warehouse_id || referenceLoading}
-            >
-              <option value="">
-                {!filters.warehouse_id
-                  ? "-- Chọn kho xuất trước --"
-                  : referenceLoading
-                  ? "Đang tải đơn vị lĩnh..."
-                  : "-- Chọn đơn vị lĩnh --"}
-              </option>
+          {/* HÀNG 3: TÌM NHANH MÃ VẬT TƯ */}
+          <div className="release-report-filter-row">
+            <label className="release-report-field release-report-field-full">
+              <span>Tìm kiếm</span>
 
-              {receiverUnitOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              <input
+                type="text"
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Nhập nhanh mã vật tư để xem báo cáo"
+              />
+            </label>
+          </div>
+
+          {/* HÀNG 4: ĐƠN VỊ LĨNH */}
+          <div className="release-report-filter-row">
+            <label className="release-report-field release-report-field-full">
+              <span>Đơn vị lĩnh vật tư</span>
+
+              <select
+                name="receiver_unit_id"
+                value={filters.receiver_unit_id}
+                onChange={handleFilterChange}
+                disabled={!filters.warehouse_id || referenceLoading}
+              >
+                <option value="">
+                  {!filters.warehouse_id
+                    ? "-- Chọn kho để lọc thêm --"
+                    : referenceLoading
+                    ? "Đang tải đơn vị lĩnh..."
+                    : "-- Tất cả đơn vị lĩnh --"}
                 </option>
-              ))}
-            </select>
-          </label>
 
-          <label className="release-report-field">
-            <span>Đối tượng xuất kho</span>
+                {receiverUnitOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
-            <select
-              name="release_target_id"
-              value={filters.release_target_id}
-              onChange={handleFilterChange}
-              disabled={!filters.warehouse_id || referenceLoading}
-            >
-              <option value="">
-                {!filters.warehouse_id
-                  ? "-- Chọn kho xuất trước --"
-                  : referenceLoading
-                  ? "Đang tải đối tượng xuất kho..."
-                  : "-- Chọn đối tượng xuất kho --"}
-              </option>
+          {/* HÀNG 5: ĐỐI TƯỢNG XUẤT KHO */}
+          <div className="release-report-filter-row">
+            <label className="release-report-field release-report-field-full">
+              <span>Đối tượng xuất kho</span>
 
-              {releaseTargetOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              <select
+                name="release_target_id"
+                value={filters.release_target_id}
+                onChange={handleFilterChange}
+                disabled={!filters.warehouse_id || referenceLoading}
+              >
+                <option value="">
+                  {!filters.warehouse_id
+                    ? "-- Chọn kho để lọc thêm --"
+                    : referenceLoading
+                    ? "Đang tải đối tượng xuất..."
+                    : "-- Tất cả đối tượng xuất --"}
                 </option>
-              ))}
-            </select>
-          </label>
 
-          <label className="release-report-field">
-            <span>Từ ngày</span>
+                {releaseTargetOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
-            <input
-              type="date"
-              name="start_date"
-              value={filters.start_date}
-              max={filters.end_date || undefined}
-              onChange={handleFilterChange}
-            />
-          </label>
+          {/* HÀNG 6: LỌC MÃ VẬT TƯ - GIỮ NGUYÊN LOGIC CŨ */}
+          <div className="release-report-filter-row">
+            <div className="release-report-field release-report-field-full">
+              <span>Lọc mã vật tư</span>
 
-          <label className="release-report-field">
-            <span>Đến ngày</span>
+              <div className="release-report-goods-filter-control">
+                <button
+                  type="button"
+                  className="release-report-goods-filter-button"
+                  onClick={() => setShowGoodsFilterModal(true)}
+                >
+                  {goodsFilterLabel}
+                </button>
 
-            <input
-              type="date"
-              name="end_date"
-              value={filters.end_date}
-              min={filters.start_date || undefined}
-              onChange={handleFilterChange}
-            />
-          </label>
+                {hasGoodsFilter && (
+                  <button
+                    type="button"
+                    className="release-report-goods-filter-clear"
+                    title="Bỏ lọc vật tư"
+                    onClick={() =>
+                      setSelectedGoodsFilter({
+                        goods_group_ids: [],
+                        goods_ids: [],
+                      })
+                    }
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
 
-          <label className="release-report-field release-report-search-field">
-            <span>Từ khóa</span>
-
-            <input
-              type="search"
-              name="search"
-              value={filters.search}
-              onChange={handleFilterChange}
-              placeholder="Tên vật tư, mã vật tư hoặc mã lệnh XK..."
-              autoComplete="off"
-            />
-          </label>
-
-          <div className="release-report-filter-actions">
+          {/* HÀNG 7: ACTION */}
+          <div className="release-report-filter-actions release-report-filter-actions-bottom">
             <button
               type="submit"
               className="release-report-search-button"
-              disabled={loading || warehouseLoading || referenceLoading}
+              disabled={warehouseLoading || referenceLoading}
             >
-              {loading ? "Đang tải..." : "Xem báo cáo"}
+              Xem báo cáo
             </button>
 
             <button
               type="button"
               className="release-report-reset-button"
               onClick={handleReset}
-              disabled={loading}
             >
               Đặt lại
             </button>
-
-            {/* Xuất theo appliedFilters (bộ lọc ĐANG hiển thị), không phải
-                filters đang gõ dở — nếu không, file tải về khác bảng trên màn
-                hình mà user không hiểu vì sao. */}
-            <ReportExcelExportButton
-              report={REPORT_RELEASE}
-              getFilters={buildExportFilters}
-              disabled={!hasViewedReport || loading}
-              fileName="bao-cao-xuat-kho.xlsx"
-            />
           </div>
         </div>
       </form>
@@ -725,211 +516,18 @@ export default function ReleaseReportPage() {
         </div>
       )}
 
-      <div className="release-report-table-card">
-        <div className="release-report-table-toolbar">
-          <div>
-            <h2>BÁO CÁO XUẤT KHO</h2>
-
-            {hasViewedReport ? (
-              <p>
-                Từ ngày: <strong>{formatDate(appliedFilters.start_date)}</strong>
-                {" - "}
-                Đến ngày: <strong>{formatDate(appliedFilters.end_date)}</strong>
-              </p>
-            ) : (
-              <p>Vui lòng chọn điều kiện lọc để xem báo cáo.</p>
-            )}
-          </div>
-
-          {hasViewedReport && (
-            <label className="release-report-page-size">
-              <span>Số dòng</span>
-
-              <select value={pageSize} onChange={handlePageSizeChange}>
-                {PAGE_SIZE_OPTIONS.map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
-
-        {hasViewedReport && (
-          <div className="release-report-result-summary">
-            Hiển thị {firstRowNumber}-{lastRowNumber} trên {totalRows} kết quả
-          </div>
-        )}
-
-        <div className="release-report-table-wrapper">
-          <table className="release-report-table">
-            <thead>
-              <tr>
-                <th className="release-report-center">STT</th>
-                <th>Mã lệnh XK</th>
-                <th>Ngày xuất</th>
-                <th>Kho xuất</th>
-                <th>Mã vật tư</th>
-                <th>Tên vật tư</th>
-                <th>ĐVT</th>
-                <th>Đơn vị lĩnh</th>
-                <th>Đối tượng xuất kho</th>
-                <th className="release-report-number">SL thực xuất</th>
-                <th className="release-report-number">Đơn giá bình quân</th>
-                <th className="release-report-number">Thành tiền</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {!hasViewedReport ? (
-                <tr>
-                  <td colSpan={12} className="release-report-state-cell">
-                    Chọn kho xuất, đơn vị lĩnh, đối tượng xuất kho và khoảng
-                    ngày, sau đó bấm Xem báo cáo.
-                  </td>
-                </tr>
-              ) : loading && rows.length === 0 ? (
-                <tr>
-                  <td colSpan={12} className="release-report-state-cell">
-                    Đang tải dữ liệu...
-                  </td>
-                </tr>
-              ) : rows.length === 0 ? (
-                <tr>
-                  <td colSpan={12} className="release-report-state-cell">
-                    Không có dữ liệu phù hợp.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((row, index) => {
-                  const view = getRowView(row);
-                  const rowNumber = (page - 1) * pageSize + index + 1;
-                  const rowKey = `${view.releaseCode}-${view.goodsCode}-${index}`;
-
-                  return (
-                    <tr key={rowKey}>
-                      <td className="release-report-center">{rowNumber}</td>
-
-                      <td className="release-report-code">
-                        {view.releaseCode ? (
-                          <button
-                            type="button"
-                            className="release-report-link-button"
-                            onClick={() => {
-                              if (view.releaseCode) {
-                                window.open(
-                                  `/dashboard/activity/export/order-detail/${encodeURIComponent(view.releaseCode)}?mode=print`,
-                                  "_blank",
-                                  "noopener,noreferrer"
-                                );
-                              }
-                            }}
-                          >
-                            {view.releaseCode}
-                          </button>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-
-                      <td>{formatDate(view.releaseDate)}</td>
-                      <td>{view.warehouseName || "—"}</td>
-                      <td>{view.goodsCode || "—"}</td>
-
-                      <td className="release-report-goods-name">
-                        {view.goodsName || "—"}
-                      </td>
-
-                      <td>{view.unitName || "—"}</td>
-                      <td>{view.receiverUnitName || "—"}</td>
-                      <td>{view.releaseTargetName || "—"}</td>
-
-                      <td className="release-report-number">
-                        {formatQuantity(view.quantity)}
-                      </td>
-
-                      <td className="release-report-number">
-                        {formatMoney(view.averagePrice)}
-                      </td>
-
-                      <td className="release-report-number release-report-total">
-                        {formatMoney(view.amount)}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {hasViewedReport && totalRows > 0 && (
-          <footer className="release-report-pagination">
-            <span>
-              Trang {page}/{totalPages}
-            </span>
-
-            <div className="release-report-pagination-buttons">
-              <button
-                type="button"
-                onClick={() => setPage(1)}
-                disabled={page === 1 || loading}
-                aria-label="Trang đầu"
-              >
-                «
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={page === 1 || loading}
-                aria-label="Trang trước"
-              >
-                ‹
-              </button>
-
-              {pageItems.map((item) =>
-                typeof item === "string" ? (
-                  <span key={item} className="release-report-ellipsis">
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={item}
-                    type="button"
-                    className={item === page ? "is-active" : ""}
-                    onClick={() => setPage(item)}
-                    disabled={loading}
-                  >
-                    {item}
-                  </button>
-                )
-              )}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setPage((current) => Math.min(totalPages, current + 1))
-                }
-                disabled={page === totalPages || loading}
-                aria-label="Trang sau"
-              >
-                ›
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPage(totalPages)}
-                disabled={page === totalPages || loading}
-                aria-label="Trang cuối"
-              >
-                »
-              </button>
-            </div>
-          </footer>
-        )}
-      </div>
+      {showGoodsFilterModal && (
+        <GoodsFilterModal
+          open={showGoodsFilterModal}
+          multiple={true}
+          value={selectedGoodsFilter.goods_group_ids}
+          title="Lọc mã vật tư"
+          onClose={() => setShowGoodsFilterModal(false)}
+          onConfirm={handleConfirmGoods}
+        />
+      )}
     </section>
   );
 }
+
+export default ReleaseReportPage;

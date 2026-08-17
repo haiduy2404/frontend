@@ -1,0 +1,321 @@
+.application-a5-page {
+  height: 100vh;
+  background: #e5e7eb;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.application-a5-toolbar {
+  width: 210mm;
+  margin: 0 auto 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.application-a5-toolbar button {
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.application-a5-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding-bottom: 24px;
+}
+
+.application-a5-paper {
+  width: 210mm;
+  min-height: 148mm;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 5mm 7mm;
+  box-sizing: border-box;
+  color: #000000;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.application-a5-paper,
+.application-a5-paper * {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.application-a5-paper-break {
+  page-break-before: always;
+  break-before: page;
+}
+
+/* SCALE TOÀN BỘ NỘI DUNG */
+.application-a5-scale-content {
+  width: calc(100% / 1.35);
+  transform: scale(1.35);
+  transform-origin: top left;
+}
+
+/* ================= HEADER ================= */
+
+.application-a5-header {
+  display: grid;
+  grid-template-columns: 55mm 74mm 55mm;
+  column-gap: 3mm;
+  align-items: start;
+  min-height: 24mm;
+}
+
+.application-a5-left-header {
+  font-size: 10pt;
+  line-height: 1.2;
+  word-break: normal;
+}
+
+.application-a5-title-block {
+  text-align: center;
+}
+
+.application-a5-title-block h1 {
+  margin: 0;
+  font-size: 13pt;
+  line-height: 1.05;
+  font-weight: 700;
+}
+
+.application-a5-date {
+  margin-top: 2mm;
+  font-size: 10pt;
+  font-style: italic;
+  line-height: 1.15;
+}
+
+.application-a5-right-header {
+  font-size: 8pt;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.application-a5-code-lines {
+  margin-top: 1mm;
+  text-align: center;
+}
+
+/* ================= INFO ================= */
+
+.application-a5-info {
+  margin-top: 2mm;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.application-a5-info > div {
+  margin-bottom: 0.7mm;
+}
+
+/* ================= TABLE ================= */
+
+.application-a5-table {
+  width: 100%;
+  margin-top: 1.5mm;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 10px;
+}
+
+.application-a5-table,
+.application-a5-table th,
+.application-a5-table td {
+  box-sizing: border-box;
+}
+
+.application-a5-table th,
+.application-a5-table td {
+  border: 1px solid #000000;
+  padding: 0.7mm 0.8mm;
+  vertical-align: middle;
+}
+
+.application-a5-table thead th {
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.application-a5-table thead tr:first-child th {
+  height: 7mm;
+}
+
+.application-a5-table thead tr:nth-child(2) th {
+  height: 5mm;
+}
+
+.application-a5-symbol-row th {
+  height: 4mm !important;
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.application-a5-col-stt {
+  width: 7mm;
+}
+
+.application-a5-col-name {
+  width: 58mm;
+}
+
+.application-a5-col-code {
+  width: 22mm;
+}
+
+.application-a5-col-unit {
+  width: 15mm;
+}
+
+.application-a5-col-qty {
+  width: 18mm;
+}
+
+.application-a5-col-price {
+  width: 20mm;
+}
+
+.application-a5-col-amount {
+  width: 22mm;
+}
+
+.application-a5-item-row td {
+  height: 5mm;
+  font-size: 10px;
+  line-height: 1.08;
+}
+
+.application-a5-center-cell {
+  text-align: center;
+}
+
+.application-a5-number-cell {
+  text-align: center;
+}
+
+.application-a5-name-cell {
+  text-align: left;
+  white-space: normal;
+  line-height: 1.08;
+}
+
+/* ================= SIGNATURE ================= */
+
+.application-a5-signature-row {
+  margin-top: 2mm;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  text-align: center;
+  gap: 1mm;
+}
+
+.application-a5-signature-row div {
+  min-height: 15mm;
+}
+
+.application-a5-signature-row strong {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.application-a5-signature-row span {
+  display: block;
+  margin-top: 0.5mm;
+  font-size: 9px;
+  font-style: italic;
+}
+
+.application-a5-signer-name-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.application-a5-loading {
+  padding: 24px;
+  font-size: 16px;
+}
+
+/* ================= PRINT ================= */
+
+@media print {
+  @page {
+    size: A5 landscape;
+    margin: 0;
+  }
+
+  html,
+  body,
+  #root {
+    width: 210mm !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .application-a5-toolbar {
+    display: none !important;
+  }
+
+  .application-a5-page {
+    display: block !important;
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .application-a5-scroll {
+    display: block !important;
+    width: 210mm !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    flex: none !important;
+  }
+
+  .application-a5-paper {
+    width: 210mm !important;
+    min-height: 148mm !important;
+    margin: 0 !important;
+    padding: 5mm 7mm !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .application-a5-scale-content {
+    width: calc(100% / 1.35) !important;
+    transform: scale(1.35) !important;
+    transform-origin: top left !important;
+  }
+
+  .application-a5-paper-break {
+    page-break-before: always;
+    break-before: page;
+  }
+}

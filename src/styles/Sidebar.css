@@ -218,25 +218,24 @@
 .category-mega-menu {
   position: absolute;
   left: calc(100% + 16px);
-  bottom: -2cm;
+  bottom: 0;
 
-  width: 640px;
-  min-height: 380px;
+  width: 500px;
+  min-height: auto;
 
   background: #111827;
   border-radius: 12px;
 
-  padding: 34px 38px;
+  padding: 24px 28px;
   box-sizing: border-box;
 
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 58px;
+  gap: 36px;
 
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
   z-index: 999;
 }
-
 .category-mega-menu::before {
   content: "";
   position: absolute;
@@ -250,7 +249,7 @@
 .category-column {
   display: flex;
   flex-direction: column;
-  padding-top: 2cm;
+  padding-top: 0;
 }
 
 .category-title {

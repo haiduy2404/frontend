@@ -93,30 +93,38 @@ const RELEASE_SIGNER_DEFINITIONS = {
 };
 
 const PRINT_SIGNER_KEYS = {
-  industrial: [
+  industrialA4: [
     "cungTieu",
     "thuKho",
     "phongKHVT",
     "giamDoc",
   ],
 
-  operation: [
+  industrialA5: [
     "cungTieu",
     "thuKho",
     "phongKHVT",
     "giamDoc",
   ],
 
-  processing: [
+  applicationA5: [
+    "cungTieu",
+    "thuKho",
+    "phongKHVT",
+    "giamDoc",
+  ],
+
+  processingA5: [
     "thuKho",
     "cungTieu",
   ],
 };
 
 const PRINT_FORM_NAMES = {
-  industrial: "A4 Công nghiệp",
-  operation: "A5 Vận dụng",
-  processing: "A5 Chế biến",
+  industrialA4: "A4 Công nghiệp",
+  industrialA5: "A5 Công nghiệp",
+  applicationA5: "A5 Vận dụng",
+  processingA5: "A5 Chế biến",
 };
 
 function WarehouseOrderRelease() {
@@ -126,7 +134,7 @@ function WarehouseOrderRelease() {
 
   const [searchParams] = useSearchParams();
   const isPrintMode = searchParams.get("mode") === "print";
-  const [printForm, setPrintForm] = useState("industrial");
+  const [printForm, setPrintForm] = useState("industrialA4");
   const [showPrintSignerModal, setShowPrintSignerModal] =
   useState(false);
 
@@ -261,14 +269,17 @@ const handleConfirmPrint = () => {
   const releaseCode = headerData.code || id;
 
   const printRoutes = {
-    industrial:
-      `/dashboard/activity/export/release-print/${releaseCode}`,
+    industrialA4:
+      `/dashboard/activity/export/release-print-industrial-a4/${releaseCode}`,
 
-    operation:
-      `/dashboard/activity/export/release-print-a5/${releaseCode}`,
+    industrialA5:
+      `/dashboard/activity/export/release-print-industrial-a5/${releaseCode}`,
 
-    processing:
-      `/dashboard/activity/export/release-print-processing/${releaseCode}`,
+    applicationA5:
+      `/dashboard/activity/export/release-print-application-a5/${releaseCode}`,
+
+    processingA5:
+      `/dashboard/activity/export/release-print-processing-a5/${releaseCode}`,
   };
 
   const printState = {
@@ -851,9 +862,10 @@ const handleConfirmPrint = () => {
                   value={printForm}
                   onChange={(e) => setPrintForm(e.target.value)}
                 >
-                  <option value="industrial">In giấy A4 (Công nghiệp)</option>
-                  <option value="operation">In giấy A5 (Vận dụng)</option>
-                  <option value="processing">In giấy A5 (Chế biến)</option>
+                  <option value="industrialA4">In giấy A4 (Công nghiệp)</option>
+                  <option value="industrialA5">In giấy A5 (Công nghiệp)</option>
+                  <option value="applicationA5">In giấy A5 (Vận dụng)</option>
+                  <option value="processingA5">In giấy A5 (Chế biến)</option>
                 </select>
                 <button
                   className="print-footer-btn"
