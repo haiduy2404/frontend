@@ -599,8 +599,8 @@ function GoodsListPage() {
                         {canDo("delete_goods") && (
                           <button
                             className="row-delete-btn"
-                            title="Xóa"
-                            onClick={() => handleDeleteGoods(goods)}
+                            title="Tạm thời chưa hỗ trợ xóa hàng hóa"
+                            disabled
                           >
                             <RiDeleteBin6Line />
                           </button>

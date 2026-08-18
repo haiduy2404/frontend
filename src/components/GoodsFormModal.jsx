@@ -762,19 +762,11 @@ function GoodsFormModal({
                         <strong>{item.ratio || "..."}</strong>{" "}
                         {primaryUnitName || "ĐVT chính"}
                       </div>
-
                       <button
                         type="button"
                         className="remove-conversion-btn"
-                        title={
-                          item.is_existing
-                            ? "Đơn vị đã lưu không được xóa"
-                            : "Xóa đơn vị"
-                        }
-                        disabled={item.is_existing}
-                        onClick={() =>
-                          handleRemoveConversionUnit(item.temp_id)
-                        }
+                        title="Tạm thời không cho phép xóa"
+                        disabled
                       >
                         <RiDeleteBin6Line />
                       </button>
