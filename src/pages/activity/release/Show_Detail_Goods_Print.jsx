@@ -123,6 +123,22 @@ function ShowDetailGoodsPrint() {
     [releaseLines]
   );
 
+  const ROWS_PER_PAGE = 32;
+
+  const pages = useMemo(() => {
+    if (rows.length === 0) {
+      return [[]];
+    }
+
+    const result = [];
+
+    for (let i = 0; i < rows.length; i += ROWS_PER_PAGE) {
+      result.push(rows.slice(i, i + ROWS_PER_PAGE));
+    }
+
+    return result;
+  }, [rows]);
+
   const totalRequested = useMemo(
     () =>
       rows.reduce(
@@ -156,166 +172,207 @@ function ShowDetailGoodsPrint() {
     );
   }
 
-  return (
-    <div className="show-goods-print-page">
-      <div className="show-goods-print-toolbar">
-        <button
-          type="button"
-          className="show-goods-print-back-btn"
-          onClick={() => navigate(-1)}
-        >
-          <RiArrowLeftLine />
-          Quay lại
-        </button>
+    return (
+      <div className="show-goods-print-page">
+        {/* TOOLBAR LUÔN HIỆN TRÊN MÀN HÌNH */}
+        <div className="show-goods-print-toolbar">
+          <button
+            type="button"
+            className="show-goods-print-back-btn"
+            onClick={() => navigate(-1)}
+          >
+            <RiArrowLeftLine />
+            Quay lại
+          </button>
 
-        <button
-          type="button"
-          className="show-goods-print-print-btn"
-          onClick={handlePrint}
-        >
-          In
-        </button>
+          <button
+            type="button"
+            className="show-goods-print-print-btn"
+            onClick={handlePrint}
+          >
+            In
+          </button>
+        </div>
+
+        {/* CHỈ VÙNG GIẤY ĐƯỢC SCROLL */}
+        <div className="show-goods-print-scroll">
+          {pages.map((pageRows, pageIndex) => {
+            const isFirstPage = pageIndex === 0;
+            const isLastPage = pageIndex === pages.length - 1;
+
+            const startIndex = pageIndex * ROWS_PER_PAGE;
+
+            return (
+              <div
+                key={`page-${pageIndex}`}
+                className={`show-goods-print-paper ${
+                  pageIndex > 0 ? "show-goods-print-paper-break" : ""
+                }`}
+              >
+                {/* THÔNG TIN PHIẾU CHỈ HIỆN TRANG 1 */}
+                {isFirstPage && (
+                  <div className="show-goods-print-info-grid">
+                    <div className="show-goods-print-info-item">
+                      <span>Số phiếu XK</span>
+                      <strong>{code || release?.code || "—"}</strong>
+                    </div>
+
+                    <div className="show-goods-print-info-item">
+                      <span>Kỳ</span>
+                      <strong>{release?.terms || "—"}</strong>
+                    </div>
+
+                    <div className="show-goods-print-info-item">
+                      <span>Ngày xuất kho</span>
+                      <strong>
+                        {formatViDate(release?.release_date)}
+                      </strong>
+                    </div>
+
+                    <div className="show-goods-print-info-item">
+                      <span>Xuất tại kho</span>
+
+                      <strong>
+                        {release?.warehouse?.code
+                          ? `${release.warehouse.code} - ${
+                              release?.warehouse?.name || ""
+                            }`
+                          : release?.warehouse?.name ||
+                            release?.warehouse_name ||
+                            "—"}
+                      </strong>
+                    </div>
+
+                    <div className="show-goods-print-info-item">
+                      <span>Đơn vị lĩnh vật tư</span>
+
+                      <strong>
+                        {release?.receiver_unit?.name ||
+                          release?.receiver_unit ||
+                          "—"}
+                      </strong>
+                    </div>
+
+                    <div className="show-goods-print-info-item">
+                      <span>Đối tượng xuất kho</span>
+
+                      <strong>
+                        {release?.release_target?.name ||
+                          release?.release_target ||
+                          "—"}
+                      </strong>
+                    </div>
+
+                    <div className="show-goods-print-info-item">
+                      <span>Hợp đồng số</span>
+                      <strong>
+                        {release?.contract_number || "—"}
+                      </strong>
+                    </div>
+
+                    <div className="show-goods-print-info-item">
+                      <span>Diễn giải</span>
+                      <strong>
+                        {release?.description || "—"}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+
+                <div className="show-goods-print-table-wrapper">
+                  <table className="show-goods-print-table">
+                    <colgroup>
+                      <col className="show-print-col-stt" />
+                      <col className="show-print-col-name" />
+                      <col className="show-print-col-code" />
+                      <col className="show-print-col-unit" />
+                      <col className="show-print-col-qty" />
+                    </colgroup>
+
+                    <thead>
+                      <tr>
+                        <th>TT</th>
+
+                        <th>
+                          Tên, nhãn hiệu quy cách, phẩm chất vật tư,
+                          dụng cụ sản phẩm, hàng hóa
+                        </th>
+
+                        <th>Mã số</th>
+                        <th>Đơn vị tính</th>
+                        <th>SL yêu cầu</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {pageRows.length > 0 ? (
+                        pageRows.map((line, index) => (
+                          <tr
+                            key={line.id}
+                            className="show-goods-print-item-row"
+                          >
+                            <td className="show-print-center">
+                              {startIndex + index + 1}
+                            </td>
+
+                            <td>
+                              {line.goods_name || ""}
+                            </td>
+
+                            <td className="show-print-center">
+                              {line.goods_code || ""}
+                            </td>
+
+                            <td className="show-print-center">
+                              {line.unit_name || ""}
+                            </td>
+
+                            <td className="show-print-number">
+                              {formatViNumber(
+                                line.requested_quantity,
+                                2
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="show-goods-print-empty"
+                          >
+                            Phiếu chưa có vật tư.
+                          </td>
+                        </tr>
+                      )}
+
+                      {/* TỔNG CHỈ HIỆN Ở TRANG CUỐI */}
+                      {isLastPage && rows.length > 0 && (
+                        <tr className="show-goods-print-total-row">
+                          <td colSpan={4}>
+                            Tổng cộng
+                          </td>
+
+                          <td className="show-print-number">
+                            {formatViNumber(totalRequested, 2)}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {isLastPage && (
+                  <div className="show-goods-print-count">
+                    Tổng số: <strong>{rows.length}</strong> vật tư
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-
-      <div className="show-goods-print-content">
-        <div className="show-goods-print-info-grid">
-          <div className="show-goods-print-info-item">
-            <span>Số phiếu XK</span>
-            <strong>{code || release?.code || "—"}</strong>
-          </div>
-
-          <div className="show-goods-print-info-item">
-            <span>Kỳ</span>
-            <strong>{release?.terms || "—"}</strong>
-          </div>
-
-          <div className="show-goods-print-info-item">
-            <span>Ngày xuất kho</span>
-            <strong>{formatViDate(release?.release_date)}</strong>
-          </div>
-
-          <div className="show-goods-print-info-item">
-            <span>Xuất tại kho</span>
-            <strong>
-              {release?.warehouse?.code
-                ? `${release.warehouse.code} - ${
-                    release?.warehouse?.name || ""
-                  }`
-                : release?.warehouse?.name ||
-                  release?.warehouse_name ||
-                  "—"}
-            </strong>
-          </div>
-
-          <div className="show-goods-print-info-item">
-            <span>Đơn vị lĩnh vật tư</span>
-            <strong>
-              {release?.receiver_unit?.name ||
-                release?.receiver_unit ||
-                "—"}
-            </strong>
-          </div>
-
-          <div className="show-goods-print-info-item">
-            <span>Đối tượng xuất kho</span>
-            <strong>
-              {release?.release_target?.name ||
-                release?.release_target ||
-                "—"}
-            </strong>
-          </div>
-
-          <div className="show-goods-print-info-item">
-            <span>Hợp đồng số</span>
-            <strong>{release?.contract_number || "—"}</strong>
-          </div>
-
-          <div className="show-goods-print-info-item">
-            <span>Diễn giải</span>
-            <strong>{release?.description || "—"}</strong>
-          </div>
-        </div>
-
-        <div className="show-goods-print-table-wrapper">
-          <table className="show-goods-print-table">
-            <colgroup>
-              <col className="show-print-col-stt" />
-              <col className="show-print-col-name" />
-              <col className="show-print-col-code" />
-              <col className="show-print-col-unit" />
-              <col className="show-print-col-qty" />
-            </colgroup>
-
-            <thead>
-              <tr>
-                <th>TT</th>
-
-                <th>
-                  Tên, nhãn hiệu quy cách, phẩm chất vật tư,
-                  dụng cụ sản phẩm, hàng hóa
-                </th>
-
-                <th>Mã số</th>
-
-                <th>Đơn vị tính</th>
-
-                <th>SL yêu cầu</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {rows.length > 0 ? (
-                rows.map((line, index) => (
-                  <tr key={line.id}>
-                    <td className="show-print-center">
-                      {index + 1}
-                    </td>
-
-                    <td>{line.goods_name || ""}</td>
-
-                    <td className="show-print-center">
-                      {line.goods_code || ""}
-                    </td>
-
-                    <td className="show-print-center">
-                      {line.unit_name || ""}
-                    </td>
-
-                    <td className="show-print-number">
-                      {formatViNumber(line.requested_quantity, 2)}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="show-goods-print-empty"
-                  >
-                    Phiếu chưa có vật tư.
-                  </td>
-                </tr>
-              )}
-
-              {rows.length > 0 && (
-                <tr className="show-goods-print-total-row">
-                  <td colSpan={4}>Tổng cộng</td>
-
-                  <td className="show-print-number">
-                    {formatViNumber(totalRequested, 2)}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="show-goods-print-count">
-          Tổng số: <strong>{rows.length}</strong> vật tư
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
 
 export default ShowDetailGoodsPrint;
