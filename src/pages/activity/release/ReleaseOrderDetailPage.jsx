@@ -963,24 +963,40 @@ const evaluateQuantityExpression = (value) => {
     };
     };
 
-  const checkDuplicateBeforeSave = async () => {
-  const payload = buildReleasePayload();
+    const checkDuplicateBeforeSave = async () => {
+      const payload = buildReleasePayload();
 
-  const response = await checkReleaseDuplicate({
-    ...payload,
-    ...(!isCreateMode && releaseId
-      ? { exclude_release_id: releaseId }
-      : {}),
-  });
+      const selectedReleaseTarget = releaseTargetOptions.find(
+        (item) => item.name === headerData.release_target
+      );
 
-  const data =
-    response?.data?.data ??
-    response?.data ??
-    response ??
-    {};
+      const response = await checkReleaseDuplicate({
+        release_date: payload.release_date,
 
-  return data?.has_warning ? data : null;
-};
+        release_target_id:
+          selectedReleaseTarget?.id || null,
+
+        items: payload.items
+          .filter((item) => !item.is_delete)
+          .map((item) => ({
+            goods_id: item.goods_id,
+          })),
+
+        window_days: 30,
+
+        ...(!isCreateMode && releaseId
+          ? { exclude_release_id: releaseId }
+          : {}),
+      });
+
+      const data =
+        response?.data?.data ??
+        response?.data ??
+        response ??
+        {};
+
+      return data?.has_warning ? data : null;
+    };
 
 const executeSaveDraft = async () => {
   const payload = buildReleasePayload();
@@ -2164,7 +2180,6 @@ const handleComplete = async () => {
           </div>
         </div>
       )}
-
       <div className="import-order-detail-footer">
         <button
           className="cancel-footer-btn"
@@ -2172,6 +2187,20 @@ const handleComplete = async () => {
         >
           {isPrintMode ? "Quay lại" : "Hủy"}
         </button>
+
+        {isPrintMode && id && id !== "new" && (
+          <button
+            type="button"
+            className="complete-btn"
+            onClick={() =>
+              navigate(
+                `/dashboard/activity/export/order/${id}/show-detail-goods-print`
+              )
+            }
+          >
+            In
+          </button>
+        )}
 
         {!isPrintMode && canSave && (
           <button className="save-draft-btn" onClick={handleSaveDraft}>

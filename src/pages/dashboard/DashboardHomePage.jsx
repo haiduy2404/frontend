@@ -1,19 +1,28 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   RiAlertLine,
   RiCalendarLine,
   RiCheckboxCircleLine,
   RiDownload2Line,
   RiRefreshLine,
+  RiBuilding2Line,
 } from "react-icons/ri";
 
 import "../../styles/DashboardHomePage.css";
 import { useAuth } from "../../contexts/AuthContext";
 
 import axiosInstance from "../../services/authService";
+import { getWarehouses } from "../../services/warehouseService";
 
 import RecentActivitiesModal from "../../components/RecentActivitiesModal";
 import StockWarningModal from "../../components/StockWarningModal";
+
 
 /* =========================================================
    HELPERS
@@ -50,6 +59,16 @@ const getRoleName = (role) => {
   );
 };
 
+const getWarehouseId = (warehouse) => {
+  if (!warehouse) return "";
+
+  if (typeof warehouse === "string") {
+    return warehouse;
+  }
+
+  return warehouse.id || warehouse.warehouse_id || "";
+};
+
 const getWarehouseName = (warehouse) => {
   if (!warehouse) return "";
   if (typeof warehouse === "string") return warehouse;
@@ -62,6 +81,28 @@ const getWarehouseName = (warehouse) => {
   if (code && name) return `${code} - ${name}`;
 
   return name || code || String(warehouse.id || warehouse.warehouse_id || "");
+};
+
+const unwrapWarehouseList = (response) => {
+  const payload = response?.data ?? response ?? [];
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.results)) {
+    return payload.results;
+  }
+
+  if (Array.isArray(payload?.data?.results)) {
+    return payload.data.results;
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  return [];
 };
 
 const readStoredUser = () => {
@@ -214,6 +255,14 @@ function DashboardHomePage() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const monthInputRef = useRef(null);
 
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState("");
+  const [filterWarehouses, setFilterWarehouses] = useState([]);
+  const [warehouseFilterLoading, setWarehouseFilterLoading] = useState(false);
+
+  const selectedWarehouseIds = useMemo(
+    () => (selectedWarehouseId ? [selectedWarehouseId] : []),
+    [selectedWarehouseId]
+  );
   const [ticketCounters, setTicketCounters] = useState(emptyTicketCounters);
   const [stockStatusData, setStockStatusData] = useState(emptyStockStatus);
   const [warningGoods, setWarningGoods] = useState([]);
@@ -316,6 +365,44 @@ function DashboardHomePage() {
     return result;
   }, [auth, user]);
 
+  useEffect(() => {
+  const fetchFilterWarehouses = async () => {
+    try {
+      setWarehouseFilterLoading(true);
+
+      const response = await getWarehouses({
+        search: "",
+        page: 1,
+        page_size: 100,
+      });
+
+      const results = unwrapWarehouseList(response);
+
+      setFilterWarehouses(results);
+    } catch (error) {
+      console.error(
+        "LOAD DASHBOARD WAREHOUSES ERROR:",
+        error?.response?.data || error
+      );
+
+      setFilterWarehouses([]);
+    } finally {
+      setWarehouseFilterLoading(false);
+    }
+  };
+
+  fetchFilterWarehouses();
+}, []);
+
+const warehouseOptions = useMemo(() => {
+  return filterWarehouses
+    .map((warehouse) => ({
+      id: getWarehouseId(warehouse),
+      name: getWarehouseName(warehouse),
+    }))
+    .filter((warehouse) => warehouse.id);
+}, [filterWarehouses]);
+
   const warehouseText = useMemo(() => {
     if (warehouses.length === 0) {
       return (
@@ -366,7 +453,7 @@ function DashboardHomePage() {
         const ticketResponse = await axiosInstance.post(
           "/inventory/dashboard/ticket-counters",
           {
-            warehouse_ids: [],
+            warehouse_ids: selectedWarehouseIds,
             period_month: selectedMonth,
             refresh,
           }
@@ -418,7 +505,7 @@ function DashboardHomePage() {
         const activityResponse = await axiosInstance.post(
           "/inventory/dashboard/recent-activities",
           {
-            warehouse_ids: [],
+            warehouse_ids: selectedWarehouseIds,
             period_month: null,
             activity_types: ["receipt", "release", "transfer"],
             page: 1,
@@ -461,10 +548,8 @@ function DashboardHomePage() {
           "/inventory/dashboard/stock-warnings",
           {
             scope_type: unrestricted ? "ORGANIZATION" : "WAREHOUSE",
-            // Widget này là "Cảnh báo tồn kho thấp" nên chỉ lấy BELOW_MIN.
-            // NEGATIVE / OUT_OF_STOCK / ABOVE_MAX đã có ở donut Tình trạng kho.
             statuses: ["BELOW_MIN"],
-            warehouse_ids: [],
+            warehouse_ids: selectedWarehouseIds,
             goods_group_ids: [],
             page: 1,
             page_size: 5,
@@ -526,7 +611,10 @@ function DashboardHomePage() {
         setStockStatusLoading(false);
       }
     },
-    [isWarehouseKeeperOperation, selectedMonth]
+    [      
+      isWarehouseKeeperOperation,
+      selectedMonth,
+      selectedWarehouseIds,]
   );
 
   const handleLoadDashboard = async () => {
@@ -555,11 +643,11 @@ function DashboardHomePage() {
 
     const response = await axiosInstance.post(
       "/inventory/dashboard/ticket-counters",
-      {
-        warehouse_ids: [],
-        period_month: selectedMonth,
-        refresh: true,
-      }
+        {
+          warehouse_ids: selectedWarehouseIds,
+          period_month: selectedMonth,
+          refresh: true,
+        }
     );
 
     const payload =
@@ -747,7 +835,7 @@ const handleRefreshStockStatus = async () => {
 
         <div className="dashboard-month-filter">
           <div className="dashboard-month-helper">
-            Chọn tháng để xem số liệu theo tháng đó
+              Chọn kho và tháng để xem số liệu
           </div>
 
           <div className="dashboard-month-filter-actions">
@@ -770,6 +858,31 @@ const handleRefreshStockStatus = async () => {
                 </span>
               </button>
             )}
+
+              {/* FILTER THEO KHO */}
+            <div className="dashboard-month-control dashboard-warehouse-control">
+              <RiBuilding2Line />
+              <span>
+                <small>Lọc theo kho</small>
+
+                <select
+                  value={selectedWarehouseId}
+                  onChange={(event) => {
+                    setSelectedWarehouseId(event.target.value);
+                    setDashboardLoaded(false);
+                  }}
+                  aria-label="Chọn kho để lọc dashboard"
+                >
+                  <option value="">Tất cả kho</option>
+
+                  {warehouseOptions.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>
+                      {warehouse.name}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </div>
 
             <div
               className="dashboard-month-control"

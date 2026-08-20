@@ -50,6 +50,7 @@ import TransferRequestPage from "./pages/tools/TransferRequestPage";
 import MoneyTransferRequestPrintPage from "./pages/tools/MoneyTransferRequestPrintPage";
 import ReleaseReportPage from "./pages/report/ReleaseReportPage";
 import ReleaseReportViewPage from "./pages/report/ReleaseReportViewPage";
+import ShowDetailGoodsPrint from "./pages/activity/release/Show_Detail_Goods_Print";
 
 import "./styles/auth.css";
 
@@ -259,6 +260,15 @@ function App() {
                 element={
                   <RequireRole roles={["view_money_transfer_request"]}>
                     <MoneyTransferRequestPrintPage />
+                  </RequireRole>
+                }
+              />
+
+              <Route
+                path="/dashboard/activity/export/order/:code/show-detail-goods-print"
+                element={
+                  <RequireRole roles={["view_warehouse_release"]}>
+                    <ShowDetailGoodsPrint />
                   </RequireRole>
                 }
               />

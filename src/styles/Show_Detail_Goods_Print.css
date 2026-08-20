@@ -1,0 +1,393 @@
+.show-goods-print-page {
+  height: 100vh;
+  background: #e5e7eb;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.show-goods-print-toolbar {
+  width: 210mm;
+  margin: 0 auto 12px;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+
+  flex: 0 0 auto;
+}
+
+.show-goods-print-back-btn {
+  height: 34px;
+  padding: 0 16px;
+
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+
+  background: #2563eb;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.show-goods-print-back-btn:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* =========================================================
+   VÙNG SCROLL
+   ========================================================= */
+
+.show-goods-print-content {
+  width: 210mm;
+  min-height: 297mm;
+
+  margin: 0 auto;
+  padding: 10mm 8mm;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+  color: #000000;
+
+  font-family: "Times New Roman", Times, serif;
+}
+
+.show-goods-print-content,
+.show-goods-print-content * {
+  font-family: "Times New Roman", Times, serif;
+}
+
+/* =========================================================
+   THÔNG TIN PHIẾU
+   ========================================================= */
+
+.show-goods-print-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  column-gap: 12mm;
+  row-gap: 3mm;
+
+  margin-bottom: 6mm;
+}
+
+.show-goods-print-info-item {
+  min-width: 0;
+
+  display: grid;
+  grid-template-columns: 38mm 1fr;
+  align-items: start;
+
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.show-goods-print-info-item span {
+  display: block;
+
+  margin: 0;
+
+  font-size: 15px;
+  font-weight: 400;
+  color: #000000;
+}
+
+.show-goods-print-info-item strong {
+  display: block;
+
+  min-width: 0;
+  min-height: auto;
+
+  font-size: 15px;
+  font-weight: 700;
+  color: #000000;
+
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   BẢNG
+   Tổng chiều rộng:
+   210mm - 8mm - 8mm = 194mm
+
+   10 + 100 + 30 + 24 + 30 = 194mm
+   ========================================================= */
+
+.show-goods-print-table-wrapper {
+  width: 100%;
+  overflow: visible;
+}
+
+.show-goods-print-table {
+  width: 100%;
+  min-width: 0;
+
+  border-collapse: collapse;
+  border-spacing: 0;
+
+  table-layout: fixed;
+
+  background: #ffffff;
+
+  font-size: 13px;
+}
+
+.show-goods-print-table,
+.show-goods-print-table th,
+.show-goods-print-table td {
+  box-sizing: border-box;
+}
+
+.show-goods-print-table th,
+.show-goods-print-table td {
+  border: 1px solid #000000;
+
+  padding: 1mm 1.2mm;
+
+  vertical-align: middle;
+}
+
+.show-goods-print-table thead th {
+  height: 11mm;
+
+  text-align: center;
+  vertical-align: middle;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.15;
+
+  white-space: normal;
+}
+
+/* =========================================================
+   ĐỘ RỘNG 5 CỘT
+   ========================================================= */
+
+.show-print-col-stt {
+  width: 10mm;
+}
+
+.show-print-col-name {
+  width: 100mm;
+}
+
+.show-print-col-code {
+  width: 30mm;
+}
+
+.show-print-col-unit {
+  width: 24mm;
+}
+
+.show-print-col-qty {
+  width: 30mm;
+}
+
+/* =========================================================
+   BODY TABLE
+   ========================================================= */
+
+.show-goods-print-table tbody td {
+  height: 7mm;
+
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.show-print-center {
+  text-align: center;
+}
+
+.show-print-number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.show-goods-print-table tbody td:nth-child(2) {
+  text-align: left;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* =========================================================
+   TỔNG
+   ========================================================= */
+
+.show-goods-print-total-row td {
+  height: 8mm;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.show-goods-print-total-row td:first-child {
+  text-align: right;
+  padding-right: 3mm;
+}
+
+/* =========================================================
+   KHÔNG CÓ DỮ LIỆU
+   ========================================================= */
+
+.show-goods-print-empty {
+  height: 15mm !important;
+
+  padding: 2mm !important;
+
+  text-align: center !important;
+
+  color: #000000;
+}
+
+/* =========================================================
+   TỔNG SỐ VẬT TƯ
+   ========================================================= */
+
+.show-goods-print-count {
+  margin-top: 3mm;
+
+  font-size: 14px;
+  color: #000000;
+}
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.show-goods-print-loading {
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #e5e7eb;
+
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+}
+
+/* =========================================================
+   MÀN HÌNH NHỎ
+   ========================================================= */
+
+@media screen and (max-width: 900px) {
+  .show-goods-print-page {
+    overflow: auto;
+  }
+
+  .show-goods-print-toolbar {
+    width: 210mm;
+  }
+
+  .show-goods-print-content {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* =========================================================
+   PRINT
+   ========================================================= */
+
+@media print {
+  html,
+  body,
+  #root {
+    width: 210mm !important;
+    height: auto !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+
+    background: #ffffff !important;
+  }
+
+  .show-goods-print-toolbar {
+    display: none !important;
+  }
+
+  .show-goods-print-page {
+    display: block !important;
+
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+
+    background: #ffffff !important;
+  }
+
+  .show-goods-print-content {
+    width: 210mm !important;
+    min-height: 297mm !important;
+
+    margin: 0 !important;
+    padding: 10mm 8mm 10mm !important;
+
+    box-sizing: border-box !important;
+
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+
+    background: #ffffff !important;
+  }
+
+  .show-goods-print-table-wrapper {
+    overflow: visible !important;
+  }
+
+  .show-goods-print-table {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+.show-goods-print-print-btn {
+  height: 34px;
+  padding: 0 16px;
+
+  border: 1px solid #2563eb;
+  border-radius: 4px;
+
+  background: #2563eb;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.show-goods-print-print-btn:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}

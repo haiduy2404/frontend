@@ -987,3 +987,129 @@
     width: 100%;
   }
 }
+
+/* =========================================================
+   FILTER THEO KHO
+   ========================================================= */
+
+.dashboard-warehouse-control {
+  min-width: 230px;
+  cursor: default;
+}
+
+.dashboard-warehouse-control > span:last-child {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Label "Lọc theo kho" */
+.dashboard-warehouse-control small {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #64748b;
+}
+
+/* Select kho */
+.dashboard-warehouse-control select {
+  width: 100%;
+  min-width: 0;
+
+  padding: 0 4px 0 0;
+
+  border: none;
+  outline: none;
+  background: transparent;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+
+  color: #1e293b;
+
+  cursor: pointer;
+}
+
+/* Không cho browser tạo nền lạ */
+.dashboard-warehouse-control select:hover,
+.dashboard-warehouse-control select:focus {
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+/* Khi đang focus select thì highlight cả box */
+.dashboard-warehouse-control:focus-within {
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.12);
+}
+
+/* Option */
+.dashboard-warehouse-control select option {
+  color: #1e293b;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Icon kho */
+.dashboard-warehouse-control > span:first-child {
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* =========================================================
+   KHO + THÁNG NẰM CẠNH NHAU
+   ========================================================= */
+
+.dashboard-month-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Đảm bảo 2 filter cao bằng nhau */
+.dashboard-month-control,
+.dashboard-warehouse-control {
+  min-height: 48px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .dashboard-month-filter-actions {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-warehouse-control {
+    min-width: 210px;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-month-filter-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-month-control,
+  .dashboard-warehouse-control {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .dashboard-load-data-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
