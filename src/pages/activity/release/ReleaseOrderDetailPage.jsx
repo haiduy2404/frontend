@@ -966,24 +966,23 @@ const evaluateQuantityExpression = (value) => {
     const checkDuplicateBeforeSave = async () => {
       const payload = buildReleasePayload();
 
-      // const selectedReleaseTarget = releaseTargetOptions.find(
-      //   (item) => item.name === headerData.release_target
-      // );
+      const selectedReleaseTarget = releaseTargetOptions.find(
+        (item) => item.name === headerData.release_target
+      );
 
       const response = await checkReleaseDuplicate({
-        ...payload,
-        // release_date: payload.release_date,
+        release_date: payload.release_date,
 
-        // release_target_id:
-        //   selectedReleaseTarget?.id || null,
+        release_target_id:
+          selectedReleaseTarget?.id || null,
 
-        // items: payload.items
-        //   .filter((item) => !item.is_delete)
-        //   .map((item) => ({
-        //     goods_id: item.goods_id,
-        //   })),
+        items: payload.items
+          .filter((item) => !item.is_delete)
+          .map((item) => ({
+            goods_id: item.goods_id,
+          })),
 
-        // window_days: 30,
+        window_days: 30,
 
         ...(!isCreateMode && releaseId
           ? { exclude_release_id: releaseId }
