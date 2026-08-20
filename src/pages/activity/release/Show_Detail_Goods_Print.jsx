@@ -298,7 +298,7 @@ function ShowDetailGoodsPrint() {
                           dụng cụ sản phẩm, hàng hóa
                         </th>
 
-                        <th>Mã số</th>
+                        <th>Mã VT</th>
                         <th>Đơn vị tính</th>
                         <th>SL yêu cầu</th>
                       </tr>

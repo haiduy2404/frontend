@@ -23,9 +23,11 @@
   gap: 8px;
 
   flex: 0 0 auto;
+  z-index: 50;
 }
 
-.show-goods-print-back-btn {
+.show-goods-print-back-btn,
+.show-goods-print-print-btn {
   height: 34px;
   padding: 0 16px;
 
@@ -46,20 +48,41 @@
   gap: 6px;
 }
 
-.show-goods-print-back-btn:hover {
+.show-goods-print-back-btn:hover,
+.show-goods-print-print-btn:hover {
   background: #1d4ed8;
   border-color: #1d4ed8;
 }
 
 /* =========================================================
    VÙNG SCROLL
+   Toolbar nằm ngoài nên luôn nhìn thấy
    ========================================================= */
 
-.show-goods-print-content {
+.show-goods-print-scroll {
+  flex: 1;
+
+  width: 100%;
+
+  overflow-y: auto;
+  overflow-x: auto;
+
+  padding-bottom: 24px;
+
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   MỖI PAPER = 1 TRANG A4
+   JSX đã chia đúng 32 dòng / paper
+   ========================================================= */
+
+.show-goods-print-paper {
   width: 210mm;
   min-height: 297mm;
 
   margin: 0 auto;
+
   padding: 10mm 8mm;
 
   box-sizing: border-box;
@@ -70,13 +93,19 @@
   font-family: "Times New Roman", Times, serif;
 }
 
-.show-goods-print-content,
-.show-goods-print-content * {
+.show-goods-print-paper,
+.show-goods-print-paper * {
   font-family: "Times New Roman", Times, serif;
+}
+
+/* Khoảng cách giữa các trang trên màn hình */
+.show-goods-print-paper-break {
+  margin-top: 16px;
 }
 
 /* =========================================================
    THÔNG TIN PHIẾU
+   Chỉ trang đầu có phần này theo JSX
    ========================================================= */
 
 .show-goods-print-info-grid {
@@ -124,17 +153,21 @@
 }
 
 /* =========================================================
-   BẢNG
-   Tổng chiều rộng:
-   210mm - 8mm - 8mm = 194mm
-
-   10 + 100 + 30 + 24 + 30 = 194mm
+   TABLE WRAPPER
    ========================================================= */
 
 .show-goods-print-table-wrapper {
   width: 100%;
   overflow: visible;
 }
+
+/* =========================================================
+   BẢNG
+   Phần sử dụng được:
+   210mm - 8mm trái - 8mm phải = 194mm
+
+   10 + 100 + 30 + 24 + 30 = 194mm
+   ========================================================= */
 
 .show-goods-print-table {
   width: 100%;
@@ -164,6 +197,10 @@
 
   vertical-align: middle;
 }
+
+/* =========================================================
+   HEADER TABLE
+   ========================================================= */
 
 .show-goods-print-table thead th {
   height: 11mm;
@@ -203,15 +240,35 @@
 }
 
 /* =========================================================
-   BODY TABLE
+   32 DÒNG / TRANG
+   Mỗi dòng cố định 7mm
+
+   Việc chia đúng 32 dòng được thực hiện trong JSX:
+   ROWS_PER_PAGE = 32
    ========================================================= */
 
+.show-goods-print-item-row td,
 .show-goods-print-table tbody td {
   height: 7mm;
 
+  padding-top: 0.8mm;
+  padding-bottom: 0.8mm;
+
   font-size: 13px;
   line-height: 1.15;
+
+  vertical-align: middle;
 }
+
+/* Không cho một row tự bị browser chẻ khi in */
+.show-goods-print-item-row {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* =========================================================
+   CĂN LỀ
+   ========================================================= */
 
 .show-print-center {
   text-align: center;
@@ -231,8 +288,14 @@
 }
 
 /* =========================================================
-   TỔNG
+   TỔNG CỘNG
+   Chỉ xuất hiện trang cuối theo JSX
    ========================================================= */
+
+.show-goods-print-total-row {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
 
 .show-goods-print-total-row td {
   height: 8mm;
@@ -243,11 +306,12 @@
 
 .show-goods-print-total-row td:first-child {
   text-align: right;
+
   padding-right: 3mm;
 }
 
 /* =========================================================
-   KHÔNG CÓ DỮ LIỆU
+   EMPTY
    ========================================================= */
 
 .show-goods-print-empty {
@@ -261,7 +325,7 @@
 }
 
 /* =========================================================
-   TỔNG SỐ VẬT TƯ
+   TỔNG SỐ
    ========================================================= */
 
 .show-goods-print-count {
@@ -294,16 +358,16 @@
 
 @media screen and (max-width: 900px) {
   .show-goods-print-page {
-    overflow: auto;
+    overflow: hidden;
   }
 
   .show-goods-print-toolbar {
     width: 210mm;
   }
 
-  .show-goods-print-content {
-    margin-left: auto;
-    margin-right: auto;
+  .show-goods-print-scroll {
+    overflow-x: auto;
+    overflow-y: auto;
   }
 }
 
@@ -326,6 +390,7 @@
     background: #ffffff !important;
   }
 
+  /* Không in toolbar */
   .show-goods-print-toolbar {
     display: none !important;
   }
@@ -345,49 +410,87 @@
     background: #ffffff !important;
   }
 
-  .show-goods-print-content {
+  .show-goods-print-scroll {
+    display: block !important;
+
     width: 210mm !important;
-    min-height: 297mm !important;
+    height: auto !important;
+    max-height: none !important;
 
     margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+
+    flex: none !important;
+  }
+
+  /* =======================================================
+     QUAN TRỌNG:
+     MỖI .show-goods-print-paper = 1 TRANG IN
+     JSX chia 32 rows / paper
+     ======================================================= */
+
+  .show-goods-print-paper {
+    display: block !important;
+
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+
+    margin: 0 !important;
+
     padding: 10mm 8mm 10mm !important;
 
     box-sizing: border-box !important;
 
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
+    overflow: hidden !important;
 
     background: #ffffff !important;
+
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+
+    page-break-after: always !important;
+    break-after: page !important;
+
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Trang cuối không tạo thêm trang trắng */
+  .show-goods-print-paper:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Khoảng cách giữa các paper chỉ dùng khi xem màn hình */
+  .show-goods-print-paper-break {
+    margin-top: 0 !important;
   }
 
   .show-goods-print-table-wrapper {
+    width: 100% !important;
+
     overflow: visible !important;
   }
 
   .show-goods-print-table {
     width: 100% !important;
     min-width: 0 !important;
+
+    table-layout: fixed !important;
   }
-}
 
-.show-goods-print-print-btn {
-  height: 34px;
-  padding: 0 16px;
+  .show-goods-print-item-row {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 
-  border: 1px solid #2563eb;
-  border-radius: 4px;
-
-  background: #2563eb;
-  color: #ffffff;
-
-  font-size: 14px;
-  font-weight: 600;
-
-  cursor: pointer;
-}
-
-.show-goods-print-print-btn:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  .show-goods-print-total-row {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 }
