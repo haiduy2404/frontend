@@ -117,14 +117,12 @@ const Sidebar = () => {
                 </NavLink>
 
                 <div
-                  className={`sidebar-subitem sidebar-subitem-header ${
-                    activeMenu === "activity" ? "active" : ""
-                  }`}
+                  className="sidebar-subitem sidebar-subitem-header"
                   onClick={() => setExportOpen((prev) => !prev)}
                 >
                   <span>Xuất kho</span>
                   <span className="sidebar-arrow">
-                    {exportOpen ? "⌄" : "›"}
+                    {exportOpen ? " ⌄" : "›"}
                   </span>
                 </div>
 
