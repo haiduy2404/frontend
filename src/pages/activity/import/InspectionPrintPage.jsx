@@ -5,6 +5,7 @@ import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 
 import { getWarehouseReceiptByCode } from "../../../services/warehouseReceiptService";
 import { getMetadata } from "../../../services/metadataService";
+import { formatViDateLong } from "../../../utils/dateUtils";
 
 function InspectionPrintPage() {
   const navigate = useNavigate();
@@ -99,22 +100,6 @@ function InspectionPrintPage() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 3,
     });
-  };
-
-  const formatDateText = (value) => {
-    if (!value) return "ngày ... tháng ... năm ...";
-
-    const dateOnly = String(value).split("T")[0];
-
-    if (dateOnly.includes("-")) {
-      const [day, month, year] = dateOnly.split("-");
-
-      if (day && month && year) {
-        return `ngày ${day} tháng ${month} năm ${year}`;
-      }
-    }
-
-    return `ngày ${value}`;
   };
 
   const getInspectionCodeFromReceiptCode = (receiptCode) => {
@@ -221,8 +206,12 @@ function InspectionPrintPage() {
     "";
 
   const invoiceCode = receipt?.invoice_code || "........";
-  const invoiceDateText = formatDateText(receipt?.invoice_date);
-  const receiptDateText = formatDateText(receipt?.receipt_date);
+  const invoiceDateText =
+    formatViDateLong(receipt?.invoice_date)
+      .replace(/^Ngày/, "ngày");
+
+  const receiptDateText =
+    formatViDateLong(receipt?.receipt_date);
 
   const signerDaiDienKyThuat = getMetadataValue("TP KỸ THUẬT");
   const signerPhoGiamDoc = getMetadataValue("PHÓ GIÁM ĐỐC");
@@ -263,10 +252,7 @@ function InspectionPrintPage() {
               </div>
 
               <div>
-                <strong>
-                  {receiptDateText.charAt(0).toUpperCase()}
-                  {receiptDateText.slice(1)}
-                </strong>
+                <strong>{receiptDateText}</strong>
               </div>
             </div>
 

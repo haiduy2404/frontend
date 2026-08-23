@@ -1,11 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { createPortal } from "react-dom";
 import "../../../styles/WarehouseTransferDetailPage.css";
 import {
   RiAddLine,
   RiDeleteBin6Line,
   RiPrinterLine,
+  RiCalendarLine,
 } from "react-icons/ri";
+import {
+  getTodayViDate,
+  formatISOToViDate,
+  convertDateToISO,
+  convertViDateToPickerDate,
+  formatPickerDateToViDate,
+  autoFillYear,
+} from "../../../utils/dateUtils";
 
 import {
   createWarehouseTransfer,
@@ -15,28 +25,6 @@ import {
 
 import { getWarehouses } from "../../../services/warehouseService";
 import { getOpeningStocks } from "../../../services/openingStockService";
-
-const getTodayDate = () => {
-  const today = new Date();
-
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
-    2,
-    "0"
-  )}-${String(today.getDate()).padStart(2, "0")}`;
-};
-
-const normalizeTransferDate = (value) => {
-  if (!value) return getTodayDate();
-
-  const dateOnly = String(value).split("T")[0];
-
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateOnly)) {
-    const [day, month, year] = dateOnly.split("/");
-    return `${year}-${month}-${day}`;
-  }
-
-  return dateOnly;
-};
 
 export default function WarehouseTransferDetailPage() {
   const navigate = useNavigate();
@@ -55,6 +43,15 @@ export default function WarehouseTransferDetailPage() {
   const [stockKeyword, setStockKeyword] = useState("");
   const stockSearchTimerRef = useRef(null);
   const enterNavigationRef = useRef(null);
+  const goodsCodeBoxRefs = useRef({});
+
+  const [stockDropdownPosition, setStockDropdownPosition] =
+    useState({
+      top: 0,
+      left: 0,
+      width: 520,
+      maxHeight: 260,
+    });
   const [deletedRows, setDeletedRows] = useState([]);
 
   const handleEnterMoveNext = (event) => {
@@ -108,10 +105,25 @@ export default function WarehouseTransferDetailPage() {
     });
   };
 
+  const openDatePicker = (event) => {
+  const picker = event.currentTarget.querySelector(
+    ".calendar-native-input"
+  );
+
+  if (!picker || picker.disabled) return;
+
+  if (typeof picker.showPicker === "function") {
+    picker.showPicker();
+    return;
+  }
+
+  picker.click();
+};
+
   const [form, setForm] = useState({
     id: null,
     transfer_code: "",
-    transfer_date: getTodayDate(),
+    transfer_date: getTodayViDate(),
     reason: "",
     from_warehouse_id: "",
     to_warehouse_id: "",
@@ -251,7 +263,9 @@ export default function WarehouseTransferDetailPage() {
             setForm({
             id: data.id,
             transfer_code: data.code || "",
-            transfer_date: normalizeTransferDate(data.transfer_date),
+            transfer_date:
+              formatISOToViDate(data.transfer_date) ||
+              getTodayViDate(),
             reason: data.description || data.reason || "",
             from_warehouse_id: data.source_warehouse_id || "",
             to_warehouse_id: data.destination_warehouse_id || "",
@@ -314,6 +328,143 @@ export default function WarehouseTransferDetailPage() {
     }, 300);
   };
 
+  const updateStockDropdownPosition = (
+  rowId = activeStockRowId
+) => {
+  if (!rowId) return;
+
+  const anchor =
+    goodsCodeBoxRefs.current[
+      String(rowId)
+    ];
+
+  if (!anchor) return;
+
+  const rect =
+    anchor.getBoundingClientRect();
+
+  const viewportWidth =
+    window.innerWidth;
+
+  const viewportHeight =
+    window.innerHeight;
+
+  const availableRight =
+    viewportWidth - rect.left - 12;
+
+  const dropdownWidth =
+    Math.min(
+      520,
+      availableRight
+    );
+
+  const availableBelow =
+    viewportHeight - rect.bottom - 12;
+
+  const availableAbove =
+    rect.top - 12;
+
+  const openUp =
+    availableBelow < 220 &&
+    availableAbove > availableBelow;
+
+  const maxHeight = Math.max(
+    120,
+    Math.min(
+      260,
+      openUp
+        ? availableAbove - 8
+        : availableBelow - 8
+    )
+  );
+
+  setStockDropdownPosition({
+    left: rect.left,
+
+    top: openUp
+      ? rect.top - maxHeight - 4
+      : rect.bottom + 4,
+
+    width: Math.max(
+      rect.width,
+      dropdownWidth
+    ),
+
+    maxHeight,
+  });
+};
+const openStockDropdown = (
+  rowId,
+  keyword = ""
+) => {
+  setActiveStockRowId(rowId);
+
+  setShowStockDropdown(true);
+
+  setStockKeyword(keyword);
+
+  requestAnimationFrame(() => {
+    updateStockDropdownPosition(
+      rowId
+    );
+  });
+
+  if (
+    form.from_warehouse_id &&
+    stockItems.length === 0
+  ) {
+    loadStockItems(
+      form.from_warehouse_id,
+      keyword
+    );
+  }
+};
+useEffect(() => {
+  if (
+    !showStockDropdown ||
+    !activeStockRowId
+  ) {
+    return;
+  }
+
+  const handlePositionChange =
+    () => {
+      updateStockDropdownPosition(
+        activeStockRowId
+      );
+    };
+
+  /*
+   * true để bắt cả scroll
+   * của warehouse-transfer-detail-scroll
+   */
+  window.addEventListener(
+    "scroll",
+    handlePositionChange,
+    true
+  );
+
+  window.addEventListener(
+    "resize",
+    handlePositionChange
+  );
+
+  return () => {
+    window.removeEventListener(
+      "scroll",
+      handlePositionChange,
+      true
+    );
+
+    window.removeEventListener(
+      "resize",
+      handlePositionChange
+    );
+  };
+}, [
+  showStockDropdown,
+  activeStockRowId,
+]);
   const handleFormChange = (field, value) => {
     setForm((prev) => ({
       ...prev,
@@ -568,7 +719,9 @@ export default function WarehouseTransferDetailPage() {
     return {
         source_warehouse_id: form.from_warehouse_id,
         destination_warehouse_id: form.to_warehouse_id,
-        transfer_date: form.transfer_date || getTodayDate(),
+        transfer_date:
+          convertDateToISO(form.transfer_date) ||
+          convertDateToISO(getTodayViDate()),
         reason: form.reason || null,
         reference: form.reference || null,
         status,
@@ -599,7 +752,7 @@ export default function WarehouseTransferDetailPage() {
     setForm({
       id: null,
       transfer_code: "",
-      transfer_date: getTodayDate(),
+      transfer_date: getTodayViDate(),
       reason: "",
       from_warehouse_id: "",
       to_warehouse_id: "",
@@ -676,328 +829,644 @@ export default function WarehouseTransferDetailPage() {
     navigate(`/dashboard/activity/transfer/print/${transferCode}`);
   };
 
-  return (
-    <div
-      className="warehouse-transfer-page"
-      ref={enterNavigationRef}
-    >
-      <div className="transfer-title">
-        Phiếu điều chuyển {form.transfer_code || ""}
-      </div>
+    return (
+      <div
+        className="warehouse-transfer-detail-page"
+        ref={enterNavigationRef}
+      >
+        {/* =====================================================
+            HEADER
+            ===================================================== */}
+        <div className="warehouse-transfer-detail-header">
+          <div className="warehouse-transfer-detail-header-text">
+            <span className="warehouse-transfer-detail-kicker">
+              ĐIỀU CHUYỂN KHO
+            </span>
 
-      <div className="transfer-main">
-        <div className="transfer-left">
-          <h3>Thông tin chung</h3>
+            <h2>
+              Phiếu điều chuyển{" "}
+              {form.transfer_code || ""}
+            </h2>
+          </div>
+        </div>
 
-          <div className="transfer-card">
-            <label className="radio-line">
-              <input type="radio" checked readOnly />
-              Điều chuyển giữa các kho
-            </label>
-
-            <div className="form-grid">
-              <div className="form-group required">
-                <label>Kho xuất</label>
-                <select
-                  data-enter-next="true"
-                  onKeyDown={handleEnterMoveNext}
-                  disabled={isViewMode}
-                  value={form.from_warehouse_id}
-                  onChange={(e) => handleFromWarehouseChange(e.target.value)}
-                >
-                  <option value="">Chọn kho xuất</option>
-
-                  {warehouses.map((warehouse) => (
-                    <option key={warehouse.id} value={warehouse.id}>
-                      {warehouse.code || warehouse.warehouse_code || ""} -{" "}
-                      {warehouse.name || warehouse.warehouse_name || ""}
-                    </option>
-                  ))}
-                </select>
+        {/* =====================================================
+            SCROLL BODY
+            ===================================================== */}
+        <div className="warehouse-transfer-detail-scroll">
+          {/* ===================================================
+              GENERAL INFORMATION
+              =================================================== */}
+          <div className="warehouse-transfer-detail-main">
+            <div className="warehouse-transfer-detail-left">
+              <div className="warehouse-transfer-detail-section-title">
+                Thông tin chung
               </div>
 
-              <div className="form-group">
-                <label>Địa chỉ kho xuất</label>
-                <input value={form.from_warehouse_address} disabled />
-              </div>
+              <div className="warehouse-transfer-detail-card">
+                <label className="warehouse-transfer-detail-radio">
+                  <input
+                    type="radio"
+                    checked
+                    readOnly
+                  />
 
-              <div className="form-group required">
-                <label>Kho nhập</label>
-                <select
-                  data-enter-next="true"
-                  onKeyDown={handleEnterMoveNext}
-                  disabled={isViewMode}
-                  value={form.to_warehouse_id}
-                  onChange={(e) => handleToWarehouseChange(e.target.value)}
-                >
-                  <option value="">Chọn kho nhập</option>
+                  <span>
+                    Điều chuyển giữa các kho
+                  </span>
+                </label>
 
-                  {warehouses
-                    .filter(
-                      (warehouse) =>
-                        String(warehouse.id) !==
-                        String(form.from_warehouse_id)
-                    )
-                    .map((warehouse) => (
-                      <option key={warehouse.id} value={warehouse.id}>
-                        {warehouse.code || warehouse.warehouse_code || ""} -{" "}
-                        {warehouse.name || warehouse.warehouse_name || ""}
+                <div className="warehouse-transfer-detail-form-grid">
+                  {/* KHO XUẤT */}
+                  <div className="warehouse-transfer-detail-form-group required">
+                    <label>
+                      Kho xuất
+                    </label>
+
+                    <select
+                      data-enter-next="true"
+                      onKeyDown={handleEnterMoveNext}
+                      disabled={isViewMode}
+                      value={form.from_warehouse_id}
+                      onChange={(e) =>
+                        handleFromWarehouseChange(
+                          e.target.value
+                        )
+                      }
+                    >
+                      <option value="">
+                        Chọn kho xuất
                       </option>
-                    ))}
-                </select>
+
+                      {warehouses.map(
+                        (warehouse) => (
+                          <option
+                            key={warehouse.id}
+                            value={warehouse.id}
+                          >
+                            {warehouse.code ||
+                              warehouse.warehouse_code ||
+                              ""}{" "}
+                            -{" "}
+                            {warehouse.name ||
+                              warehouse.warehouse_name ||
+                              ""}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </div>
+
+                  {/* ĐỊA CHỈ KHO XUẤT */}
+                  <div className="warehouse-transfer-detail-form-group">
+                    <label>
+                      Địa chỉ kho xuất
+                    </label>
+
+                    <input
+                      value={
+                        form.from_warehouse_address
+                      }
+                      disabled
+                    />
+                  </div>
+
+                  {/* KHO NHẬP */}
+                  <div className="warehouse-transfer-detail-form-group required">
+                    <label>
+                      Kho nhập
+                    </label>
+
+                    <select
+                      data-enter-next="true"
+                      onKeyDown={handleEnterMoveNext}
+                      disabled={isViewMode}
+                      value={form.to_warehouse_id}
+                      onChange={(e) =>
+                        handleToWarehouseChange(
+                          e.target.value
+                        )
+                      }
+                    >
+                      <option value="">
+                        Chọn kho nhập
+                      </option>
+
+                      {warehouses
+                        .filter(
+                          (warehouse) =>
+                            String(warehouse.id) !==
+                            String(
+                              form.from_warehouse_id
+                            )
+                        )
+                        .map((warehouse) => (
+                          <option
+                            key={warehouse.id}
+                            value={warehouse.id}
+                          >
+                            {warehouse.code ||
+                              warehouse.warehouse_code ||
+                              ""}{" "}
+                            -{" "}
+                            {warehouse.name ||
+                              warehouse.warehouse_name ||
+                              ""}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {/* ĐỊA CHỈ KHO NHẬP */}
+                  <div className="warehouse-transfer-detail-form-group">
+                    <label>
+                      Địa chỉ kho nhập
+                    </label>
+
+                    <input
+                      value={
+                        form.to_warehouse_address
+                      }
+                      disabled
+                    />
+                  </div>
+
+                  {/* NGÀY ĐIỀU CHUYỂN */}
+                  <div className="warehouse-transfer-detail-form-group full">
+                    <label>
+                      Ngày điều chuyển
+                    </label>
+
+                    <div className="warehouse-transfer-detail-date-input">
+                      <input
+                        data-enter-next="true"
+                        onKeyDown={
+                          handleEnterMoveNext
+                        }
+                        className="warehouse-transfer-detail-date-text"
+                        value={
+                          form.transfer_date
+                        }
+                        onChange={(e) =>
+                          handleFormChange(
+                            "transfer_date",
+                            e.target.value
+                          )
+                        }
+                        onBlur={(e) =>
+                          handleFormChange(
+                            "transfer_date",
+                            autoFillYear(
+                              e.target.value
+                            )
+                          )
+                        }
+                        placeholder="dd/mm/yyyy"
+                        disabled={isViewMode}
+                      />
+
+                      <button
+                        type="button"
+                        disabled={isViewMode}
+                        onClick={openDatePicker}
+                      >
+                        <RiCalendarLine />
+
+                        <input
+                          type="date"
+                          className="calendar-native-input"
+                          value={convertViDateToPickerDate(
+                            form.transfer_date
+                          )}
+                          disabled={isViewMode}
+                          onChange={(e) =>
+                            handleFormChange(
+                              "transfer_date",
+                              formatPickerDateToViDate(
+                                e.target.value
+                              )
+                            )
+                          }
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* LÝ DO */}
+                  <div className="warehouse-transfer-detail-form-group full">
+                    <label>
+                      Lý do điều chuyển
+                    </label>
+
+                    <input
+                      data-enter-next="true"
+                      onKeyDown={
+                        handleEnterMoveNext
+                      }
+                      disabled={isViewMode}
+                      value={form.reason}
+                      onChange={(e) =>
+                        handleFormChange(
+                          "reason",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Nhập lý do điều chuyển"
+                    />
+                  </div>
+
+                  {/* THAM CHIẾU */}
+                  <div className="warehouse-transfer-detail-form-group full">
+                    <label>
+                      Tham chiếu
+                    </label>
+
+                    <input
+                      data-enter-next="true"
+                      onKeyDown={
+                        handleEnterMoveNext
+                      }
+                      disabled={isViewMode}
+                      value={form.reference}
+                      onChange={(e) =>
+                        handleFormChange(
+                          "reference",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Nhập tham chiếu"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* =================================================
+                STATUS
+                ================================================= */}
+            <div className="warehouse-transfer-detail-status-column">
+              <div className="warehouse-transfer-detail-section-title">
+                Theo dõi tình trạng
               </div>
 
-              <div className="form-group">
-                <label>Địa chỉ kho nhập</label>
-                <input value={form.to_warehouse_address} disabled />
+              <div className="warehouse-transfer-detail-status-card">
+                <div className="warehouse-transfer-detail-status-row">
+                  <span>
+                    Tình trạng thực hiện
+                  </span>
+
+                  <b
+                    className={`status-${String(
+                      form.status || "DRAFT"
+                    ).toLowerCase()}`}
+                  >
+                    {form.status || "DRAFT"}
+                  </b>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ===================================================
+              GOODS DETAIL
+              =================================================== */}
+          <div className="warehouse-transfer-detail-section">
+            <div className="warehouse-transfer-detail-section-title">
+              Chi tiết
+            </div>
+
+            <div className="warehouse-transfer-detail-card warehouse-transfer-detail-goods-card">
+              <div className="warehouse-transfer-detail-goods-toolbar">
+                <label>
+                  Hàng hóa tồn kho
+                </label>
               </div>
 
-              <div className="form-group full">
-                <label>Ngày điều chuyển</label>
-                <input
-                  type="date"
-                  data-enter-next="true"
-                  onKeyDown={handleEnterMoveNext}
-                  disabled={isViewMode}
-                  value={form.transfer_date}
-                  onChange={(e) =>
-                    handleFormChange("transfer_date", e.target.value)
-                  }
-                />
+              <div className="warehouse-transfer-detail-table-wrap">
+                <table className="warehouse-transfer-detail-table">
+                  <colgroup>
+                    <col className="col-stt" />
+                    <col className="col-code" />
+                    <col className="col-name" />
+                    <col className="col-unit" />
+                    <col className="col-stock" />
+                    <col className="col-qty" />
+                    <col className="col-main-qty" />
+                    <col className="col-action" />
+                  </colgroup>
+
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Mã hàng</th>
+                      <th>Tên hàng</th>
+                      <th>ĐVT</th>
+                      <th>Tồn kho</th>
+                      <th>
+                        SL điều chuyển
+                      </th>
+                      <th>
+                        SL điều chuyển theo ĐVT chính
+                      </th>
+                      <th></th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {rows.map(
+                      (row, index) => (
+                        <tr
+                          key={row.row_id}
+                          className="warehouse-transfer-detail-row"
+                        >
+                          <td>
+                            {index + 1}
+                          </td>
+
+                          {/* MÃ HÀNG */}
+                          <td className="warehouse-transfer-detail-goods-code-cell">
+                           <div
+                              className="warehouse-transfer-detail-goods-code-box"
+                              ref={(element) => {
+                                if (element) {
+                                  goodsCodeBoxRefs.current[String(row.row_id)] = element;
+                                } else {
+                                  delete goodsCodeBoxRefs.current[String(row.row_id)];
+                                }
+                              }}
+                            >
+                              <input
+                                data-enter-next="true"
+                                data-stock-code-row-id={String(
+                                  row.row_id
+                                )}
+                                onKeyDown={
+                                  handleEnterMoveNext
+                                }
+                                value={
+                                  row.goods_code
+                                }
+                                placeholder={
+                                  form.from_warehouse_id
+                                    ? "Chọn mã hàng"
+                                    : "Chọn kho xuất trước"
+                                }
+                                disabled={
+                                  isViewMode ||
+                                  !form.from_warehouse_id
+                                }
+                                onFocus={() => {
+                                  openStockDropdown(
+                                    row.row_id,
+                                    row.goods_code || ""
+                                  );
+                                }}
+                                onChange={(e) =>
+                                  handleStockKeywordChange(
+                                    row.row_id,
+                                    e.target.value
+                                  )
+                                }
+                              />
+                              <button
+                                type="button"
+                                disabled={
+                                  isViewMode ||
+                                  !form.from_warehouse_id
+                                }
+                                onClick={() => {
+                                  const isCurrentOpen =
+                                    showStockDropdown &&
+                                    String(activeStockRowId) ===
+                                      String(row.row_id);
+
+                                  if (isCurrentOpen) {
+                                    setShowStockDropdown(false);
+                                    setActiveStockRowId(null);
+                                    return;
+                                  }
+
+                                  openStockDropdown(
+                                    row.row_id,
+                                    row.goods_code || ""
+                                  );
+                                }}
+                              >
+                                ▾
+                              </button>
+                            </div>
+                          </td>
+
+                          <td>
+                            {row.goods_name}
+                          </td>
+
+                          <td>
+                            {row.unit_name}
+                          </td>
+
+                          <td className="number-cell">
+                            {
+                              row.remaining_quantity
+                            }
+                          </td>
+
+                          <td>
+                            <input
+                              data-enter-next="true"
+                              onKeyDown={(e) =>
+                                handleTransferQuantityEnter(
+                                  e,
+                                  row.row_id
+                                )
+                              }
+                              disabled={
+                                isViewMode
+                              }
+                              value={
+                                row.transfer_quantity
+                              }
+                              onChange={(e) =>
+                                handleRowChange(
+                                  row.row_id,
+                                  "transfer_quantity",
+                                  e.target.value
+                                )
+                              }
+                              onBlur={(e) =>
+                                handleRowChange(
+                                  row.row_id,
+                                  "transfer_quantity",
+                                  formatViNumber(
+                                    e.target
+                                      .value,
+                                    2
+                                  )
+                                )
+                              }
+                            />
+                          </td>
+
+                          <td className="number-cell">
+                            {
+                              row.transfer_main_quantity
+                            }
+                          </td>
+
+                          <td className="warehouse-transfer-detail-action-cell">
+                            {!isViewMode && (
+                              <div className="warehouse-transfer-detail-row-actions">
+                                <button
+                                  type="button"
+                                  className="add"
+                                  onClick={() =>
+                                    handleAddRow(
+                                      row.row_id
+                                    )
+                                  }
+                                >
+                                  <RiAddLine />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="delete"
+                                  onClick={() =>
+                                    handleDeleteRow(
+                                      row.row_id
+                                    )
+                                  }
+                                >
+                                  <RiDeleteBin6Line />
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
               </div>
 
-              <div className="form-group full">
-                <label>Lý do điều chuyển</label>
-                <input
-                  data-enter-next="true"
-                  onKeyDown={handleEnterMoveNext}
-                  disabled={isViewMode}
-                  value={form.reason}
-                  onChange={(e) => handleFormChange("reason", e.target.value)}
-                  placeholder="Nhập lý do điều chuyển"
-                />
-              </div>
+              <div className="warehouse-transfer-detail-footer">
+                <span>
+                  Tổng số: {rows.length}
+                </span>
 
-              <div className="form-group full">
-                <label>Tham chiếu</label>
-                <input
-                  data-enter-next="true"
-                  onKeyDown={handleEnterMoveNext}
-                  disabled={isViewMode}
-                  value={form.reference}
-                  onChange={(e) =>
-                    handleFormChange("reference", e.target.value)
-                  }
-                  placeholder="Nhập tham chiếu"
-                />
+                <div className="warehouse-transfer-detail-pagination">
+                  <span>
+                    Số dòng/trang
+                  </span>
+
+                  <select defaultValue={20}>
+                    <option value={20}>
+                      20
+                    </option>
+                  </select>
+
+                  <b>
+                    {rows.length
+                      ? `1 - ${rows.length}`
+                      : "0 - 0"}
+                  </b>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="transfer-status">
-          <h3>Theo dõi tình trạng</h3>
-
-          <div className="status-card">
-            <div className="status-row">
-              <span>Tình trạng thực hiện</span>
-              <b>{form.status || "DRAFT"}</b>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="detail-section">
-        <h3>Chi tiết</h3>
-
-        <div className="detail-card">
-          <div className="goods-toolbar">
-            <label>Hàng hóa tồn kho</label>
-          </div>
-
-         <div className="table-wrap">
-            <table className="transfer-detail-table">
-                <colgroup>
-                <col className="col-stt" />
-                <col className="col-code" />
-                <col className="col-name" />
-                <col className="col-unit" />
-                <col className="col-stock" />
-                <col className="col-qty" />
-                <col className="col-main-qty" />
-                <col className="col-action" />
-                </colgroup>
-
-                <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Mã hàng</th>
-                  <th>Tên hàng</th>
-                  <th>ĐVT</th>
-                  <th>Tồn kho</th>
-                  <th>SL điều chuyển</th>
-                  <th>SL điều chuyển theo ĐVT chính</th>
-                  <th></th>
-                </tr>
-              </thead>
-
-              <tbody>
-  {rows.map((row, index) => (
-    <tr key={row.row_id} className="transfer-row">
-      <td>{index + 1}</td>
-
-      <td className="goods-code-dropdown-cell">
-        <div className="goods-code-dropdown-box">
-          <input
-            data-enter-next="true"
-            data-stock-code-row-id={String(row.row_id)}
-            onKeyDown={handleEnterMoveNext}
-            value={row.goods_code}
-            placeholder={form.from_warehouse_id ? "Chọn mã hàng" : "Chọn kho xuất trước"}
-            disabled={isViewMode || !form.from_warehouse_id}
-            onFocus={() => {
-              setActiveStockRowId(row.row_id);
-              setShowStockDropdown(true);
-              setStockKeyword(row.goods_code || "");
-              if (form.from_warehouse_id && stockItems.length === 0) {
-                loadStockItems(form.from_warehouse_id, row.goods_code || "");
-              }
-            }}
-            onChange={(e) => {
-              handleStockKeywordChange(row.row_id, e.target.value);
-            }}
-          />
-
-          <button
-            type="button"
-            disabled={isViewMode || !form.from_warehouse_id}
-            onClick={() => {
-              setActiveStockRowId(row.row_id);
-              const nextOpen = !showStockDropdown;
-              setShowStockDropdown(nextOpen);
-              setStockKeyword(row.goods_code || "");
-              if (nextOpen && form.from_warehouse_id && stockItems.length === 0) {
-                loadStockItems(form.from_warehouse_id, row.goods_code || "");
-              }
-            }}
-          >
-            ▾
-          </button>
-          {showStockDropdown && activeStockRowId === row.row_id && (
-            <div className="goods-code-dropdown-list">
-                <div className="goods-code-dropdown-header">
+        {/* =====================================================
+            GOODS DROPDOWN PORTAL
+            ===================================================== */}
+        {showStockDropdown &&
+          activeStockRowId != null &&
+          createPortal(
+            <div
+              className="warehouse-transfer-detail-goods-dropdown warehouse-transfer-detail-goods-dropdown-portal"
+              style={{
+                top: stockDropdownPosition.top,
+                left: stockDropdownPosition.left,
+                width: stockDropdownPosition.width,
+                maxHeight: stockDropdownPosition.maxHeight,
+              }}
+            >
+              <div className="warehouse-transfer-detail-goods-dropdown-header">
                 <span>Mã hàng</span>
                 <span>Tên hàng</span>
-                </div>
+              </div>
 
-                {stockItems.map((item) => (
+              {stockItems.map((item) => (
                 <div
-                    key={item.inventory_id || item.goods_id || item.id}
-                    className="goods-code-dropdown-item"
-                    onMouseDown={(e) => {
-                        e.preventDefault();
+                  key={
+                    item.inventory_id ||
+                    item.goods_id ||
+                    item.id
+                  }
+                  className="warehouse-transfer-detail-goods-dropdown-item"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
 
-                        handleSelectInventory(row.row_id, item);
+                    handleSelectInventory(
+                      activeStockRowId,
+                      item
+                    );
 
-                        setShowStockDropdown(false);
-                        setActiveStockRowId(null);
-                    }}
+                    setShowStockDropdown(false);
+                    setActiveStockRowId(null);
+                  }}
                 >
-                    <span>{item.goods_code || item.code}</span>
-                    <span>{item.goods_name || item.name}</span>
+                  <span>
+                    {item.goods_code ||
+                      item.code ||
+                      "-"}
+                  </span>
+
+                  <span>
+                    {item.goods_name ||
+                      item.name ||
+                      "-"}
+                  </span>
                 </div>
-                ))}
+              ))}
 
-                {stockItems.length === 0 && (
-                <div className="goods-code-dropdown-status">
-                    Không có dữ liệu
+              {stockItems.length === 0 && (
+                <div className="warehouse-transfer-detail-goods-dropdown-empty">
+                  Không có dữ liệu
                 </div>
-                )}
-            </div>
-            )}
-        </div>
-      </td>
-
-      <td>{row.goods_name}</td>
-      <td>{row.unit_name}</td>
-      <td>{row.remaining_quantity}</td>
-
-      <td>
-      <input
-        data-enter-next="true"
-        onKeyDown={(e) =>
-          handleTransferQuantityEnter(e, row.row_id)
-        }
-        disabled={isViewMode}
-        value={row.transfer_quantity}
-        onChange={(e) =>
-          handleRowChange(
-            row.row_id,
-            "transfer_quantity",
-            e.target.value
-          )
-        }
-        onBlur={(e) =>
-          handleRowChange(
-            row.row_id,
-            "transfer_quantity",
-            formatViNumber(e.target.value, 2)
-          )
-        }
-      />
-      </td>
-
-      <td>{row.transfer_main_quantity}</td>
-
-        <td className="delete-row-col">
-          {!isViewMode && (
-            <div className="detail-action-row add-row-action">
-                <button
-                type="button"
-                className="goods-code-add-btn"
-                onClick={() => handleAddRow(row.row_id)}
-                >
-                <RiAddLine />
-                </button>
-
-                <button
-                type="button"
-                className="delete-row-btn"
-                onClick={() => handleDeleteRow(row.row_id)}
-                >
-                <RiDeleteBin6Line />
-                </button>
-            </div>
+              )}
+            </div>,
+            document.body
           )}
-        </td>
-    </tr>
-  ))}
-</tbody>
-            </table>
-          </div>
 
-          <div className="detail-footer">
-            <span>Tổng số: {rows.length}</span>
-
-            <div className="page-size">
-              <span>Số dòng/trang</span>
-              <select defaultValue={20}>
-                <option value={20}>20</option>
-              </select>
-              <b>{rows.length ? `1 - ${rows.length}` : "0 - 0"}</b>
-            </div>
-          </div>
-        </div>
-      </div>
-        <div className="bottom-actions">
-          <button type="button" onClick={() => navigate("/dashboard/activity/transfer")}>
-            {isPrintMode ? "Quay lại" : "Hủy"}
+        {/* =====================================================
+            ACTION FOOTER
+            ===================================================== */}
+        <div className="warehouse-transfer-detail-actions">
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                "/dashboard/activity/transfer"
+              )
+            }
+          >
+            {isPrintMode
+              ? "Quay lại"
+              : "Hủy"}
           </button>
 
           {isPrintMode && (
-            <button type="button" className="print" onClick={handlePrint}>
+            <button
+              type="button"
+              className="print"
+              onClick={handlePrint}
+            >
               <RiPrinterLine />
-              In
+
+              <span>
+                In
+              </span>
             </button>
           )}
 
@@ -1006,17 +1475,23 @@ export default function WarehouseTransferDetailPage() {
               <button
                 type="button"
                 className="outline"
-                onClick={handleSaveDraftAndAddNew}
+                onClick={
+                  handleSaveDraftAndAddNew
+                }
               >
                 Lưu và Thêm
               </button>
 
-              <button type="button" className="save" onClick={handleSaveDraft}>
+              <button
+                type="button"
+                className="save"
+                onClick={handleSaveDraft}
+              >
                 Lưu
               </button>
             </>
           )}
         </div>
-    </div>
-  );
+      </div>
+    );
 }

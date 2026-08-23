@@ -8,6 +8,7 @@ import {
 import "../../../styles/ReleasePrintPageA5.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getReleaseOrderByCode } from "../../../services/releaseOrderService";
+import { formatViDateLong } from "../../../utils/dateUtils";
 
 function ApplicationA5Print() {
   const navigate = useNavigate();
@@ -39,20 +40,6 @@ function ApplicationA5Print() {
       minimumFractionDigits: fractionDigits,
       maximumFractionDigits: fractionDigits,
     });
-  };
-
-  const formatDateText = (value) => {
-    if (!value) return "Ngày.......tháng .... năm 2026";
-
-    const dateOnly = String(value).split("T")[0];
-
-    if (dateOnly.includes("/")) {
-      const [day, month, year] = dateOnly.split("/");
-      return `Ngày ${day} tháng ${month} năm ${year}`;
-    }
-
-    const [year, month, day] = dateOnly.split("-");
-    return `Ngày ${day} tháng ${month} năm ${year}`;
   };
 
   useEffect(() => {
@@ -298,7 +285,7 @@ function ApplicationA5Print() {
                   <h1>PHIẾU XUẤT KHO VẬT TƯ, PHỤ TÙNG</h1>
 
                   <div className="release-print-date-a5">
-                    {formatDateText(release?.release_date)}
+                    {formatViDateLong(release?.release_date)}
                   </div>
                 </div>
 

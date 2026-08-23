@@ -499,207 +499,324 @@ function CompanyListPage() {
   }
 
 
-  return (
-    <div className="company-list-page">
-      <div className="company-list-toolbar">
-        <div className="company-list-left">
-          <input
-            className="company-search-input"
-            placeholder="🔍 Tìm kiếm mã số thuế, tên công ty"
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-          />
+return (
+  <div className="company-list-page">
 
-          <button className="icon-btn" title="Làm mới" onClick={fetchCompanies}>
-            <RiRefreshLine />
-          </button>
+    {/* =====================================================
+        PAGE HEADER
+        ===================================================== */}
+    <div className="company-page-header-card">
+      <div className="company-page-header-content">
+        <div className="company-page-kicker">
+          DANH MỤC
         </div>
 
-        <div className="company-list-actions">
+        <h1 className="company-page-title">
+          Khách hàng / Nhà cung cấp
+        </h1>
+
+        <p className="company-page-description">
+          Quản lý thông tin khách hàng, nhà cung cấp và tài khoản ngân hàng.
+        </p>
+      </div>
+
+      {canDo("create_company") && (
         <button
-            className="delete-btn icon-delete-btn"
-            title="Xóa"
+          type="button"
+          className="company-primary-btn"
+          onClick={handleOpenAddForm}
+        >
+          <RiAddLine />
+          <span>Thêm</span>
+        </button>
+      )}
+    </div>
+
+
+    {/* =====================================================
+        TOOLBAR
+        ===================================================== */}
+    <div className="company-toolbar-card">
+      <div className="company-list-left">
+        <input
+          className="company-search-input"
+          placeholder="🔍 Tìm kiếm mã số thuế, tên công ty"
+          value={searchText}
+          onChange={(event) =>
+            setSearchText(event.target.value)
+          }
+        />
+
+        <button
+          type="button"
+          className="company-icon-btn"
+          title="Làm mới"
+          onClick={fetchCompanies}
+        >
+          <RiRefreshLine />
+        </button>
+      </div>
+
+      <div className="company-list-actions">
+        {selectedIds.length > 0 && (
+          <button
+            type="button"
+            className="company-delete-selected-btn"
+            title="Xóa các mục đã chọn"
             onClick={handleDeleteSelected}
           >
             <RiDeleteBin6Line />
-        </button>
-
-          <button className="add-btn" onClick={handleOpenAddForm}>
-            <RiAddLine />
-            <span>Thêm</span>
           </button>
-        </div>
+        )}
       </div>
+    </div>
 
-      <div className="company-list-content">
-        <div className="company-table-wrapper">
-            <table className="company-table">
-              <thead>
-                <tr>
-                  <th className="checkbox-col">
+
+    {/* =====================================================
+        TABLE CARD
+        ===================================================== */}
+    <div className="company-table-card">
+      <div className="company-table-wrapper">
+        <table className="company-table">
+          <thead>
+            <tr>
+              <th className="checkbox-col">
+                <input
+                  type="checkbox"
+                  checked={isAllChecked}
+                  onChange={handleToggleAll}
+                />
+              </th>
+
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  className="resizable-th"
+                  style={{
+                    width: `${column.width}px`,
+                    minWidth: `${column.width}px`,
+                    maxWidth: `${column.width}px`,
+                  }}
+                >
+                  <span>{column.label}</span>
+
+                  <span
+                    className="column-resizer"
+                    onMouseDown={(event) =>
+                      handleStartResize(
+                        event,
+                        column.key
+                      )
+                    }
+                  />
+                </th>
+              ))}
+
+              <th className="action-col">
+                Thao tác
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filteredCompanies.length > 0 ? (
+              filteredCompanies.map((company) => (
+                <tr key={company.id}>
+                  <td className="checkbox-col">
                     <input
                       type="checkbox"
-                      checked={isAllChecked}
-                      onChange={handleToggleAll}
+                      checked={selectedIds.includes(
+                        company.id
+                      )}
+                      onChange={(event) =>
+                        handleToggleOne(
+                          event,
+                          company.id
+                        )
+                      }
+                      onClick={(event) =>
+                        event.stopPropagation()
+                      }
                     />
-                  </th>
+                  </td>
 
                   {columns.map((column) => (
-                    <th
+                    <td
                       key={column.key}
-                      className="resizable-th"
                       style={{
                         width: `${column.width}px`,
                         minWidth: `${column.width}px`,
                         maxWidth: `${column.width}px`,
                       }}
                     >
-                      <span>{column.label}</span>
-
-                      <span
-                        className="column-resizer"
-                        onMouseDown={(event) => handleStartResize(event, column.key)}
-                      />
-                    </th>
+                      {renderCompanyCell(
+                        company,
+                        column.key
+                      )}
+                    </td>
                   ))}
 
-                  <th className="action-col">Thao tác</th>
+                  <td className="action-cell">
+                    <div className="row-actions">
+                      <button
+                        type="button"
+                        className="row-edit-btn"
+                        title="Sửa"
+                        onClick={() =>
+                          handleOpenEditForm(
+                            company
+                          )
+                        }
+                      >
+                        <RiEdit2Line />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="row-delete-btn"
+                        title="Xóa"
+                        onClick={() =>
+                          handleDeleteOne(
+                            company.id
+                          )
+                        }
+                      >
+                        <RiDeleteBin6Line />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-
-              <tbody>
-                {filteredCompanies.length > 0 ? (
-                  filteredCompanies.map((company) => (
-                    <tr key={company.id}>
-                      <td className="checkbox-col">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(company.id)}
-                          onChange={(event) => handleToggleOne(event, company.id)}
-                          onClick={(event) => event.stopPropagation()}
-                        />
-                      </td>
-
-                      {columns.map((column) => (
-                        <td
-                          key={column.key}
-                          style={{
-                            width: `${column.width}px`,
-                            minWidth: `${column.width}px`,
-                            maxWidth: `${column.width}px`,
-                          }}
-                        >
-                          {renderCompanyCell(company, column.key)}
-                        </td>
-                      ))}
-                    <td className="action-cell">
-                      <div className="row-actions">
-                        <button
-                          type="button"
-                          className="row-edit-btn"
-                          title="Sửa"
-                          onClick={() => handleOpenEditForm(company)}
-                        >
-                          <RiEdit2Line />
-                        </button>
-
-                        <button
-                          type="button"
-                          title="Xóa"
-                          className="row-delete-btn"
-                          onClick={() => handleDeleteOne(company.id)}
-                        >
-                          <RiDeleteBin6Line />
-                        </button>
-                      </div>
-                    </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td className="empty-cell" colSpan={columns.length + 2}>
-                      Không có dữ liệu công ty
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-        </div>
+              ))
+            ) : (
+              <tr>
+                <td
+                  className="empty-cell"
+                  colSpan={
+                    columns.length + 2
+                  }
+                >
+                  Không có dữ liệu công ty
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
+    </div>
 
-      {showForm && (
-        <div className="company-modal-overlay">
-          <div className="company-modal">
-            <div className="company-modal-header">
-              <h3>{editingId ? "Chỉnh sửa công ty" : "Thêm công ty"}</h3>
 
-              <button className="modal-close-btn" onClick={resetForm}>
-                <RiCloseLine />
+    {/* =====================================================
+        ADD / EDIT MODAL
+        ===================================================== */}
+    {showForm && (
+      <div className="company-modal-overlay">
+        <div className="company-modal">
+
+          <div className="company-modal-header">
+            <h3>
+              {editingId
+                ? "Chỉnh sửa công ty"
+                : "Thêm công ty"}
+            </h3>
+
+            <button
+              type="button"
+              className="modal-close-btn"
+              onClick={resetForm}
+            >
+              <RiCloseLine />
+            </button>
+          </div>
+
+
+          <div className="company-modal-body">
+            <label>Mã KH</label>
+
+            <input
+              name="supplier_code"
+              value={formData.supplier_code}
+              onChange={handleInputChange}
+              placeholder="Nhập mã khách hàng / NCC"
+            />
+
+
+            <label>
+              Mã số thuế <span>*</span>
+            </label>
+
+            <div className="tax-code-input-row">
+              <input
+                name="tax_code"
+                value={formData.tax_code}
+                onChange={handleInputChange}
+                placeholder="Nhập mã số thuế"
+              />
+
+              <button
+                type="button"
+                className="load-tax-btn"
+                title="Load thông tin công ty"
+                onClick={
+                  handleLoadCompanyByTaxCode
+                }
+                disabled={loadingTaxCode}
+              >
+                <RiLoader4Line
+                  className={
+                    loadingTaxCode
+                      ? "loading-icon"
+                      : ""
+                  }
+                />
               </button>
             </div>
 
-            <div className="company-modal-body">
-              <label>Mã KH</label>
-              <input
-                name="supplier_code"
-                value={formData.supplier_code}
-                onChange={handleInputChange}
-                placeholder="Nhập mã khách hàng / NCC"
-              />
 
-              <label>
-                Mã số thuế <span>*</span>
-              </label>
+            <label>
+              Tên đơn vị cung cấp{" "}
+              <span>*</span>
+            </label>
 
-              <div className="tax-code-input-row">
-                <input
-                  name="tax_code"
-                  value={formData.tax_code}
-                  onChange={handleInputChange}
-                  placeholder="Nhập mã số thuế"
-                />
+            <input
+              name="supplier_name"
+              value={formData.supplier_name}
+              onChange={handleInputChange}
+              placeholder="Nhập tên đơn vị cung cấp"
+            />
 
-                <button
-                  type="button"
-                  className="load-tax-btn"
-                  title="Load thông tin công ty"
-                  onClick={handleLoadCompanyByTaxCode}
-                  disabled={loadingTaxCode}
+
+            <label>Địa chỉ</label>
+
+            <input
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              placeholder="Nhập địa chỉ"
+            />
+
+
+            {formData.bank_accounts.map(
+              (bank, index) => (
+                <div
+                  className="bank-account-row"
+                  key={index}
                 >
-                  <RiLoader4Line className={loadingTaxCode ? "loading-icon" : ""} />
-                </button>
-              </div>
-
-              <label>
-                Tên đơn vị cung cấp <span>*</span>
-              </label>
-              <input
-                name="supplier_name"
-                value={formData.supplier_name}
-                onChange={handleInputChange}
-                placeholder="Nhập tên đơn vị cung cấp"
-              />
-
-              <label>Địa chỉ</label>
-              <input
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                placeholder="Nhập địa chỉ"
-              />
-
-              {formData.bank_accounts.map((bank, index) => (
-                <div className="bank-account-row" key={index}>
                   <input
                     value={bank.bank_name}
                     onChange={(event) =>
-                      handleBankAccountChange(index, "bank_name", event.target.value)
+                      handleBankAccountChange(
+                        index,
+                        "bank_name",
+                        event.target.value
+                      )
                     }
                     placeholder="Tên ngân hàng"
                   />
 
                   <input
-                    value={bank.bank_account_number}
+                    value={
+                      bank.bank_account_number
+                    }
                     onChange={(event) =>
                       handleBankAccountChange(
                         index,
@@ -710,41 +827,61 @@ function CompanyListPage() {
                     placeholder="Số tài khoản"
                   />
 
-                  {formData.bank_accounts.length > 1 && (
+                  {formData.bank_accounts
+                    .length > 1 && (
                     <button
                       type="button"
                       className="remove-bank-btn"
-                      onClick={() => handleRemoveBankAccount(index)}
+                      onClick={() =>
+                        handleRemoveBankAccount(
+                          index
+                        )
+                      }
                     >
                       Xóa
                     </button>
                   )}
                 </div>
-              ))}
+              )
+            )}
 
-              <button
-                type="button"
-                className="add-bank-btn"
-                onClick={handleAddBankAccount}
-              >
-                + Thêm tài khoản ngân hàng
-              </button>
-            </div>
 
-            <div className="company-modal-actions">
-              <button className="cancel-btn" onClick={resetForm}>
-                Hủy
-              </button>
+            <button
+              type="button"
+              className="add-bank-btn"
+              onClick={
+                handleAddBankAccount
+              }
+            >
+              + Thêm tài khoản ngân hàng
+            </button>
+          </div>
 
-              <button className="save-btn" onClick={handleSave}>
-                {editingId ? "Lưu chỉnh sửa" : "Thêm mới"}
-              </button>
-            </div>
+
+          <div className="company-modal-actions">
+            <button
+              type="button"
+              className="cancel-btn"
+              onClick={resetForm}
+            >
+              Hủy
+            </button>
+
+            <button
+              type="button"
+              className="save-btn"
+              onClick={handleSave}
+            >
+              {editingId
+                ? "Lưu chỉnh sửa"
+                : "Thêm mới"}
+            </button>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 }
 
 export default CompanyListPage;

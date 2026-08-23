@@ -13,6 +13,15 @@ import {
   getReleaseReferencesPageable,
   checkReleaseDuplicate,
 } from "../../../services/releaseOrderService";
+import {
+  getCurrentTerms,
+  getTodayViDate,
+  formatISOToViDate,
+  formatPickerDateToViDate,
+  convertViDateToPickerDate,
+  convertDateToISO,
+  autoFillYear,
+} from "../../../utils/dateUtils";
 
 import {
   RiAddLine,
@@ -147,45 +156,6 @@ function ReleaseOrderDetailPage() {
     }
   };
 
-  const getCurrentTerms = () => {
-    const today = new Date();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-    return `${month}/${year}`;
-  };
-
-  const getTodayViDate = () => {
-    const today = new Date();
-    const day = String(today.getDate()).padStart(2, "0");
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  const formatPickerDateToViDate = (value) => {
-    if (!value) return "";
-
-    const [year, month, day] = value.split("-");
-    if (!year || !month || !day) return value;
-
-    return `${day}/${month}/${year}`;
-  };
-
-  const convertViDateToPickerDate = (value) => {
-    if (!value) return "";
-
-    const text = String(value).trim();
-    if (!text) return "";
-
-    if (text.includes("/")) {
-      const [day, month, year] = text.split("/");
-      if (!day || !month || !year) return "";
-      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-    }
-
-    return text.split("T")[0];
-  };
-
   const openDatePicker = (event) => {
     const picker = event.currentTarget.querySelector(".calendar-native-input");
     if (!picker || picker.disabled) return;
@@ -196,48 +166,6 @@ function ReleaseOrderDetailPage() {
     }
 
     picker.click();
-  };
-
-  const formatISOToViDate = (value) => {
-    if (!value) return "";
-
-    const dateOnly = String(value).split("T")[0];
-
-    if (dateOnly.includes("/")) return dateOnly;
-
-    const [year, month, day] = dateOnly.split("-");
-    if (!year || !month || !day) return value;
-
-    return `${day}/${month}/${year}`;
-  };
-
-  const convertDateToISO = (value) => {
-    if (!value) return null;
-
-    const text = String(value).trim();
-
-    if (text.includes("/")) {
-      const [day, month, year] = text.split("/");
-
-      if (day && month && year) {
-        return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-      }
-    }
-
-    return text.split("T")[0];
-  };
-
-  const autoFillYear = (value) => {
-    const text = String(value || "").trim();
-    const match = text.match(/^(\d{1,2})\/(\d{1,2})$/);
-
-    if (!match) return value;
-
-    const currentYear = new Date().getFullYear();
-    const day = match[1].padStart(2, "0");
-    const month = match[2].padStart(2, "0");
-
-    return `${day}/${month}/${currentYear}`;
   };
 
   const parseNumber = (value) => {
@@ -1280,7 +1208,10 @@ const handleComplete = async () => {
 
         const response = await getReleaseOrderByCode(releaseCode);
 
-        const data = response?.data?.data || response?.data || response;
+        const data =
+          response?.data?.data ||
+          response?.data ||
+          response;
 
         const warehouseId = data.warehouse_id || "";
 
@@ -1298,7 +1229,11 @@ const handleComplete = async () => {
 
         setHeaderData({
           terms: data.terms || getCurrentTerms(),
-          release_date: data.release_date || getTodayViDate(),
+
+          release_date:
+            formatISOToViDate(data.release_date) ||
+            getTodayViDate(),
+
           warehouse_id: warehouseId,
           receiver_unit: receiverUnitName,
           release_target: releaseTargetName,
@@ -2091,7 +2026,7 @@ const handleComplete = async () => {
                 <option value={60}>2 tháng</option>
                 <option value={90}>3 tháng</option>
               </select>
-              
+
               <button
                 type="button"
                 className="release-duplicate-complete-btn"
@@ -2147,10 +2082,17 @@ const handleComplete = async () => {
                       duplicateWarningData.window_to && (
                         <>
                           {" "}
-                          ({duplicateWarningData.window_from} -{" "}
-                          {duplicateWarningData.window_to})
+                          (
+                          {formatISOToViDate(
+                            duplicateWarningData.window_from
+                          )}{" "}
+                          -{" "}
+                          {formatISOToViDate(
+                            duplicateWarningData.window_to
+                          )}
+                          )
                         </>
-                      )}
+                    )}
                   </div>
 
                   <div className="release-duplicate-table-wrap">
@@ -2200,12 +2142,11 @@ const handleComplete = async () => {
                                           <strong>
                                             {ticket.code || "—"}
                                           </strong>
-
-                                          <span>
-                                            {ticket.release_date ||
-                                              "—"}
-                                          </span>
-
+                                            <span>
+                                              {formatISOToViDate(
+                                                ticket.release_date
+                                              ) || "—"}
+                                            </span>
                                           <span>
                                             {ticket.quantity ||
                                               "—"}{" "}

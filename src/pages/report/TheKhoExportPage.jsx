@@ -699,6 +699,24 @@ function TheKhoExportPage() {
 
   return (
     <div className="the-kho-export-page">
+      {/* =====================================================
+        PAGE HEADER
+        ===================================================== */}
+      <div className="the-kho-page-header">
+        <div className="the-kho-page-header-text">
+          <div className="the-kho-page-kicker">
+            BÁO CÁO
+          </div>
+
+          <h1>
+            Thẻ kho
+          </h1>
+
+          <p>
+            Xuất báo cáo thẻ kho theo tháng, kho và vật tư.
+          </p>
+        </div>
+      </div>
       <div className="the-kho-filter-card">
         <div className="the-kho-filter-grid the-kho-filter-grid-stacked">
           {/* THÁNG THẺ KHO */}

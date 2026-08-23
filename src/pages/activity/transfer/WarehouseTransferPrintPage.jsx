@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import "../../../styles/WarehouseTransferPrintPage.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getWarehouseTransferByCode } from "../../../services/warehouseTransferService";
+import { formatViDateLong } from "../../../utils/dateUtils";
 
 function WarehouseTransferPrintPage() {
   const navigate = useNavigate();
@@ -77,31 +78,6 @@ function WarehouseTransferPrintPage() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 3,
     });
-  };
-
-  const formatDateText = (value) => {
-    if (!value) return "Ngày ........ tháng ........ năm 20..........";
-
-    const dateOnly = String(value).split("T")[0];
-
-    if (dateOnly.includes("/")) {
-      const [day, month, year] = dateOnly.split("/");
-      return `Ngày ${day} tháng ${month} năm ${year}`;
-    }
-
-    if (dateOnly.includes("-")) {
-      const parts = dateOnly.split("-");
-
-      if (parts[0]?.length === 4) {
-        const [year, month, day] = parts;
-        return `Ngày ${day} tháng ${month} năm ${year}`;
-      }
-
-      const [day, month, year] = parts;
-      return `Ngày ${day} tháng ${month} năm ${year}`;
-    }
-
-    return `Ngày ${dateOnly}`;
   };
 
   useEffect(() => {
@@ -200,7 +176,7 @@ function WarehouseTransferPrintPage() {
 
           <div className="transfer-print-title-block">
             <h1>PHIẾU CHUYỂN VẬT TƯ TRONG NỘI BỘ</h1>
-            <div>{formatDateText(transfer?.transfer_date)}</div>
+            <div>{formatViDateLong(transfer?.transfer_date)}</div>
           </div>
 
           <div className="transfer-print-info">

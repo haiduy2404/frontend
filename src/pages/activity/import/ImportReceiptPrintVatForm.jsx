@@ -5,6 +5,10 @@ import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getWarehouseReceiptByCode } from "../../../services/warehouseReceiptService";
 import mauthongtu from "../../../assets/mauthongtu.png";
 import { getMetadata } from "../../../services/metadataService";
+import {
+  formatISOToViDate,
+  formatViDateLong,
+} from "../../../utils/dateUtils";
 
 function ImportReceiptPrintVatForm() {
   const navigate = useNavigate();
@@ -78,33 +82,6 @@ const signerKeToanTruong =
 const signerGiamDoc =
   signerGiamDocFromInput ||
   getMetadataValue("GIÁM ĐỐC");
-
-  const formatReceiptDateText = (value) => {
-    if (!value) return "Ngày      tháng      năm";
-
-    const dateOnly = String(value).split("T")[0];
-
-    if (dateOnly.includes("/")) {
-      const [day, month, year] = dateOnly.split("/");
-      return `Ngày ${day} tháng ${month} năm ${year}`;
-    }
-
-    const [year, month, day] = dateOnly.split("-");
-    return `Ngày ${day} tháng ${month} năm ${year}`;
-  };
-
-  const formatViDate = (value) => {
-    if (!value) return "........";
-
-    const dateOnly = String(value).split("T")[0];
-
-    if (dateOnly.includes("/")) {
-      return dateOnly;
-    }
-
-    const [year, month, day] = dateOnly.split("-");
-    return `${day}/${month}/${year}`;
-  };
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -297,8 +274,11 @@ const numberToVietnameseText = (value) => {
     };
 
     const invoiceCode = receipt?.invoice_code || "";
-    const invoiceDate = formatViDate(receipt?.invoice_date);
-    const receiptDateText = formatReceiptDateText(receipt?.receipt_date);
+    const invoiceDate =
+      formatISOToViDate(receipt?.invoice_date) || "........";
+
+    const receiptDateText =
+      formatViDateLong(receipt?.receipt_date);
     
     const warehouseName = receipt?.warehouse?.name || receipt?.warehouse_name || "";
     const warehouseAddress =

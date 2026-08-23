@@ -4,6 +4,7 @@ import "../../../styles/TransferPaymentPrintPage.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getWarehouseReceiptByCode } from "../../../services/warehouseReceiptService";
 import { getMetadata } from "../../../services/metadataService";
+import { formatViDateLong } from "../../../utils/dateUtils";
 
 function TransferRequestPrintPage() {
   const [metadataMap, setMetadataMap] = useState({});
@@ -86,20 +87,6 @@ const toTitleCaseVi = (value) => {
     .join(" ");
 };
     
-
-  const formatReceiptDateText = (value) => {
-    if (!value) return "Ngày      tháng      năm";
-
-    const dateOnly = String(value).split("T")[0];
-
-    if (dateOnly.includes("/")) {
-      const [day, month, year] = dateOnly.split("/");
-      return `Ngày ${day} tháng ${month} năm ${year}`;
-    }
-
-    const [year, month, day] = dateOnly.split("-");
-    return `Ngày ${day} tháng ${month} năm ${year}`;
-  };
 
   const readThreeDigits = (number, hasHundredsBefore = false) => {
   const units = [
@@ -286,8 +273,8 @@ const toTitleCaseVi = (value) => {
 
         <h1>GIẤY ĐỀ NGHỊ CHUYỂN TIỀN</h1>
 
-          <div className="transfer-date-line">
-                {formatReceiptDateText(receipt?.receipt_date)}
+        <div className="transfer-date-line">
+          {formatViDateLong(receipt?.receipt_date)}
         </div>
 
         <div className="transfer-content">

@@ -65,6 +65,7 @@
 
 .the-kho-filter-card {
   padding: 18px 20px;
+  margin-top: 12px;
   margin-bottom: 16px;
 }
 
@@ -1227,4 +1228,69 @@
   pointer-events: none !important;
   left: 0;
   bottom: 0;
+}
+
+/* =========================================================
+   PAGE HEADER
+   ========================================================= */
+
+.the-kho-page-header {
+  width: 100%;
+
+  min-height: 82px;
+
+  padding: 14px 18px;
+
+  display: flex;
+  align-items: center;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  border: 1px solid #dde4ec;
+  border-top: 3px solid #173a63;
+  border-radius: 10px;
+
+  box-shadow:
+    0 5px 16px rgb(15 23 42 / 4%);
+}
+
+
+.the-kho-page-header-text {
+  min-width: 0;
+}
+
+
+.the-kho-page-kicker {
+  margin-bottom: 4px;
+
+  color: #5d7187;
+
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 800;
+
+  letter-spacing: 0.11em;
+}
+
+
+.the-kho-page-header h1 {
+  margin: 0;
+
+  color: #172033;
+
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 750;
+}
+
+
+.the-kho-page-header p {
+  margin: 5px 0 0;
+
+  color: #66758a;
+
+  font-size: 12.5px;
+  line-height: 1.4;
 }

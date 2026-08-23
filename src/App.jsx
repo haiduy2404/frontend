@@ -24,8 +24,6 @@ import CompanyListPage from "./pages/company/CompanyListPage";
 import TransferRequestPrintPage from "./pages/activity/import/TransferRequestPrintPage";
 import ImportReceiptPrintNoVatForm from "./pages/activity/import/ImportReceiptPrintNoVatForm";
 import ImportReceiptPrintVatForm from "./pages/activity/import/ImportReceiptPrintVatForm";
-import InspectionPage from "./pages/activity/import/InspectionPage";
-import InspectionDetailPage from "./pages/activity/import/InspectionDetailPage";
 import InspectionPrintPage from "./pages/activity/import/InspectionPrintPage";
 import ReceiptReportPageAcordingCompany from "./pages/report/ReceiptReportPageAcordingCompany";
 import ReceiptReportPageAcordingGoods from "./pages/report/ReceiptReportPageAcordingGoods";
@@ -43,7 +41,6 @@ import IndustrialA4Print from "./pages/activity/release/IndustrialA4Print";
 import IndustrialA5Print from "./pages/activity/release/IndustrialA5Print";
 import ApplicationA5Print from "./pages/activity/release/ApplicationA5Print";
 import ProcessingA5Print from "./pages/activity/release/ProcessingA5Print";
-import WarehouseOrderRelease from "./pages/activity/release/WarehouseOrderRelease";
 import WarehouseTransferPrintPage from "./pages/activity/transfer/WarehouseTransferPrintPage";
 import GoodsUnitPage from "./pages/good_unit/GoodsUnitPage";
 import TransferRequestPage from "./pages/tools/TransferRequestPage";
@@ -185,14 +182,7 @@ function App() {
                     </RequireRole>
                   }
                 />
-                <Route
-                  path="inspection"
-                  element={
-                    <RequireRole roles={["view_warehouse_receipt"]}>
-                      <InspectionPage />
-                    </RequireRole>
-                  }
-                />
+
               </Route>
                 <Route path="activity/export" element={<Outlet />}>
                   <Route index element={<Navigate to="order" replace />} />
@@ -211,19 +201,6 @@ function App() {
                     element={
                       <RequireRole roles={["view_actual_release"]}>
                         <WarehouseReleasePage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="release/edit/:id"
-                    element={
-                      <RequireRole
-                        roles={[
-                          "view_actual_release",
-                          "update_actual_released_quantity",
-                        ]}
-                      >
-                        <WarehouseOrderRelease />
                       </RequireRole>
                     }
                   />
@@ -343,22 +320,6 @@ function App() {
                   </RequireRole>
                 }
               />
-            <Route
-              path="/dashboard/activity/import/inspection-detail/new"
-              element={
-                <RequireRole roles={["view_warehouse_receipt"]}>
-                  <InspectionDetailPage />
-                </RequireRole>
-              }
-            />
-            <Route
-              path="/dashboard/activity/import/inspection-detail/:id"
-              element={
-                <RequireRole roles={["view_warehouse_receipt"]}>
-                  <InspectionDetailPage />
-                </RequireRole>
-              }
-            />
             <Route
               path="/dashboard/activity/import/order/:id/transfer-request-print"
               element={

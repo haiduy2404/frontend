@@ -1,318 +1,2071 @@
-.warehouse-transfer-list-page {
-  min-height: 100vh;
-  background: #eef1f5;
-  padding: 0 16px 16px;
-  box-sizing: border-box;
-  color: #111827;
-  font-size: 14px;
-}
-
-.transfer-tabs {
-  display: flex;
-  align-items: flex-end;
-  gap: 0;
-  height: 42px;
-}
-
-.transfer-tabs button {
-  height: 42px;
-  padding: 0 22px;
-  border: none;
-  border-radius: 6px 6px 0 0;
-  background: transparent;
-  color: #374151;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.transfer-tabs button.active {
+.warehouse-transfer-page {
+  --wt-blue: #2563eb;
+  --wt-blue-soft: #eff6ff;
+  --wt-blue-border: #bfdbfe;
+  --wt-green: #059669;
+  --wt-green-soft: #ecfdf5;
+  --wt-red: #dc2626;
+  --wt-text: #0f172a;
+  --wt-muted: #64748b;
+  --wt-border: #e2e8f0;
+  --wt-bg: #f8fafc;
+  height: calc(100vh - 64px);
+  min-height: 640px;
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
   background: #ffffff;
-  color: #2563eb;
-}
-
-.transfer-list-card {
-  background: #ffffff;
-  border-radius: 0 6px 6px 6px;
-  min-height: calc(100vh - 72px);
-  display: flex;
-  flex-direction: column;
+  color: var(--wt-text);
   overflow: hidden;
 }
 
-.transfer-toolbar {
-  height: 52px;
+.warehouse-transfer-page *,
+.warehouse-transfer-page *::before,
+.warehouse-transfer-page *::after {
+  box-sizing: border-box;
+}
+
+.warehouse-transfer-left-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--wt-border);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.warehouse-transfer-tab-title {
+  height: 58px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  border-bottom: 1px solid #e5e7eb;
-  box-sizing: border-box;
-}
-
-.transfer-toolbar .search-input {
-  width: 240px;
-  height: 34px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  padding: 0 12px;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.transfer-toolbar select {
-  height: 34px;
-  min-width: 210px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  padding: 0 12px;
-  outline: none;
-  background: #ffffff;
-  color: #374151;
-  box-sizing: border-box;
-}
-
-.transfer-toolbar .search-input:focus,
-.transfer-toolbar select:focus {
-  border-color: #2563eb;
-}
-
-.toolbar-spacer {
-  flex: 1;
-}
-
-.icon-btn {
-  width: 34px;
-  height: 34px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  background: #ffffff;
-  color: #374151;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.icon-btn:hover {
-  background: #f9fafb;
-}
-
-.add-btn {
-  height: 34px;
   padding: 0 18px;
-  border: 1px solid #2563eb;
-  border-radius: 4px;
-  background: #2563eb;
-  color: #ffffff;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.add-btn:hover {
-  background: #1d4ed8;
-}
-
-.transfer-table-wrap {
-  flex: 1;
-  overflow: auto;
-}
-
-.transfer-table-wrap table {
-  width: 100%;
-  min-width: 1050px;
-  border-collapse: collapse;
-}
-
-.transfer-table-wrap thead {
-  background: #f3f4f6;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-.transfer-table-wrap th,
-.transfer-table-wrap td {
-  height: 38px;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0 14px;
-  text-align: left;
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
-.transfer-table-wrap th {
+  color: var(--wt-blue);
+  font-size: 15px;
   font-weight: 700;
-  color: #111827;
+  border-bottom: 1px solid var(--wt-border);
 }
 
-.transfer-table-wrap td {
-  color: #111827;
+.warehouse-transfer-filters {
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid var(--wt-border);
 }
 
-.transfer-table-wrap tbody tr:hover td {
-  background: #f9fafb;
-}
-
-.check-col {
-  width: 40px;
-}
-
-.transfer-table-wrap input[type="checkbox"] {
-  width: 15px;
-  height: 15px;
-  cursor: pointer;
-}
-
-.code-link {
-  border: none;
-  background: transparent;
-  color: #2563eb;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-
-.code-link:hover {
-  text-decoration: underline;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: #eef2f7;
-  color: #6b7280;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.empty-row {
-  height: 70px !important;
-  text-align: center !important;
-  color: #6b7280 !important;
-  font-style: italic;
-}
-
-.transfer-footer {
-  height: 56px;
-  flex: 0 0 auto;
-  border-top: 1px solid #e5e7eb;
+.warehouse-transfer-search-row,
+.warehouse-transfer-filter-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
-  box-sizing: border-box;
-  background: #ffffff;
-}
-
-.footer-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #6b7280;
-}
-
-.footer-right select {
-  height: 34px;
-  min-width: 84px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  padding: 0 10px;
-  background: #ffffff;
-  color: #111827;
-}
-
-.footer-right b {
-  color: #111827;
-}
-
-@media (max-width: 900px) {
-  .transfer-toolbar {
-    height: auto;
-    flex-wrap: wrap;
-  }
-
-  .toolbar-spacer {
-    display: none;
-  }
-
-  .transfer-toolbar .search-input,
-  .transfer-toolbar select {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .add-btn {
-    margin-left: auto;
-  }
-}
-
-.delete-row-btn {
-  width: 30px;
-  height: 30px;
-  border: none;
-  background: transparent;
-  color: #dc2626;
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-.delete-row-btn:hover {
-  background: #fee2e2;
-}
-
-.delete-action-col {
-  width: 50px;
-  text-align: center !important;
-}
-
-.transfer-delete-btn {
-  width: 30px;
-  height: 30px;
-  border: none;
-  background: transparent;
-  color: #dc2626;
-  cursor: pointer;
-  border-radius: 4px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 18px;
-}
-
-.transfer-delete-btn:hover {
-  background: #fee2e2;
-}
-
-.transfer-action-loading-icon {
-  display: inline-block;
-  flex-shrink: 0;
-  animation: transfer-action-spin 0.8s linear infinite;
-}
-
-.delete-toolbar-btn,
-.complete-toolbar-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   gap: 6px;
 }
 
-.delete-toolbar-btn:disabled,
-.complete-toolbar-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
+.warehouse-transfer-filter-row {
+  margin-top: 8px;
 }
 
-@keyframes transfer-action-spin {
-  from {
-    transform: rotate(0deg);
-  }
+.warehouse-transfer-search-box {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--wt-border);
+  border-radius: 6px;
+  background: #ffffff;
+}
 
+.warehouse-transfer-search-icon {
+  width: 34px;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 20px;
+}
+
+.warehouse-transfer-search-box input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  padding: 0 10px 0 0;
+  color: var(--wt-text);
+  background: transparent;
+  font-size: 13px;
+}
+
+.warehouse-transfer-filter-icon-btn,
+.warehouse-transfer-sort-btn,
+.warehouse-transfer-filter-row select,
+.warehouse-transfer-page-size select {
+  border: 1px solid var(--wt-border);
+  background: #ffffff;
+  color: #334155;
+  border-radius: 6px;
+  outline: 0;
+}
+
+.warehouse-transfer-filter-icon-btn {
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.warehouse-transfer-filter-row select {
+  min-width: 0;
+  flex: 1;
+  height: 34px;
+  padding: 0 7px;
+  font-size: 11px;
+}
+
+.warehouse-transfer-list-panel {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.warehouse-transfer-list-meta {
+  height: 42px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--wt-border);
+}
+
+.warehouse-transfer-total-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155;
+  font-size: 12px;
+}
+
+.warehouse-transfer-sort-btn {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.warehouse-transfer-list-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: #ffffff;
+}
+
+.warehouse-transfer-list-item {
+  position: relative;
+  width: 100%;
+  min-height: 96px;
+  display: flex;
+  gap: 10px;
+  padding: 12px 12px 11px 14px;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid #edf2f7;
+  background: #ffffff;
+  color: inherit;
+  cursor: pointer;
+}
+
+.warehouse-transfer-list-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+}
+
+.warehouse-transfer-list-item:hover {
+  background: #f8fafc;
+}
+
+.warehouse-transfer-list-item.selected {
+  background: linear-gradient(90deg, #f0fdf4 0%, #f8fffb 100%);
+  box-shadow: inset 0 0 0 1px #a7f3d0;
+}
+
+.warehouse-transfer-list-item.selected::before {
+  background: #10b981;
+}
+
+.warehouse-transfer-select-dot {
+  width: 14px;
+  flex: 0 0 14px;
+  margin-top: 1px;
+  color: var(--wt-blue);
+  font-size: 13px;
+}
+
+.warehouse-transfer-list-item-content {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.warehouse-transfer-list-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.warehouse-transfer-list-item-head strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.warehouse-transfer-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.warehouse-transfer-status-badge.completed {
+  color: #047857;
+  background: var(--wt-green-soft);
+}
+
+.warehouse-transfer-status-badge.pending {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.warehouse-transfer-status-badge.default {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.warehouse-transfer-route {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-transfer-list-date {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.warehouse-transfer-list-state {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.warehouse-transfer-list-state.error {
+  color: var(--wt-red);
+}
+
+.warehouse-transfer-list-footer {
+  min-height: 56px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--wt-border);
+  background: #ffffff;
+}
+
+.warehouse-transfer-page-size,
+.warehouse-transfer-pagination {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.warehouse-transfer-page-size select {
+  height: 30px;
+  padding: 0 8px;
+}
+
+.warehouse-transfer-pagination button,
+.warehouse-transfer-pagination .active {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--wt-border);
+  border-radius: 5px;
+  background: #ffffff;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+}
+
+.warehouse-transfer-pagination .active {
+  color: #047857;
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+}
+
+.warehouse-transfer-detail-panel,
+.warehouse-transfer-detail-empty {
+  min-width: 0;
+  overflow-y: auto;
+  background: #fbfdff;
+}
+
+.warehouse-transfer-detail-empty {
+  display: grid;
+  place-items: center;
+}
+
+.warehouse-transfer-detail-empty > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+}
+
+.warehouse-transfer-detail-empty strong {
+  color: #334155;
+  font-size: 16px;
+}
+
+.warehouse-transfer-detail-head {
+  min-height: 82px;
+  padding: 16px 20px 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  background: #ffffff;
+}
+
+.warehouse-transfer-detail-code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.warehouse-transfer-detail-code-row h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.warehouse-transfer-detail-head p {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.warehouse-transfer-detail-head p strong {
+  color: #475569;
+}
+
+.warehouse-transfer-add-btn {
+  height: 36px;
+  min-width: 96px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--wt-blue);
+  border-radius: 6px;
+  background: var(--wt-blue);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.warehouse-transfer-summary-grid {
+  margin: 0 20px 12px;
+  display: grid;
+  grid-template-columns: 1.65fr 1.45fr 1fr 1.1fr 1.1fr;
+  border: 1px solid var(--wt-border);
+  border-radius: 7px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.warehouse-transfer-summary-cell {
+  min-width: 0;
+  min-height: 92px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  border-right: 1px solid var(--wt-border);
+}
+
+.warehouse-transfer-summary-cell:last-child {
+  border-right: 0;
+}
+
+.warehouse-transfer-summary-cell small {
+  color: #475569;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.warehouse-transfer-summary-cell strong {
+  color: #0f172a;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-transfer-summary-cell:not(.warehouse) > strong {
+  font-size: 17px;
+}
+
+.warehouse-transfer-summary-cell > span,
+.warehouse-transfer-summary-cell.warehouse span:not(.warehouse-transfer-route-arrow) {
+  color: #64748b;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-transfer-warehouse-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.warehouse-transfer-warehouse-summary-row > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.warehouse-transfer-route-arrow {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--wt-blue-soft);
+  color: var(--wt-blue) !important;
+  font-size: 16px !important;
+}
+
+.warehouse-transfer-detail-content-grid {
+  padding: 0 20px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 222px;
+  gap: 12px;
+}
+
+.warehouse-transfer-main-column,
+.warehouse-transfer-side-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.warehouse-transfer-card,
+.warehouse-transfer-side-card {
+  border: 1px solid var(--wt-border);
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.warehouse-transfer-card {
+  padding: 16px;
+}
+
+.warehouse-transfer-card h3,
+.warehouse-transfer-side-card h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.warehouse-transfer-process-card {
+  min-height: 254px;
+}
+
+.warehouse-transfer-process-track {
+  display: grid;
+  grid-template-columns: 92px minmax(25px, 1fr) 105px minmax(25px, 1fr) 115px minmax(25px, 1fr) 105px minmax(25px, 1fr) 92px;
+  align-items: start;
+  margin-top: 27px;
+}
+
+.warehouse-transfer-process-line {
+  height: 3px;
+  margin-top: 26px;
+  background: #cbd5e1;
+}
+
+.warehouse-transfer-process-line.done {
+  background: repeating-linear-gradient(
+    90deg,
+    #3b82f6 0 6px,
+    #93c5fd 6px 10px
+  );
+}
+
+.warehouse-transfer-process-line.pending {
+  background: repeating-linear-gradient(
+    90deg,
+    #cbd5e1 0 6px,
+    transparent 6px 10px
+  );
+}
+
+.warehouse-transfer-process-node,
+.warehouse-transfer-warehouse-node {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 5px;
+}
+
+.warehouse-transfer-process-circle,
+.warehouse-transfer-warehouse-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 800;
+}
+
+.warehouse-transfer-process-circle.done,
+.warehouse-transfer-warehouse-icon {
+  border-color: #93c5fd;
+  color: var(--wt-blue);
+  box-shadow: 0 0 0 7px #eff6ff;
+}
+
+.warehouse-transfer-warehouse-icon {
+  background: var(--wt-blue);
+  color: #ffffff;
+  box-shadow: 0 0 0 7px #dbeafe;
+  border-color: #ffffff;
+}
+
+.warehouse-transfer-warehouse-node.destination .warehouse-transfer-warehouse-icon {
+  background: #3b82f6;
+}
+
+.warehouse-transfer-process-node strong,
+.warehouse-transfer-warehouse-node strong {
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 10px;
+}
+
+.warehouse-transfer-process-node span,
+.warehouse-transfer-warehouse-node span,
+.warehouse-transfer-process-node small {
+  max-width: 120px;
+  color: #64748b;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.warehouse-transfer-warehouse-node span {
+  color: #334155;
+  font-weight: 600;
+}
+
+.warehouse-transfer-process-message {
+  margin-top: 28px;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 5px;
+  background: #eff6ff;
+  color: #475569;
+  font-size: 10px;
+}
+
+.warehouse-transfer-section-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.warehouse-transfer-section-title-row p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.warehouse-transfer-outline-btn {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--wt-blue);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.warehouse-transfer-side-card {
+  overflow: hidden;
+}
+
+.warehouse-transfer-side-card > h3 {
+  padding: 15px 14px;
+  border-bottom: 1px solid var(--wt-border);
+}
+
+.warehouse-transfer-side-actions,
+.warehouse-transfer-doc-list {
+  padding: 8px 10px 10px;
+}
+
+.warehouse-transfer-side-actions button,
+.warehouse-transfer-doc-list button {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 6px;
+  border: 0;
+  border-bottom: 1px solid #edf2f7;
+  background: #ffffff;
+  color: var(--wt-blue);
+  text-align: left;
+  cursor: pointer;
+}
+
+.warehouse-transfer-side-actions button:last-child,
+.warehouse-transfer-doc-list button:last-child {
+  border-bottom: 0;
+}
+
+.warehouse-transfer-side-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.warehouse-transfer-side-actions button.danger {
+  color: var(--wt-red);
+}
+
+.warehouse-transfer-side-actions button > svg,
+.warehouse-transfer-text-icon,
+.warehouse-transfer-doc-list button > span:first-child {
+  width: 20px;
+  flex: 0 0 20px;
+  font-size: 17px;
+}
+
+.warehouse-transfer-side-actions button > span:last-child,
+.warehouse-transfer-doc-list button > span:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.warehouse-transfer-side-actions strong,
+.warehouse-transfer-doc-list strong {
+  color: currentColor;
+  font-size: 10px;
+}
+
+.warehouse-transfer-side-actions small,
+.warehouse-transfer-doc-list small {
+  color: #94a3b8;
+  font-size: 9px;
+}
+
+.warehouse-transfer-note-card p {
+  margin: 0;
+  padding: 13px 14px 16px;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.warehouse-transfer-spin {
+  animation: warehouse-transfer-spin 0.8s linear infinite;
+}
+
+@keyframes warehouse-transfer-spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+@media (max-width: 1280px) {
+  .warehouse-transfer-page {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  .warehouse-transfer-summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .warehouse-transfer-summary-cell:nth-child(3) {
+    border-right: 0;
+  }
+
+  .warehouse-transfer-summary-cell:nth-child(n + 4) {
+    border-top: 1px solid var(--wt-border);
+  }
+
+  .warehouse-transfer-process-track {
+    grid-template-columns: 82px minmax(16px, 1fr) 92px minmax(16px, 1fr) 96px minmax(16px, 1fr) 92px minmax(16px, 1fr) 82px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .warehouse-transfer-page {
+    height: auto;
+    min-height: 100vh;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .warehouse-transfer-left-column {
+    max-height: 520px;
+    border-right: 0;
+    border-bottom: 1px solid var(--wt-border);
+  }
+
+  .warehouse-transfer-detail-panel {
+    overflow: visible;
+  }
+
+  .warehouse-transfer-detail-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .warehouse-transfer-side-column {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .warehouse-transfer-detail-head,
+  .warehouse-transfer-summary-grid,
+  .warehouse-transfer-detail-content-grid {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .warehouse-transfer-detail-head {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .warehouse-transfer-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .warehouse-transfer-summary-cell,
+  .warehouse-transfer-summary-cell:nth-child(3),
+  .warehouse-transfer-summary-cell:nth-child(n + 4) {
+    border-right: 0;
+    border-top: 1px solid var(--wt-border);
+  }
+
+  .warehouse-transfer-summary-cell:first-child {
+    border-top: 0;
+  }
+
+  .warehouse-transfer-process-card {
+    overflow-x: auto;
+  }
+
+  .warehouse-transfer-process-track {
+    min-width: 760px;
+    position: relative;
+  }
+
+  .warehouse-transfer-goods-summary,
+  .warehouse-transfer-side-column {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   WAREHOUSE TRANSFER - WORKFLOW TRAIN / RAILWAY
+   ========================================================= */
+
+.warehouse-transfer-process-track {
+  width: 100%;
+
+  display: flex;
+  align-items: flex-start;
+}
+
+
+/* =========================================================
+   PROCESS LINE
+   ========================================================= */
+
+.warehouse-transfer-process-line {
+  position: relative;
+
+  flex: 1 1 auto;
+
+  height: 40px;
+  min-width: 40px;
+
+  overflow: visible;
+
+  background: transparent;
+}
+
+
+/* =========================================================
+   HAI THANH RAY
+   ========================================================= */
+
+.warehouse-transfer-process-line::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+
+  top: 17px;
+
+  height: 7px;
+
+  background:
+    linear-gradient(
+      to bottom,
+
+      #cbd5e1 0,
+      #cbd5e1 2px,
+
+      transparent 2px,
+      transparent 5px,
+
+      #cbd5e1 5px,
+      #cbd5e1 7px
+    );
+
+  opacity: 0.9;
+}
+
+
+/* =========================================================
+   TÀ VẸT
+   ========================================================= */
+
+.warehouse-transfer-process-line::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+
+  top: 16px;
+
+  height: 9px;
+
+  background:
+    repeating-linear-gradient(
+      90deg,
+
+      transparent 0,
+      transparent 8px,
+
+      #94a3b8 8px,
+      #94a3b8 10px,
+
+      transparent 10px,
+      transparent 18px
+    );
+
+  opacity: 0.55;
+}
+
+
+/* =========================================================
+   ĐƯỜNG VÀNG ĐÃ ĐI
+   ========================================================= */
+
+.warehouse-transfer-process-line-progress {
+  position: absolute;
+
+  left: 0;
+  top: 19px;
+
+  width: 0;
+  height: 3px;
+
+  z-index: 3;
+
+  border-radius: 999px;
+
+  background: #f59e0b;
+
+  transition:
+    width 0.35s ease;
+}
+
+
+/* đoạn đã đi xong */
+
+.warehouse-transfer-process-line-progress.is-completed {
+  width: 100%;
+}
+
+
+/* =========================================================
+   ĐOẠN ĐANG ĐIỀU CHUYỂN
+   ========================================================= */
+
+.warehouse-transfer-process-line-progress.is-transit {
+  width: 62%;
+
+  background:
+    linear-gradient(
+      90deg,
+
+      #d97706 0%,
+      #f59e0b 32%,
+      #fbbf24 58%,
+      #f59e0b 82%,
+      #d97706 100%
+    );
+
+  background-size:
+    200% 100%;
+
+  animation:
+    warehouse-transfer-rail-progress
+    1.5s
+    linear
+    infinite;
+}
+
+
+/* =========================================================
+   CON TÀU
+   ========================================================= */
+
+.warehouse-transfer-process-train {
+  position: absolute;
+
+  right: -15px;
+  top: 50%;
+
+  width: 34px;
+  height: 30px;
+
+  z-index: 8;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #d97706;
+
+  transform:
+    translateY(-108%);
+
+  filter:
+    drop-shadow(
+      0 2px 2px
+      rgba(15, 23, 42, 0.2)
+    );
+
+  animation:
+    warehouse-transfer-train-running
+    0.9s
+    ease-in-out
+    infinite;
+}
+
+
+.warehouse-transfer-process-train svg {
+  display: block;
+
+  width: 27px;
+  height: 27px;
+}
+
+
+/* =========================================================
+   NODE
+   ========================================================= */
+
+.warehouse-transfer-process-node {
+  flex: 0 0 auto;
+
+  min-width: 105px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+}
+
+
+.warehouse-transfer-process-circle {
+  position: relative;
+
+  z-index: 5;
+
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border:
+    1.5px solid
+    #cbd5e1;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  color: #475569;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+.warehouse-transfer-process-node.is-reached
+.warehouse-transfer-process-circle {
+  border-color: #f59e0b;
+
+  color: #d97706;
+}
+
+
+/* =========================================================
+   NODE TEXT
+   ========================================================= */
+
+.warehouse-transfer-process-info {
+  margin-top: 7px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 2px;
+}
+
+
+.warehouse-transfer-process-info strong {
+  color: #111827;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+.warehouse-transfer-process-info span {
+  color: #64748b;
+
+  font-size: 9px;
+}
+
+
+.warehouse-transfer-process-info small {
+  color: #94a3b8;
+
+  font-size: 8px;
+}
+
+
+/* =========================================================
+   TRAIN ANIMATION
+   ========================================================= */
+
+@keyframes warehouse-transfer-rail-progress {
+  from {
+    background-position:
+      100% 0;
+  }
+
+  to {
+    background-position:
+      -100% 0;
+  }
+}
+
+
+@keyframes warehouse-transfer-train-running {
+  0%,
+  100% {
+    transform:
+      translateY(-108%)
+      translateX(-2px);
+  }
+
+  25% {
+    transform:
+      translateY(-112%)
+      translateX(0);
+  }
+
+  50% {
+    transform:
+      translateY(-108%)
+      translateX(3px);
+  }
+
+  75% {
+    transform:
+      translateY(-111%)
+      translateX(1px);
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .warehouse-transfer-process-line-progress.is-transit,
+  .warehouse-transfer-process-train {
+    animation: none;
+  }
+}
+
+/* =========================================================
+   TRANSFER - CÁC PHIẾU IN
+   ========================================================= */
+
+.warehouse-transfer-print-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.warehouse-transfer-print-item {
+  min-height: 50px;
+  padding: 10px 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border: 1px solid #dbe3ef;
+  border-radius: 6px;
+
+  background: #ffffff;
+
+  color: #1f2937;
+  text-decoration: none;
+
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.warehouse-transfer-print-item:hover {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
+/* Icon tài liệu bên trái */
+.warehouse-transfer-print-item > svg:first-child {
+  flex: 0 0 auto;
+
+  width: 19px;
+  height: 19px;
+
+  color: #2563eb;
+}
+
+/* Nội dung */
+.warehouse-transfer-print-item > span {
+  min-width: 0;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.warehouse-transfer-print-item strong {
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.warehouse-transfer-print-item small {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+/* Mũi tên bên phải */
+.warehouse-transfer-print-item > svg:last-child {
+  flex: 0 0 auto;
+
+  width: 18px;
+  height: 18px;
+
+  color: #475569;
+}
+
+.warehouse-transfer-print-item:hover > svg:last-child {
+  color: #2563eb;
+}
+
+/* =========================================================
+   TRANSFER - TÀI LIỆU LIÊN QUAN
+   ========================================================= */
+
+.warehouse-transfer-documents-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.warehouse-transfer-documents-card
+  .warehouse-transfer-section-title-row {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.warehouse-transfer-documents-card
+  .warehouse-transfer-section-title-row h3 {
+  margin: 0;
+}
+
+.warehouse-transfer-documents-card
+  .warehouse-transfer-section-title-row p {
+  margin: 4px 0 0;
+
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.warehouse-transfer-document-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.warehouse-transfer-document-item {
+  width: 100%;
+  min-height: 52px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 9px 11px;
+  box-sizing: border-box;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+
+  background: #ffffff;
+
+  color: #1f2937;
+  text-decoration: none;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.warehouse-transfer-document-item:hover {
+  background: #f8fbff;
+  border-color: #bfdbfe;
+}
+
+.warehouse-transfer-document-icon {
+  width: 34px;
+  height: 34px;
+
+  flex: 0 0 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 6px;
+
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.warehouse-transfer-document-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.warehouse-transfer-document-content {
+  min-width: 0;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.warehouse-transfer-document-content strong {
+  overflow: hidden;
+
+  color: #1f2937;
+
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-transfer-document-content span {
+  overflow: hidden;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+  line-height: 1.3;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-transfer-document-item > svg:last-child {
+  width: 18px;
+  height: 18px;
+
+  flex: 0 0 auto;
+
+  color: #64748b;
+}
+
+.warehouse-transfer-document-item:hover > svg:last-child {
+  color: #2563eb;
+}
+
+
+/* =========================================================
+   TRANSFER - GOODS DETAIL MODAL
+   ========================================================= */
+
+.warehouse-transfer-modal-backdrop {
+  position: fixed;
+  inset: 0;
+
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+  box-sizing: border-box;
+
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.warehouse-transfer-goods-modal {
+  width: min(1080px, 94vw);
+  max-height: 86vh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 20px 45px rgba(15, 23, 42, 0.18),
+    0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+
+/* =========================================================
+   MODAL HEADER
+   ========================================================= */
+
+.warehouse-transfer-modal-header {
+  min-height: 66px;
+
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 14px 18px;
+
+  border-bottom: 1px solid #e2e8f0;
+
+  background: #ffffff;
+}
+
+.warehouse-transfer-modal-header > div {
+  min-width: 0;
+}
+
+.warehouse-transfer-modal-header h2 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.warehouse-transfer-modal-header p {
+  margin: 3px 0 0;
+
+  color: #64748b;
+
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.warehouse-transfer-modal-close {
+  width: 34px;
+  height: 34px;
+
+  flex: 0 0 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid transparent;
+  border-radius: 5px;
+
+  background: transparent;
+  color: #64748b;
+
+  cursor: pointer;
+}
+
+.warehouse-transfer-modal-close:hover {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #111827;
+}
+
+.warehouse-transfer-modal-close svg {
+  width: 21px;
+  height: 21px;
+}
+
+
+/* =========================================================
+   MODAL BODY
+   ========================================================= */
+
+.warehouse-transfer-modal-body {
+  min-height: 0;
+  flex: 1;
+
+  padding: 16px 18px;
+
+  overflow: auto;
+
+  background: #f8fafc;
+}
+
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table-wrap {
+  overflow: auto;
+
+  border: 1px solid #dbe3ef;
+  border-radius: 6px;
+
+  background: #ffffff;
+}
+
+
+/* =========================================================
+   MODAL GOODS TABLE
+   ========================================================= */
+
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table {
+  width: 100%;
+  min-width: 820px;
+
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  background: #ffffff;
+}
+
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table th {
+  height: 40px;
+
+  padding: 8px 10px;
+
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #dbe3ef;
+
+  background: #f8fafc;
+
+  color: #475569;
+
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+
+  text-align: left;
+  vertical-align: middle;
+}
+
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table td {
+  height: 42px;
+
+  padding: 8px 10px;
+
+  border-right: 1px solid #edf0f4;
+  border-bottom: 1px solid #edf0f4;
+
+  color: #1f2937;
+
+  font-size: 12px;
+  line-height: 1.4;
+
+  vertical-align: middle;
+}
+
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table th:last-child,
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table td:last-child {
+  border-right: none;
+}
+
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+
+/* STT */
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table th:nth-child(1),
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table td:nth-child(1) {
+  width: 44px;
+  text-align: center;
+}
+
+/* Mã hàng */
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table th:nth-child(2),
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table td:nth-child(2) {
+  width: 130px;
+}
+
+/* Tên hàng */
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table th:nth-child(3),
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table td:nth-child(3) {
+  width: 230px;
+}
+
+/* ĐVT */
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table th:nth-child(4),
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table td:nth-child(4) {
+  width: 100px;
+}
+
+/* SL điều chuyển */
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table th:nth-child(5),
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table td:nth-child(5) {
+  width: 140px;
+}
+
+/* SL theo ĐVT chính */
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table th:nth-child(6),
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table td:nth-child(6) {
+  width: 190px;
+}
+
+.warehouse-transfer-modal-body
+  .warehouse-transfer-goods-table .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.warehouse-transfer-modal-body
+  .warehouse-transfer-empty-table {
+  height: 90px;
+
+  color: #94a3b8;
+
+  text-align: center !important;
+}
+
+
+/* =========================================================
+   MODAL FOOTER
+   ========================================================= */
+
+.warehouse-transfer-modal-footer {
+  min-height: 58px;
+
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+
+  padding: 10px 18px;
+
+  border-top: 1px solid #e2e8f0;
+
+  background: #ffffff;
+}
+
+.warehouse-transfer-modal-footer
+  .warehouse-transfer-outline-btn {
+  min-width: 82px;
+  height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 16px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+
+  background: #ffffff;
+  color: #334155;
+
+  font-size: 12px;
+  font-weight: 500;
+
+  cursor: pointer;
+}
+
+.warehouse-transfer-modal-footer
+  .warehouse-transfer-outline-btn:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+
+/* =========================================================
+   MODAL RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .warehouse-transfer-modal-backdrop {
+    padding: 12px;
+  }
+
+  .warehouse-transfer-goods-modal {
+    width: 100%;
+    max-height: 92vh;
+  }
+
+  .warehouse-transfer-modal-header {
+    padding: 12px 14px;
+  }
+
+  .warehouse-transfer-modal-body {
+    padding: 12px;
+  }
+
+  .warehouse-transfer-modal-footer {
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .warehouse-transfer-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .warehouse-transfer-goods-modal {
+    width: 100%;
+    max-height: 92vh;
+
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
+
+    border-radius: 10px 10px 0 0;
+  }
+}
+
+/* =========================================================
+   TRANSFER - GOODS PANEL
+   ========================================================= */
+
+.warehouse-transfer-goods-card {
+  padding: 0;
+  overflow: hidden;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+
+  background: #ffffff;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.warehouse-transfer-goods-card
+  .warehouse-transfer-section-title-row {
+  min-height: 62px;
+
+  margin: 0;
+  padding: 12px 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  border-bottom: 1px solid #e8edf3;
+
+  background: #f8fbff;
+}
+
+.warehouse-transfer-goods-card
+  .warehouse-transfer-section-title-row h3 {
+  margin: 0;
+
+  color: #1d4ed8;
+
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.warehouse-transfer-goods-card
+  .warehouse-transfer-section-title-row p {
+  margin: 3px 0 0;
+
+  color: #64748b;
+
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.warehouse-transfer-goods-card
+  .warehouse-transfer-outline-btn {
+  height: 30px;
+
+  padding: 0 11px;
+
+  border: 1px solid #93c5fd;
+  border-radius: 5px;
+
+  background: #ffffff;
+  color: #2563eb;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.warehouse-transfer-goods-card
+  .warehouse-transfer-outline-btn:hover {
+  border-color: #60a5fa;
+  background: #eff6ff;
+}
+
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+
+.warehouse-transfer-goods-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  margin: 0;
+  padding: 12px 16px;
+
+  background: #ffffff;
+}
+
+.warehouse-transfer-mini-stat {
+  min-width: 0;
+  min-height: 58px;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 5px 14px;
+
+  border: 0;
+  border-right: 1px solid #e5e7eb;
+  border-radius: 0;
+
+  background: transparent;
+}
+
+.warehouse-transfer-mini-stat:first-child {
+  padding-left: 2px;
+}
+
+.warehouse-transfer-mini-stat:last-child {
+  border-right: 0;
+}
+
+.warehouse-transfer-mini-icon {
+  width: 30px;
+  height: 30px;
+
+  flex: 0 0 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 6px;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  font-size: 13px;
+}
+
+.warehouse-transfer-mini-stat > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.warehouse-transfer-mini-stat small {
+  color: #64748b;
+
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.warehouse-transfer-mini-stat strong {
+  margin: 0;
+
+  color: #0f172a;
+
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.warehouse-transfer-mini-stat div > span {
+  color: #94a3b8;
+
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.warehouse-transfer-goods-table-wrap {
+  margin: 0 16px 14px;
+
+  overflow-x: auto;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+
+  background: #ffffff;
+}
+
+.warehouse-transfer-goods-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  color: #334155;
+
+  font-size: 10px;
+}
+
+.warehouse-transfer-goods-table th {
+  height: 34px;
+
+  padding: 7px 9px;
+
+  border-right: 1px solid #e8edf3;
+  border-bottom: 1px solid #dfe5ec;
+
+  background: #f8fafc;
+
+  color: #475569;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-align: left;
+  vertical-align: middle;
+}
+
+.warehouse-transfer-goods-table td {
+  height: 35px;
+
+  padding: 7px 9px;
+
+  border-right: 1px solid #eef2f6;
+  border-bottom: 1px solid #eef2f6;
+
+  color: #334155;
+
+  font-size: 10px;
+  font-weight: 400;
+
+  vertical-align: middle;
+}
+
+.warehouse-transfer-goods-table th:last-child,
+.warehouse-transfer-goods-table td:last-child {
+  border-right: 0;
+}
+
+.warehouse-transfer-goods-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+
+/* STT */
+.warehouse-transfer-goods-table th:first-child,
+.warehouse-transfer-goods-table td:first-child {
+  width: 34px;
+  text-align: center;
+}
+
+
+/* MÃ HÀNG */
+.warehouse-transfer-goods-table td:nth-child(2) {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+
+/* TÊN HÀNG */
+.warehouse-transfer-goods-table td:nth-child(3) {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+
+/* SỐ LƯỢNG */
+.warehouse-transfer-goods-table .number {
+  text-align: right;
+  white-space: nowrap;
+
+  color: #1e40af;
+  font-weight: 600;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* =========================================================
+   TOTAL
+   ========================================================= */
+
+.warehouse-transfer-goods-table tfoot td {
+  height: 34px;
+
+  padding: 7px 9px;
+
+  border-top: 1px solid #dbe3ec;
+  border-bottom: 0;
+
+  background: #f8fafc;
+
+  color: #334155;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.warehouse-transfer-goods-table tfoot .number {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+
+/* EMPTY */
+.warehouse-transfer-empty-table {
+  height: 70px;
+
+  color: #94a3b8 !important;
+
+  text-align: center !important;
 }

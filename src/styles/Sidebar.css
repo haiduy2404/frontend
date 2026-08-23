@@ -1,415 +1,775 @@
-.sidebar {
-  width: 240px;
-  min-width: 240px;
-  flex: 0 0 240px;
-  flex-shrink: 0;
+/* =========================================================
+   SIDEBAR
+   Logo + menu + extra menu + collapse
+   ========================================================= */
 
-  height: calc(100vh - 56px);
-  background-color: #0f172a;
-  color: #cbd5e1;
+.sidebar,
+.sidebar * {
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   ROOT
+   ========================================================= */
+
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  flex: 0 0 220px;
+
+  height: 100vh;
+  min-height: 0;
 
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-
-  padding: 18px 14px;
-  box-sizing: border-box;
 
   position: relative;
-  z-index: 20;
+  z-index: 30;
 
-  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow: visible;
 
-  transition: width 0.25s ease, min-width 0.25s ease, flex-basis 0.25s ease;
+  background: #151e27;
+
+  color: #b8c2cc;
+
+  border-right: 1px solid #26313b;
+
+  box-shadow: none;
+
+  font-family:
+    Inter,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+
+  transition:
+    width 0.22s ease,
+    min-width 0.22s ease,
+    flex-basis 0.22s ease;
 }
 
-.sidebar-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow-y: auto;
-  max-height: calc(100% - 220px);
-}
 
-.sidebar-item {
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 6px;
+/* =========================================================
+   BRAND / LOGO
+   ========================================================= */
 
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.sidebar-brand {
+  width: 100%;
+  height: 72px;
+  min-height: 72px;
 
-  cursor: pointer;
+  flex: 0 0 72px;
 
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.2px;
+  padding: 8px 18px;
 
-  color: #cbd5e1;
-  text-decoration: none;
-
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.sidebar-item:hover {
-  background-color: #1e293b;
-  color: #ffffff;
-  text-decoration: none;
-}
-
-.sidebar-item.active,
-.sidebar-item.active-parent {
-  background-color: #2563eb;
-  color: #ffffff;
-}
-
-.sidebar-main-link {
   display: flex;
   align-items: center;
-  gap: 10px;
 
+  background: #151e27;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+
+.sidebar-brand-link {
   width: 100%;
   height: 100%;
 
-  color: inherit;
-  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.2px;
-}
-
-.sidebar-main-link:hover {
-  color: inherit;
   text-decoration: none;
 }
 
-.sidebar-main-link.active-parent {
-  color: #ffffff;
+
+.sidebar-brand-logo {
+  width: 155px;
+  height: 52px;
+
+  display: block;
+
+  object-fit: contain;
+  object-position: left center;
 }
 
-.sidebar-icon {
-  width: 18px;
-  min-width: 18px;
-  font-size: 16px;
-  line-height: 1;
+
+/* =========================================================
+   MAIN MENU
+   ========================================================= */
+
+.sidebar-menu {
+  flex: 1 1 0;
+
+  width: 100%;
+
+  min-height: 0;
+
+  padding: 14px 10px 10px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+
+/* =========================================================
+   ITEM
+   ========================================================= */
+
+.sidebar-item {
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+
+  margin: 0;
+
+  padding: 0 11px;
 
   display: flex;
   align-items: center;
-  justify-content: center;
+
+  gap: 10px;
+
+  position: relative;
+
+  border-radius: 6px;
+
+  color: #cbd5e1;
+
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
+
+.sidebar-item:hover {
+  background: #1d2934;
+  color: #f1f5f9;
+}
+
+
+/*
+ * Parent đang mở.
+ * Chỉ sáng nhẹ, không tô xanh cả parent.
+ */
+.sidebar-item.active-parent {
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   MAIN NAV LINK
+   ========================================================= */
+
+.sidebar-main-link {
+  width: calc(100% + 22px);
+  height: 40px;
+
+  margin: 0 -11px;
+  padding: 0 11px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  border-radius: 6px;
+
+  color: inherit;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-decoration: none;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+
+.sidebar-main-link:hover {
+  background: #1d2934;
+
+  color: #f1f5f9;
+
+  text-decoration: none;
+}
+
+
+/*
+ * Route chính đang active
+ */
+.sidebar-main-link.active-parent {
+  background: #14634e;
+  color: #f8fafc;
+  box-shadow: none;
+}
+
+
+
+/* =========================================================
+   ICON / TEXT / ARROW
+   ========================================================= */
+
+.sidebar-icon {
+  width: 20px;
+  min-width: 20px;
+
+  flex: 0 0 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 15px;
+  line-height: 1;
+}
+
+
 .sidebar-text {
-  flex: 1;
+  flex: 1 1 auto;
+
   min-width: 0;
 
   overflow: hidden;
-  white-space: nowrap;
+
+  color: inherit;
+
+  font-size: 13px;
+  font-weight: 600;
+
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+
 .sidebar-arrow {
+  flex: 0 0 auto;
+
   margin-left: auto;
-  font-size: 16px;
+
+  color: #94a3b8;
+
+  font-size: 14px;
   line-height: 1;
 }
 
+
+/* =========================================================
+   SUBMENU
+   ========================================================= */
+
 .sidebar-submenu {
+  margin: 2px 0 8px 20px;
+
+  padding-left: 10px;
+
   display: flex;
   flex-direction: column;
+
   gap: 2px;
 
-  margin-left: 28px;
-  margin-top: 4px;
-  margin-bottom: 6px;
+  border-left: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-.sidebar-subitem {
-  display: block;
-
-  padding: 8px 12px;
-  border-radius: 5px;
-
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: 0.1px;
-
-  color: #cbd5e1;
-  cursor: pointer;
-  text-decoration: none;
-
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.sidebar-subitem:hover {
-  background-color: #1e293b;
-  color: #ffffff;
-  text-decoration: none;
-}
-
-.sidebar-subitem.active {
-  background-color: #2563eb;
-  color: #ffffff;
-  font-weight: 600;
-}
 
 .activity-submenu {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
-/* EXTRA MENU: Báo cáo + Danh mục */
-.sidebar-extra-menu {
-  position: absolute;
 
-  left: 14px;
-  right: 14px;
-  bottom: 92px;
+.sidebar-subitem {
+  width: 100%;
+  min-height: 34px;
+
+  padding: 0 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+
+  border-radius: 5px;
+
+  color: #aebdce;
+
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 500;
+
+  text-decoration: none;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+
+.sidebar-subitem:hover {
+  background: rgba(255, 255, 255, 0.05);
+
+  color: #ffffff;
+
+  text-decoration: none;
+}
+
+
+.sidebar-subitem.active {
+  background: #0d7655;
+  color: #ffffff;
+  font-weight: 650;
+  box-shadow: none;
+}
+
+
+.sidebar-subitem-header {
+  width: 100%;
+}
+
+
+.sidebar-submenu-group {
+  margin-left: 8px;
 
   display: flex;
   flex-direction: column;
-  gap: 4px;
 
-  padding-top: 12px;
-  border-top: 1px solid #1e293b;
+  gap: 2px;
 }
 
-/* BOTTOM */
+
+/* =========================================================
+   EXTRA MENU
+   Công cụ / Báo cáo / Danh mục
+   ========================================================= */
+
+.sidebar-extra-menu {
+  width: 100%;
+
+  flex: 0 0 auto;
+
+  padding: 10px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+
+/* =========================================================
+   BOTTOM
+   ========================================================= */
+
 .sidebar-bottom {
-  position: absolute;
+  width: 100%;
 
-  left: 14px;
-  right: 14px;
-  bottom: 18px;
+  flex: 0 0 auto;
 
-  padding-top: 12px;
-  border-top: 1px solid #1e293b;
+  padding: 8px 10px 12px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+  background: rgba(0, 0, 0, 0.08);
 }
+
 
 .collapse-btn {
   width: 100%;
-  height: 38px;
+  height: 36px;
 
-  border: none;
+  padding: 0 10px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 6px;
-  background-color: #1e293b;
+
+  background: rgba(255, 255, 255, 0.045);
+
   color: #cbd5e1;
 
-  font-size: 13px;
+  font: inherit;
+  font-size: 12px;
   font-weight: 600;
+
   cursor: pointer;
 
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
+
 
 .collapse-btn:hover {
-  background-color: #334155;
-  color: #ffffff;
-}
+  background: rgba(255, 255, 255, 0.085);
 
-/* CATEGORY MEGA MENU */
-.sidebar-category-wrap {
-  position: relative;
-}
-
-.category-mega-menu {
-  position: absolute;
-  left: calc(100% + 16px);
-  bottom: 0;
-
-  width: 500px;
-  min-height: auto;
-
-  background: #111827;
-  border-radius: 12px;
-
-  padding: 24px 28px;
-  box-sizing: border-box;
-
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 36px;
-
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
-  z-index: 999;
-}
-.category-mega-menu::before {
-  content: "";
-  position: absolute;
-  left: -18px;
-  top: 0;
-
-  width: 18px;
-  height: 100%;
-}
-
-.category-column {
-  display: flex;
-  flex-direction: column;
-  padding-top: 0;
-}
-
-.category-title {
-  margin-bottom: 22px;
-
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-
-  color: #cbd5e1;
-}
-
-.category-title-second {
-  margin-top: 28px;
-}
-
-.category-link {
-  padding: 8px 0;
+  border-color: rgba(255, 255, 255, 0.11);
 
   color: #ffffff;
-  text-decoration: none;
-
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: 0.1px;
-
-  transition: color 0.15s ease, transform 0.15s ease;
 }
 
-.category-link:hover {
-  color: #93c5fd;
-  transform: translateX(4px);
-}
 
-.category-link.active {
-  color: #60a5fa;
-}
+/* =========================================================
+   CATEGORY / REPORT WRAPPER
+   ========================================================= */
 
-/* REPORT MEGA MENU */
+.sidebar-category-wrap,
 .sidebar-report-wrap {
   position: relative;
 }
 
-.report-mega-menu {
+
+/* =========================================================
+   CATEGORY MEGA MENU
+   ========================================================= */
+
+.category-mega-menu {
   position: absolute;
-  left: calc(100% + 16px);
+
+  left: calc(100% + 18px);
   bottom: 0;
 
-  width: 320px;
-  min-height: 230px;
+  width: 480px;
+
+  padding: 22px 26px;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  gap: 30px;
 
   background: #111827;
-  border-radius: 12px;
 
-  padding: 30px 34px;
-  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
 
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
-  z-index: 999;
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.28);
+
+  z-index: 1000;
 }
 
-.report-mega-menu::before {
+
+.category-mega-menu::before {
   content: "";
+
   position: absolute;
+
   left: -18px;
   top: 0;
 
   width: 18px;
   height: 100%;
 }
+
+
+.category-column {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+
+.category-title {
+  margin-bottom: 14px;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 700;
+
+  letter-spacing: 0.7px;
+
+  text-transform: uppercase;
+}
+
+
+.category-title-second {
+  margin-top: 24px;
+}
+
+
+.category-link {
+  padding: 7px 0;
+
+  color: #e2e8f0;
+
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 600;
+
+  text-decoration: none;
+
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+
+.category-link:hover {
+  color: #34d399;
+
+  transform: translateX(3px);
+}
+
+
+.category-link.active {
+  color: #34d399;
+}
+
+
+/* =========================================================
+   REPORT / TOOLS MEGA MENU
+   ========================================================= */
+
+.report-mega-menu {
+  position: absolute;
+
+  left: calc(100% + 18px);
+  bottom: 0;
+
+  width: 300px;
+  min-height: 180px;
+
+  padding: 22px 26px;
+
+  background: #111827;
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.28);
+
+  z-index: 1000;
+}
+
+
+.report-mega-menu::before {
+  content: "";
+
+  position: absolute;
+
+  left: -18px;
+  top: 0;
+
+  width: 18px;
+  height: 100%;
+}
+
 
 .report-column {
   display: flex;
   flex-direction: column;
 }
 
+
 .report-title {
-  margin-bottom: 22px;
+  margin-bottom: 14px;
 
-  font-size: 13px;
+  color: #94a3b8;
+
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
 
-  color: #cbd5e1;
+  letter-spacing: 0.7px;
+
+  text-transform: uppercase;
 }
+
 
 .report-link {
-  padding: 8px 0;
+  padding: 7px 0;
 
-  color: #ffffff;
+  color: #e2e8f0;
+
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 600;
+
   text-decoration: none;
 
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: 0.1px;
-
-  transition: color 0.15s ease, transform 0.15s ease;
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
 }
+
 
 .report-link:hover {
-  color: #93c5fd;
-  transform: translateX(4px);
+  color: #34d399;
+
+  transform: translateX(3px);
 }
+
 
 .report-link.active {
-  color: #60a5fa;
+  color: #34d399;
 }
 
-/* COLLAPSED */
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.sidebar-menu::-webkit-scrollbar {
+  width: 5px;
+}
+
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.22);
+
+  border-radius: 999px;
+}
+
+
+.sidebar-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+/* =========================================================
+   COLLAPSED
+   ========================================================= */
+
 .sidebar.collapsed {
-  width: 72px;
-  min-width: 72px;
-  flex: 0 0 72px;
-
-  padding: 18px 10px;
+  width: 64px;
+  min-width: 64px;
+  flex: 0 0 64px;
 }
+
+
+/* ---------- Brand ---------- */
+
+.sidebar.collapsed .sidebar-brand {
+  height: 72px;
+  min-height: 72px;
+
+  padding: 8px 6px;
+}
+
+
+.sidebar.collapsed .sidebar-brand-link {
+  justify-content: center;
+}
+
+
+.sidebar.collapsed .sidebar-brand-logo {
+  width: 50px;
+  height: 50px;
+
+  object-fit: contain;
+  object-position: center;
+}
+
+
+/* ---------- Main menu ---------- */
 
 .sidebar.collapsed .sidebar-menu {
-  max-height: calc(100% - 82px);
+  padding: 14px 8px 10px;
 }
+
 
 .sidebar.collapsed .sidebar-item {
-  justify-content: center;
   padding: 0;
+
+  justify-content: center;
 }
 
+
 .sidebar.collapsed .sidebar-main-link {
+  width: 40px;
+  height: 40px;
+
+  margin: 0 auto;
+  padding: 0;
+
   justify-content: center;
+
   gap: 0;
 }
 
+
 .sidebar.collapsed .sidebar-icon {
-  width: auto;
-  min-width: auto;
-  font-size: 17px;
+  width: 20px;
+  min-width: 20px;
+
+  flex: 0 0 20px;
+
+  font-size: 16px;
 }
+
 
 .sidebar.collapsed .sidebar-text,
 .sidebar.collapsed .sidebar-arrow,
-.sidebar.collapsed .sidebar-submenu {
+.sidebar.collapsed .sidebar-submenu,
+.sidebar.collapsed .sidebar-submenu-group {
   display: none;
 }
 
+
+/* ---------- Extra ---------- */
+
 .sidebar.collapsed .sidebar-extra-menu {
-  left: 10px;
-  right: 10px;
+  padding: 10px 8px;
 }
+
+
+.sidebar.collapsed .sidebar-extra-menu .sidebar-item {
+  width: 40px;
+
+  margin-inline: auto;
+}
+
+
+/* ---------- Bottom ---------- */
 
 .sidebar.collapsed .sidebar-bottom {
-  left: 10px;
-  right: 10px;
+  padding: 8px 8px 12px;
 }
 
+
 .sidebar.collapsed .collapse-btn {
-  font-size: 20px;
+  width: 40px;
+
+  margin: 0 auto;
   padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 17px;
+}
+
+
+/* Không hiện mega menu khi sidebar đang thu gọn */
+.sidebar.collapsed .category-mega-menu,
+.sidebar.collapsed .report-mega-menu {
+  display: none;
 }

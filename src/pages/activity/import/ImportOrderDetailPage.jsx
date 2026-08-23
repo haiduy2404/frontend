@@ -1,2899 +1,844 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+
 import { useAuth } from "../../../contexts/AuthContext";
+
 import "../../../styles/ImportOrderDetailPage.css";
-import { getGoods } from "../../../services/goodsService";
-import { getCompanies, createCompanyBankAccount } from "../../../services/companyService";
-import { getWarehouses } from "../../../services/warehouseService";
+
 import {
-  createWarehouseReceipt,
-  updateWarehouseReceipt,
-  getWarehouseReceiptByCode,
-} from "../../../services/warehouseReceiptService";
-import { calculateImportOrderTotals } from "../../../utils/importOrderTotals";
-import { lookupCompanyByTaxCode } from "../../../services/externalService";
+  createEmptyImportReceiptHeader,
+} from "../../../utils/importReceiptMapper";
+
+import {
+  parseNumber,
+} from "../../../utils/importReceiptNumber";
+
+import useImportGoodsDropdown from "../../../hooks/order-detail/useImportGoodsDropdown.js";
+import useImportWarehouses from "../../../hooks/order-detail/useImportWarehouses.js";
+import useImportReceiptController from "../../../hooks/order-detail/useImportReceiptController.js";
+import useImportReceiptVat from "../../../hooks/order-detail/useImportReceiptVat.js";
+import useImportSupplierBank from "../../../hooks/order-detail/useImportSupplierBank.js";
+import useImportReceiptItems from "../../../hooks/order-detail/useImportReceiptItems.js";
+
 import GoodsFormModal from "../../../components/GoodsFormModal";
-import {
-  RiAddLine,
-  RiDeleteBin6Line,
-  RiEdit2Line,
-  RiCheckboxLine,
-  RiTruckLine,
-  RiKeyboardBoxLine,
-  RiSettings3Line,
-  RiQuestionLine,
-  RiCloseLine,
-  RiSearchLine,
-  RiCalendarLine,
-  RiLoader4Line,
-  RiPrinterLine,
-} from "react-icons/ri";
-import { getUserNames } from "../../../services/authService";
 
-const EMPTY_RECEIPT_SIGNERS = {
-  cungTieu: "",
-  thuKho: "",
-  vatLieuVien: "",
-  phoPhongKHVT: "",
-  truongPhongKHVT: "",
-  giamDoc: "",
-};
+import ImportReceiptPageHeader from "../../../components/import/order-detail/ImportReceiptPageHeader.jsx";
+import ImportReceiptHeader from "../../../components/import/order-detail/ImportReceiptHeader.jsx";
+import ImportReceiptItemsTable from "../../../components/import/order-detail/ImportReceiptItemsTable.jsx";
+import ImportReceiptMoneySummary from "../../../components/import/order-detail/ImportReceiptMoneySummary.jsx";
+import ImportReceiptTableFooter from "../../../components/import/order-detail/ImportReceiptTableFooter.jsx";
+import ImportReceiptFooter from "../../../components/import/order-detail/ImportReceiptFooter.jsx";
 
-const IMPORT_RECEIPT_SIGNERS_STORAGE_KEY =
-  "import-receipt-signers-session";
-
-const getStoredImportReceiptSelection = () => {
-  try {
-    const rawValue = sessionStorage.getItem(
-      IMPORT_RECEIPT_SIGNERS_STORAGE_KEY
-    );
-
-    if (!rawValue) {
-      return {
-        signers: { ...EMPTY_RECEIPT_SIGNERS },
-        attachedDocumentNumber: "",
-      };
-    }
-
-    const parsedValue = JSON.parse(rawValue);
-
-    return {
-      signers: {
-        ...EMPTY_RECEIPT_SIGNERS,
-        ...(parsedValue?.signers || {}),
-      },
-      attachedDocumentNumber: String(
-        parsedValue?.attachedDocumentNumber || ""
-      ),
-    };
-  } catch (error) {
-    console.error(
-      "READ IMPORT RECEIPT SIGNERS STORAGE ERROR:",
-      error
-    );
-
-    return {
-      signers: { ...EMPTY_RECEIPT_SIGNERS },
-      attachedDocumentNumber: "",
-    };
-  }
-};
-
-const normalizePosition = (value) =>
-  String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-
-const RECEIPT_SIGNER_FIELDS = [
-  {
-    key: "cungTieu",
-    label: "PT cung tiêu",
-    match: (position) => position.includes("cung tieu"),
-  },
-  {
-    key: "thuKho",
-    label: "Thủ kho",
-    required: true,
-    match: (position) => position.startsWith("thu kho"),
-  },
-  {
-    key: "vatLieuVien",
-    label: "Vật liệu viên",
-    match: (position) => position.includes("vat lieu vien"),
-  },
-  {
-    key: "phoPhongKHVT",
-    label: "Phó phòng KHVT",
-    match: (position) => position.includes("pho phong khvt"),
-  },
-  {
-    key: "truongPhongKHVT",
-    label: "Trưởng phòng KHVT",
-    match: (position) =>
-      position === "tp khvt" ||
-      position.includes("truong phong khvt"),
-  },
-  {
-    key: "giamDoc",
-    label: "Giám đốc",
-    match: (position) => position === "giam doc",
-  },
-];
 
 function ImportOrderDetailPage() {
-    const navigate = useNavigate();
-    const { id } = useParams();
-    const { canDo } = useAuth();
-    const canSave =
-      (id && id !== "new")
-        ? canDo("update_warehouse_receipt")
-        : canDo("create_warehouse_receipt");
+  const navigate = useNavigate();
+  const { id } = useParams();
 
-    const canComplete = canDo("complete_warehouse_receipt");
+  const { canDo } = useAuth();
 
-    const isCreateMode = !id;
-    const [companyLoading, setCompanyLoading] = useState(false);
-    const [bankAccountOptions, setBankAccountOptions] = useState([]);
-    const [showBankDropdown, setShowBankDropdown] = useState(false);
-    const [warehouseList, setWarehouseList] = useState([]);
-    const [warehouseLoading, setWarehouseLoading] = useState(false);
-    const [goodsList, setGoodsList] = useState([]);
-    const [goodsPage, setGoodsPage] = useState(1);
-    const [goodsTotalPages, setGoodsTotalPages] = useState(1);
-    const [goodsLoading, setGoodsLoading] = useState(false);
-    const [showGoodsDropdown, setShowGoodsDropdown] = useState(false);
-    const [activeGoodsRowId, setActiveGoodsRowId] = useState(null);
-    const [goodsKeyword, setGoodsKeyword] = useState("");
-    const [detailLoading, setDetailLoading] = useState(false);
-    const [receiptId, setReceiptId] = useState(null);
-    const [searchParams] = useSearchParams();
-    const isPrintMode = searchParams.get("mode") === "print";
-    const isEditReceivedMode = searchParams.get("mode") === "edit-items";
-    const isLockedWhenReceived = isPrintMode || isEditReceivedMode;
-    const isLockedOnlyPrint = isPrintMode;
-    const [showPrintReasonModal, setShowPrintReasonModal] = useState(false);
-    const [printReason, setPrintReason] = useState("");
-    const [transferBankId, setTransferBankId] = useState("");
-    const [transferBankName, setTransferBankName] = useState("");
-    const [transferBankAccountNumber, setTransferBankAccountNumber] = useState("");
-    const [showReceiptPrintModal, setShowReceiptPrintModal] = useState(false);
-    const [receiptUsers, setReceiptUsers] = useState([]);
-    const [receiptUsersLoading, setReceiptUsersLoading] =
-      useState(false);
-    const [receiptSigners, setReceiptSigners] = useState(
-      () => getStoredImportReceiptSelection().signers
-    );
+  const [searchParams] =
+    useSearchParams();
 
-    const [
-      receiptAttachedDocumentNumber,
-      setReceiptAttachedDocumentNumber,
-    ] = useState(
-      () =>
-        getStoredImportReceiptSelection()
-          .attachedDocumentNumber
-    );
+  const [
+    showAddGoodsModal,
+    setShowAddGoodsModal,
+  ] = useState(false);
 
-    useEffect(() => {
-  try {
-    sessionStorage.setItem(
-      IMPORT_RECEIPT_SIGNERS_STORAGE_KEY,
-      JSON.stringify({
-        signers: receiptSigners,
-        attachedDocumentNumber:
-          receiptAttachedDocumentNumber,
-      })
-    );
-  } catch (error) {
-    console.error(
-      "SAVE IMPORT RECEIPT SIGNERS STORAGE ERROR:",
-      error
-    );
-  }
-}, [
-  receiptSigners,
-  receiptAttachedDocumentNumber,
-]);
-    const [showAddGoodsModal, setShowAddGoodsModal] = useState(false);
-    const [deletedItems, setDeletedItems] = useState([]);
-    const [companyId, setCompanyId] = useState(null);
-    const [debouncedGoodsKeyword, setDebouncedGoodsKeyword] = useState("");
-    const VAT_RATES = ["0", "5", "8", "10"];
+  const enterNavigationRef =
+    useRef(null);
 
-    const [manualVatSummary, setManualVatSummary] = useState({
-      0: "",
-      5: "",
-      8: "",
-      10: "",
-    });
-    const goodsSearchRequestIdRef = useRef(0);
-    const goodsPendingRequestsRef = useRef(0);
-    const debouncedGoodsKeywordRef = useRef("");
-    const enterNavigationRef = useRef(null);
 
-    const handleEnterMoveNext = (event) => {
-      if (
-        event.key !== "Enter" ||
-        event.nativeEvent?.isComposing ||
-        event.altKey ||
-        event.ctrlKey ||
-        event.metaKey
-      ) {
-        return;
-      }
+  /* =========================================================
+     MODE / PERMISSION
+     ========================================================= */
 
-      event.preventDefault();
+  const isCreateMode =
+    !id || id === "new";
 
-      const fields = Array.from(
-        enterNavigationRef.current?.querySelectorAll(
-          '[data-enter-next="true"]:not(:disabled):not([readonly]):not([type="hidden"])'
-        ) || []
-      );
+  const isPrintMode =
+    searchParams.get("mode") ===
+    "print";
 
-      const currentIndex = fields.indexOf(event.currentTarget);
-      if (currentIndex === -1) return;
+  const isEditReceivedMode =
+    searchParams.get("mode") ===
+    "edit-items";
 
-      const direction = event.shiftKey ? -1 : 1;
-      const nextField = fields[currentIndex + direction];
+  const isLockedWhenReceived =
+    isPrintMode ||
+    isEditReceivedMode;
 
-      event.currentTarget.blur();
+  const isLockedOnlyPrint =
+    isPrintMode;
 
-      if (!nextField) return;
 
-      requestAnimationFrame(() => {
-        nextField.focus();
-
-        if (
-          nextField.tagName === "INPUT" &&
-          !["checkbox", "radio", "file"].includes(nextField.type) &&
-          typeof nextField.select === "function"
-        ) {
-          nextField.select();
-        }
-      });
-    };
-    const canPrintTransfer = canDo("print_transfer_request");
-    const canPrintReceipt = canDo("print_warehouse_receipt");
-    const handlePrint = () => {
-      window.print();
-    };
-
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        setDebouncedGoodsKeyword(goodsKeyword);
-      }, 300);
-
-      return () => clearTimeout(timer);
-    }, [goodsKeyword]);
-
-    useEffect(() => {
-      debouncedGoodsKeywordRef.current = debouncedGoodsKeyword;
-    }, [debouncedGoodsKeyword]);
-    
-
-    const formatISOToViDate = (value) => {
-      if (!value) return "";
-
-      return String(value).split("T")[0];
-    };
-
-
-  const getCurrentTerms = () => {
-    const today = new Date();
-
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-
-    return `${month}/${year}`;
-  };
-
-  const getTodayViDate = () => {
-    const today = new Date();
-
-    const day = String(today.getDate()).padStart(2, "0");
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const year = today.getFullYear();
-
-    return `${day}/${month}/${year}`;
-  };
-
-  const formatPickerDateToViDate = (value) => {
-    if (!value) return "";
-
-    const [year, month, day] = value.split("-");
-
-    if (!year || !month || !day) return value;
-
-    return `${day}/${month}/${year}`;
-  };
-
-  const convertViDateToPickerDate = (value) => {
-    if (!value) return "";
-
-    const text = String(value).trim();
-    if (!text) return "";
-
-    if (text.includes("/")) {
-      const [day, month, year] = text.split("/");
-      if (!day || !month || !year) return "";
-      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-    }
-
-    return text.split("T")[0];
-  };
-
-  const openDatePicker = (event) => {
-    const picker = event.currentTarget.querySelector(".calendar-native-input");
-    if (!picker || picker.disabled) return;
-
-    if (typeof picker.showPicker === "function") {
-      picker.showPicker();
-      return;
-    }
-
-    picker.click();
-  };
-
-      const handleLoadCompanyByTaxCode = async () => {
-      const taxCode = headerData.tax_code.trim();
-
-      if (!taxCode) {
-        alert("Vui lòng nhập MST trước khi load công ty");
-        return;
-      }
-
-      try {
-        setCompanyLoading(true);
-
-        const internalCompanyResponse = await getCompanies({
-          search: taxCode,
-          page: 1,
-          page_size: 10,
-        });
-
-      const internalPayload =
-        internalCompanyResponse?.data || internalCompanyResponse;
-
-      const internalResults = Array.isArray(internalPayload)
-        ? internalPayload
-        : Array.isArray(internalPayload?.data?.results)
-        ? internalPayload.data.results
-        : Array.isArray(internalPayload?.results)
-        ? internalPayload.results
-        : Array.isArray(internalPayload?.data)
-        ? internalPayload.data
-        : [];
-
-        const duplicatedCompany = internalResults.find((item) => {
-        return String(item.tax_code || item.tax_office_code || "").trim() === taxCode;
-        });
-
-          if (duplicatedCompany) {
-            const duplicatedBankAccounts =
-              Array.isArray(duplicatedCompany.list_of_bank) &&
-              duplicatedCompany.list_of_bank.length > 0
-                ? duplicatedCompany.list_of_bank.map((bank) => ({
-                    id: bank.id || "",
-
-                    // Load MST dùng field này
-                    bank_account_name: bank.bank_name || "",
-                    bank_account_number: bank.account_number || "",
-                  }))
-                : Array.isArray(duplicatedCompany.bank_accounts) &&
-                  duplicatedCompany.bank_accounts.length > 0
-                ? duplicatedCompany.bank_accounts.map((bank) => ({
-                    id: bank.id || bank.bank_account_id || "",
-
-                    // Nếu endpoint này trả kiểu mới thì vẫn ăn
-                    bank_account_name: bank.bank_account_name || "",
-                    bank_account_number: bank.bank_account_number || "",
-                  }))
-                : duplicatedCompany.bank_name || duplicatedCompany.account_number
-                ? [
-                    {
-                      id: duplicatedCompany.bank_account_id || "",
-                      bank_account_name: duplicatedCompany.bank_name || "",
-                      bank_account_number: duplicatedCompany.account_number || "",
-                    },
-                  ]
-                : [];
-
-            setBankAccountOptions(duplicatedBankAccounts);
-            setShowBankDropdown(duplicatedBankAccounts.length > 0);
-
-            setHeaderData((prev) => ({
-              ...prev,
-              supplier_code:
-                duplicatedCompany.supplier_code ||
-                duplicatedCompany.code ||
-                prev.supplier_code,
-
-              supplier_name:
-                duplicatedCompany.supplier_name ||
-                duplicatedCompany.name ||
-                prev.supplier_name,
-
-              tax_code:
-                duplicatedCompany.tax_code ||
-                duplicatedCompany.tax_office_code ||
-                prev.tax_code,
-
-              address:
-                duplicatedCompany.address ||
-                duplicatedCompany.address_tax_office ||
-                prev.address,
-                  bank_account_id: duplicatedBankAccounts[0]?.id || "",
-                  bank_account_name: duplicatedBankAccounts[0]?.bank_account_name || "",
-                  bank_account_number: duplicatedBankAccounts[0]?.bank_account_number || "",
-            }));
-
-            return;
-          }
- 
-
-        setBankAccountOptions([]);
-        setShowBankDropdown(false);
-
-        const result = await lookupCompanyByTaxCode(taxCode);
-        const company = result?.data || result;
-
-        setHeaderData((prev) => ({
-          ...prev,
-          supplier_code:
-            company.supplier_code ||
-            company.code ||
-            company.customer_code ||
-            company.tax_code ||
-            prev.supplier_code,
-
-          supplier_name:
-            company.supplier_name ||
-            company.name ||
-            company.company_name ||
-            company.title ||
-            prev.supplier_name,
-
-          tax_code:
-            company.tax_code ||
-            company.taxCode ||
-            company.tax_office_code ||
-            prev.tax_code,
-
-          address:
-            company.address ||
-            company.full_address ||
-            company.address_tax_office ||
-            prev.address,
-
-            bank_account_id: "",
-            bank_account_name: "",
-            bank_account_number: "",
-        }));
-      } catch (error) {
-        console.error("LOAD COMPANY ERROR:", error.response?.data || error);
-        setBankAccountOptions([]);
-        setShowBankDropdown(false);
-        alert("Không tìm thấy công ty theo MST. Bạn có thể nhập tay.");
-      } finally {
-        setCompanyLoading(false);
-      }
-    };
-
-        const fetchWarehouseList = async () => {
-        try {
-        setWarehouseLoading(true);
-
-        const data = await getWarehouses({
-          search: "",
-          page: 1,
-          page_size: 100,
-        });
-
-        const results = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.data?.results)
-          ? data.data.results
-          : Array.isArray(data?.results)
-          ? data.results
-          : Array.isArray(data?.data)
-          ? data.data
-          : [];
-
-        setWarehouseList(results);
-      } catch (error) {
-        console.error("LOAD WAREHOUSE LIST ERROR:", error.response?.data || error);
-        alert("Không tải được danh sách kho");
-        setWarehouseList([]);
-      } finally {
-        setWarehouseLoading(false);
-      }
-    };
-
-    useEffect(() => {
-        fetchWarehouseList();
-    }, []);
-
-    const [items, setItems] = useState([
-        {
-          id: 1,
-          inventory_id: "",
-          goods_id: "",
-          goods_code: "",
-          goods_name: "",
-          unit_id: "",
-          unit: "",
-          unit_options: [],
-          conversion_ratio: "",
-          requested_quantity: "1,00000",
-          actual_quantity: "0,00000",
-          marked_old: false,
-          unit_price: "0,00",
-          amount: "0,00",
-          vat: "0",
-          is_delete: false,
-        },
-    ]);
-
-    const [headerData, setHeaderData] = useState({
-      terms: getCurrentTerms(),
-      inward_date: getTodayViDate(),
-      warehouse_id: "",
-      delivery_person: "",
-      invoice_symbol: "",
-      invoice_no: "",
-      invoice_date: "",
-      supplier_code: "",
-      supplier_name: "",
-      tax_code: "",
-      address: "",
-      description: "",
-      bank_account_id: "",
-      bank_account_name: "",
-      bank_account_number: "",
-    });
-
-    const handleHeaderChange = (e) => {
-      const { name, value } = e.target;
-
-      setHeaderData((prev) => ({
-        ...prev,
-        [name]: value,
-        ...(name === "bank_account_name" || name === "bank_account_number"
-          ? { bank_account_id: "" }
-          : {}),
-      }));
-
-      if (name === "tax_code") {
-        setBankAccountOptions([]);
-        setShowBankDropdown(false);
-      }
-    };
-
-    const handleSelectBankAccount = (bank) => {
-      setHeaderData((prev) => ({
-        ...prev,
-        bank_account_id: bank.id || "",
-        bank_account_name: bank.bank_account_name || "",
-        bank_account_number: bank.bank_account_number || "",
-      }));
-
-      setShowBankDropdown(false);
-    };
-
-    const createEmptyRow = () => ({
-      id: Date.now(),
-      goods_id: "",
-      goods_code: "",
-      goods_name: "",
-      unit: "",
-      requested_quantity: "1,00000",
-      actual_quantity: "0,00000",
-      marked_old: false,
-      unit_price: "0,00",
-      amount: "0",
-      unit_id: "",
-      unit_options: [],
-      vat: "0",
-      is_delete: false,
-      inventory_id: "",
-      conversion_ratio: "",
-    });
-
-    const handleUnitPriceEnter = (event, rowId) => {
-      if (
-        event.key !== "Enter" ||
-        event.nativeEvent?.isComposing ||
-        event.ctrlKey ||
-        event.altKey ||
-        event.metaKey
-      ) {
-        return;
-      }
-
-      // Shift + Enter vẫn quay lại ô trước
-      if (event.shiftKey) {
-        handleEnterMoveNext(event);
-        return;
-      }
-
-      event.preventDefault();
-
-      // Blur trước để onBlur của đơn giá chạy và format số
-      event.currentTarget.blur();
-
-      const newRow = createEmptyRow();
-
-      setItems((prev) => {
-        const currentIndex = prev.findIndex(
-          (item) => String(item.id) === String(rowId)
+  const canSave =
+    id && id !== "new"
+      ? canDo(
+          "update_warehouse_receipt"
+        )
+      : canDo(
+          "create_warehouse_receipt"
         );
 
-        if (currentIndex === -1) {
-          return [...prev, newRow];
-        }
-
-        return [
-          ...prev.slice(0, currentIndex + 1),
-          newRow,
-          ...prev.slice(currentIndex + 1),
-        ];
-      });
-
-      setShowGoodsDropdown(false);
-      setActiveGoodsRowId(null);
-      setGoodsKeyword("");
-
-      // Chờ React render dòng mới rồi focus vào Mã hàng
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const goodsCodeInputs = Array.from(
-            enterNavigationRef.current?.querySelectorAll(
-              "[data-goods-code-row-id]"
-            ) || []
-          );
-
-          const newGoodsCodeInput = goodsCodeInputs.find(
-            (input) =>
-              input.dataset.goodsCodeRowId === String(newRow.id)
-          );
-
-          if (newGoodsCodeInput) {
-            newGoodsCodeInput.focus();
-            newGoodsCodeInput.select();
-          }
-        });
-      });
-    };
-
-    const handleAddRow = (rowId) => {
-      setItems((prev) => {
-        const newRow = createEmptyRow();
-
-        if (!rowId) {
-          return [...prev, newRow];
-        }
-
-        const index = prev.findIndex((item) => item.id === rowId);
-
-        if (index === -1) {
-          return [...prev, newRow];
-        }
-
-        return [
-          ...prev.slice(0, index + 1),
-          newRow,
-          ...prev.slice(index + 1),
-        ];
-      });
-    };
-
-    const handleDeleteAllRows = () => {
-      setDeletedItems((old) => [
-        ...old,
-        ...items
-          .filter((item) => item.inventory_id)
-          .map((item) => ({
-            ...item,
-            is_delete: true,
-          })),
-      ]);
-
-      setItems([]);
-    };
-
-    const handleDeleteRow = (rowId) => {
-      setItems((prev) => {
-        const deletedItem = prev.find((item) => item.id === rowId);
-
-        if (deletedItem?.inventory_id) {
-          setDeletedItems((old) => {
-            const existed = old.some(
-              (item) => String(item.inventory_id) === String(deletedItem.inventory_id)
-            );
-
-            if (existed) return old;
-
-            return [
-              ...old,
-              {
-                ...deletedItem,
-                is_delete: true,
-              },
-            ];
-          });
-        }
-
-        return prev.filter((item) => item.id !== rowId);
-      });
-    };
-    const fetchGoodsDropdown = useCallback(async ({
-        keyword = "",
-        pageNumber = 1,
-        append = false,
-    } = {}) => {
-        const keywordSnapshot = keyword;
-        const requestId = append ? null : ++goodsSearchRequestIdRef.current;
-
-        goodsPendingRequestsRef.current += 1;
-        setGoodsLoading(true);
-
-        try {
-            const data = await getGoods({
-              search: keywordSnapshot,
-              page: pageNumber,
-              page_size: 30,
-            });
-
-            if (!append && requestId !== goodsSearchRequestIdRef.current) {
-              return;
-            }
-            if (append && keywordSnapshot !== debouncedGoodsKeywordRef.current) {
-              return;
-            }
-
-            const results = Array.isArray(data)
-              ? data
-              : Array.isArray(data?.data?.results)
-              ? data.data.results
-              : Array.isArray(data?.results)
-              ? data.results
-              : Array.isArray(data?.data)
-              ? data.data
-              : [];
-
-            const totalPages =
-              data?.data?.total_pages ||
-              data?.total_pages ||
-              Math.ceil((data?.data?.count || data?.count || results.length) / 30) ||
-              1;
-
-            setGoodsList((prev) => (append ? [...prev, ...results] : results));
-            setGoodsPage(pageNumber);
-            setGoodsTotalPages(totalPages);
-        } catch (error) {
-            console.error("LOAD GOODS DROPDOWN ERROR:", error.response?.data || error);
-            alert("Không tải được danh sách hàng hóa");
-        } finally {
-            goodsPendingRequestsRef.current -= 1;
-            if (goodsPendingRequestsRef.current === 0) {
-              setGoodsLoading(false);
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-      if (!showGoodsDropdown) return;
-
-      fetchGoodsDropdown({
-        keyword: debouncedGoodsKeyword,
-        pageNumber: 1,
-        append: false,
-      });
-    }, [debouncedGoodsKeyword, showGoodsDropdown, fetchGoodsDropdown]);
-
-    const openGoodsDropdown = (rowId, keyword = "") => {
-      const normalizedKeyword = keyword || "";
-      setActiveGoodsRowId(rowId);
-      setShowGoodsDropdown(true);
-      setGoodsKeyword(normalizedKeyword);
-      setDebouncedGoodsKeyword(normalizedKeyword);
-    };
-
-    const handleGoodsDropdownScroll = (e) => {
-    const element = e.currentTarget;
-
-    const isBottom =
-        element.scrollTop + element.clientHeight >= element.scrollHeight - 8;
-
-    if (isBottom && !goodsLoading && goodsPage < goodsTotalPages) {
-        fetchGoodsDropdown({
-        keyword: debouncedGoodsKeywordRef.current,
-        pageNumber: goodsPage + 1,
-        append: true,
-        });
-    }
-    };
-
-    const parseNumber = (value, options = {}) => {
-      const { viThousands = false } = options;
-
-      if (value === null || value === undefined || value === "") return 0;
-
-      if (typeof value === "number") {
-        return Number.isNaN(value) ? 0 : value;
-      }
-
-      const text = String(value).trim();
-
-      if (!text) return 0;
-
-      let normalized = text;
-
-      if (text.includes(",")) {
-        // Dạng VN: 60.000,00 / 100.500,000
-        normalized = text.replace(/\./g, "").replace(",", ".");
-      } else if (viThousands && /^\d{1,3}(\.\d{3})+$/.test(text)) {
-        // Dạng tiền VN không phần thập phân: 300.000 / 1.250.000
-        normalized = text.replace(/\./g, "");
-      } else if ((text.match(/\./g) || []).length > 1) {
-        // Dạng VN nhiều dấu chấm: 3.015.000 / 11.000.000
-        normalized = text.replace(/\./g, "");
-      } else {
-        // Dạng backend decimal chuẩn: 30.000 / 51000.000
-        normalized = text;
-      }
-
-  const number = Number(normalized);
-
-  return Number.isNaN(number) ? 0 : number;
-};
-
-  const formatViNumber = (value, fractionDigits = 2) => {
-  const number = parseNumber(value);
-
-  return number.toLocaleString("vi-VN", {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-  });
-};
-
-  const formatViQuantity = (value) => {
-    const number = parseNumber(value);
-
-    return number.toLocaleString("vi-VN", {
-      minimumFractionDigits: 3,
-      maximumFractionDigits: 5,
-    });
-  };
-
-  const handleSelectGoods = (goods) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== activeGoodsRowId) {
-          return item;
-        }
-
-        const quantity = parseNumber(item.actual_quantity || 0);
-
-        const unitOptions = Array.isArray(goods.units)
-          ? goods.units.map((unitItem) => ({
-              unit_id: unitItem.unit_id || "",
-              unit_name: unitItem.unit_name || "",
-              conversion_ratio: Number(unitItem.conversion_ratio || 1),
-              last_unit_price: unitItem.last_unit_price,
-              is_default: Boolean(unitItem.is_default),
-            }))
-          : [];
-
-        const defaultUnit =
-          unitOptions.find((unitItem) => unitItem.is_default) ||
-          unitOptions[0] ||
-          null;
-
-        const unitPrice = parseNumber(
-          defaultUnit?.last_unit_price || 0
-        );
-
-        return {
-          ...item,
-          goods_id: goods.id,
-          goods_code: goods.code || goods.goods_code || "",
-          goods_name: goods.name || goods.goods_name || "",
-
-          unit_id: defaultUnit?.unit_id || "",
-          unit: defaultUnit?.unit_name || "",
-          unit_options: unitOptions,
-
-          conversion_ratio: String(
-            defaultUnit?.conversion_ratio || 1
-          ),
-
-          unit_price: formatViNumber(unitPrice, 3),
-
-          amount: formatViNumber(
-            Math.round(quantity * unitPrice),
-            0
-          ),
-        };
-      })
+  const canComplete =
+    canDo(
+      "complete_warehouse_receipt"
     );
 
-    setShowGoodsDropdown(false);
-    setActiveGoodsRowId(null);
-    setGoodsKeyword("");
-  };
-
-    const handleChangeItemUnit = (rowId, unitId) => {
-      setItems((prev) =>
-        prev.map((item) => {
-          if (item.id !== rowId) return item;
-
-          const selectedUnit = item.unit_options?.find(
-            (unitItem) => String(unitItem.unit_id) === String(unitId)
-          );
-
-          const quantity = parseNumber(item.actual_quantity);
-          const unitPrice = parseNumber(selectedUnit?.last_unit_price || 0);
-
-          return {
-            ...item,
-            unit_id: unitId,
-            unit: selectedUnit?.unit_name || item.unit,
-            conversion_ratio: selectedUnit?.conversion_ratio
-              ? String(selectedUnit.conversion_ratio)
-              : "1",
-            unit_price: formatViNumber(unitPrice, 3),
-            amount: formatViNumber(Math.round(quantity * unitPrice), 0),
-          };
-        })
-      );
-    };
-
-    const handleChangeItemField = (rowId, field, value) => {
-      if (field === "vat") {
-        setItems((prev) => {
-          const firstRowId = prev[0]?.id;
-          const oldVat = prev.find((x) => x.id === rowId)?.vat;
-
-          return prev.map((item) => {
-            if (item.id === rowId) {
-              return {
-                ...item,
-                vat: value,
-              };
-            }
-
-            if (rowId === firstRowId && item.vat === oldVat) {
-              return {
-                ...item,
-                vat: value,
-              };
-            }
-
-            return item;
-          });
-        });
-
-        return;
-      }
-
-      setItems((prev) =>
-        prev.map((item) => {
-          if (item.id !== rowId) {
-            return item;
-          }
-
-          const nextItem = {
-            ...item,
-            [field]: value,
-          };
-
-          if (field === "marked_old") {
-            nextItem.actual_quantity = value ? item.requested_quantity : "0,00000";
-          }
-
-          const quantity = parseNumber(nextItem.actual_quantity);
-
-          const unitPrice = parseNumber(
-            field === "unit_price" ? value : nextItem.unit_price
-          );
-
-          if (
-            field === "requested_quantity" ||
-            field === "actual_quantity" ||
-            field === "unit_price" ||
-            field === "marked_old"
-          ) {
-            nextItem.amount = formatViNumber(
-              Math.round(quantity * unitPrice),
-              0
-            );
-          }
-
-          return nextItem;
-        })
-      );
-    };
-      const {
-        totalAmount,
-        vatSummary,
-      } = calculateImportOrderTotals(items, {
-        getQty: (item) => parseNumber(item.actual_quantity),
-        getPrice: (item) => parseNumber(item.unit_price),
-        getVat: (item) => String(item.vat || "0"),
-      });
-
-      const finalVat0 = manualVatSummary["0"] !== ""
-        ? parseNumber(manualVatSummary["0"], { viThousands: true })
-        : parseNumber(vatSummary["0"] || 0);
-
-      const finalVat5 = manualVatSummary["5"] !== ""
-        ? parseNumber(manualVatSummary["5"], { viThousands: true })
-        : parseNumber(vatSummary["5"] || 0);
-
-      const finalVat8 = manualVatSummary["8"] !== ""
-        ? parseNumber(manualVatSummary["8"], { viThousands: true })
-        : parseNumber(vatSummary["8"] || 0);
-
-      const finalVat10 = manualVatSummary["10"] !== ""
-        ? parseNumber(manualVatSummary["10"], { viThousands: true })
-        : parseNumber(vatSummary["10"] || 0);
-
-      const finalVatAmount = finalVat0 + finalVat5 + finalVat8 + finalVat10;
-
-      const finalGrandTotal = Math.round(totalAmount + finalVatAmount);
-
-    const buildVatAmountSummaryPayload = () => ({
-      vat0amount: Math.round(finalVat0),
-      vat5amount: Math.round(finalVat5),
-      vat8amount: Math.round(finalVat8),
-      vat10amount: Math.round(finalVat10),
-    });
-
-      const handleChangeManualVat = (rate, value) => {
-        setManualVatSummary((prev) => ({
-          ...prev,
-          [rate]: value,
-        }));
-      };
-
-      const handleBlurManualVat = (rate, value) => {
-        const text = String(value || "").trim();
-
-        if (!text) {
-          setManualVatSummary((prev) => ({
-            ...prev,
-            [rate]: "",
-          }));
-          return;
-        }
-
-        setManualVatSummary((prev) => ({
-          ...prev,
-          [rate]: parseNumber(text, { viThousands: true }).toLocaleString("vi-VN", {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          }),
-        }));
-      };
-
-    const handleResetAllManualVat = () => {
-      setManualVatSummary({
-        0: "",
-        5: "",
-        8: "",
-        10: "",
-      });
-    };
-
-    const convertDateToISO = (value) => {
-      if (!value) return null;
-
-      const text = String(value).trim();
-
-      // dd/mm/yyyy -> yyyy-mm-dd
-      if (text.includes("/")) {
-        const [day, month, year] = text.split("/");
-
-        if (day && month && year) {
-          return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-        }
-      }
-
-      // yyyy-mm-dd giữ nguyên
-      return text.split("T")[0];
-    };
-  const getLineAmountValue = (item) => {
-  const quantity = parseNumber(item.actual_quantity || item.requested_quantity);
-  const unitPrice = parseNumber(item.unit_price);
-
-  return Math.round(quantity * unitPrice);
-};
-
-const getAutoLineVatAmount = (item) => {
-  const lineAmount = getLineAmountValue(item);
-  const vatRate = Number(item.vat || 0);
-
-  return Math.round((lineAmount * vatRate) / 100);
-};
-
-const getItemPayloadKey = (item, index) => {
-  return `${item.inventory_id || item.id || "new"}-${index}`;
-};
-
-const buildVatAmountMap = (payloadItems) => {
-  const vatAmountMap = {};
-
-  VAT_RATES.forEach((rate) => {
-    const rows = payloadItems
-      .map((item, index) => ({
-        item,
-        index,
-        key: getItemPayloadKey(item, index),
-        lineAmount: getLineAmountValue(item),
-      }))
-      .filter(
-        (row) =>
-          row.item.goods_id &&
-          !row.item.is_delete &&
-          String(row.item.vat || "0") === String(rate)
-      );
-
-    if (rows.length === 0) return;
-
-    // Không sửa tay summary VAT => gửi VAT tự tính từng dòng
-    if (manualVatSummary[rate] === "") {
-      rows.forEach((row) => {
-        vatAmountMap[row.key] = getAutoLineVatAmount(row.item);
-      });
-
-      return;
-    }
-
-    // Có sửa tay summary VAT => chia tổng VAT nhập tay về từng dòng cùng thuế suất
-    const manualTotalVat = Math.round(parseNumber(manualVatSummary[rate]));
-    const totalLineAmount = rows.reduce(
-      (sum, row) => sum + row.lineAmount,
-      0
-    );
-
-    let usedVat = 0;
-
-    rows.forEach((row, rowIndex) => {
-      let rowVat = 0;
-
-      if (rowIndex === rows.length - 1) {
-        rowVat = manualTotalVat - usedVat;
-      } else if (totalLineAmount > 0) {
-        rowVat = Math.round(
-          (manualTotalVat * row.lineAmount) / totalLineAmount
-        );
-      } else {
-        rowVat = Math.round(manualTotalVat / rows.length);
-      }
-
-      vatAmountMap[row.key] = rowVat;
-      usedVat += rowVat;
-    });
-  });
-
-  return vatAmountMap;
-  };
-
-  const buildReceiptPayload = (status) => {
-  const inventoryPayloadItems = [
-    ...items.map((item) => ({
-      ...item,
-      is_delete: false,
-    })),
-    ...deletedItems.map((item) => ({
-      ...item,
-      is_delete: true,
-    })),
-  ];
-  const parseConversionRatio = (value) => {
-  if (value === null || value === undefined || value === "") return 1;
-
-  if (typeof value === "number") return value;
-
-  const text = String(value).trim();
-
-  if (text.includes(",")) {
-    return Number(text.replace(/\./g, "").replace(",", "."));
-  }
-
-  // Nếu dạng 1.000, 10.000, 100.000 thì hiểu là hàng nghìn kiểu VN
-  if (/^\d{1,3}(\.\d{3})+$/.test(text)) {
-    return Number(text.replace(/\./g, ""));
-  }
-
-  return Number(text);
-};
-  return {
-    terms: headerData.terms || null,
-    receipt_date: convertDateToISO(headerData.inward_date),
-    warehouse_id: headerData.warehouse_id,
-    delivery_persion: headerData.delivery_person || null,
-    contract_code: headerData.invoice_symbol || null,
-    invoice_code: headerData.invoice_no || null,
-    invoice_date: headerData.invoice_date
-      ? convertDateToISO(headerData.invoice_date)
-      : null,
-    company_code: headerData.supplier_code,
-    company_name: headerData.supplier_name,
-    company_address: headerData.address || null,
-    company_tax_code: headerData.tax_code,
-    description: headerData.description || null,
-    inventory: inventoryPayloadItems
-      .filter((item) => item.goods_id)
-      .map((item,index) => ({
-        inventory_id: item.inventory_id || null,
-        goods_id: item.goods_id,
-        goods_unit_id: item.unit_id || null,
-        goods_name_display: item.goods_name || null,
-        requested_quantity: parseNumber(item.requested_quantity),
-        original_quantity: parseNumber(item.actual_quantity || item.requested_quantity),
-        unit_price: parseNumber(item.unit_price),
-        conversion_ratio: parseConversionRatio(item.conversion_ratio || 1),
-        vat: Number(item.vat || 0),
-        is_delete: Boolean(item.is_delete),
-        sort_order: index + 1,
-      })),
-
-    bank_account_id: headerData.bank_account_id || null,
-    bank_name: headerData.bank_account_name.trim(),
-    bank_account_name: headerData.bank_account_name.trim(),
-    bank_account_number: headerData.bank_account_number.trim(),
-    vat_amount_summary: buildVatAmountSummaryPayload(),
-    status, 
-  };
-};
-
-const handleComplete = async () => {
-  try {
-    if (!headerData.inward_date) {
-      alert("Vui lòng nhập ngày nhập kho");
-      return;
-    }
-
-    if (!headerData.warehouse_id) {
-      alert("Vui lòng chọn kho nhập");
-      return;
-    }
-
-    if (!headerData.supplier_code || !headerData.supplier_name || !headerData.tax_code) {
-      alert("Vui lòng nhập đầy đủ thông tin nhà cung cấp");
-      return;
-    }
-
-    const validItems = items.filter((item) => item.goods_id);
-
-    if (validItems.length === 0) {
-      alert("Vui lòng chọn ít nhất một hàng hóa");
-      return;
-    }
-
-    const payload = buildReceiptPayload("RECEIVED");
-
-//     console.log("SUBMIT BANK:", {
-//       bank_account_id: payload.bank_account_id,
-//       bank_account_name: payload.bank_account_name,
-//       bank_account_number: payload.bank_account_number,
-// }   );
-
-    if (id && id !== "new" && receiptId) {
-      await updateWarehouseReceipt(receiptId, payload);
-      alert("Cập nhật phiếu nhập kho thành công");
-    } else {
-      await createWarehouseReceipt(payload);
-      alert("Tạo phiếu nhập kho thành công");
-    }
-
-    navigate("/dashboard/activity/import/order");
-  } catch (error) {
-    console.error("CREATE WAREHOUSE RECEIPT ERROR:", error.response?.data || error);
-    alert("Tạo phiếu nhập kho thất bại");
-  }
-};
-
-  const handleFillActualQuantity = () => {
-  setItems((prev) =>
-    prev.map((item) => ({
-      ...item,
-      actual_quantity: item.requested_quantity,
-      marked_old: true,
-    }))
+  /* =========================================================
+     HEADER
+     ========================================================= */
+
+  const [
+    headerData,
+    setHeaderData,
+  ] = useState(
+    () =>
+      createEmptyImportReceiptHeader()
   );
-};
 
-    const fetchReceiptDetail = async (receiptCode) => {
-      if (!receiptCode || receiptCode === "new") return;
 
-      try {
-        setDetailLoading(true);
+  /* =========================================================
+     SUPPLIER / BANK
+     ========================================================= */
 
-        const response = await getWarehouseReceiptByCode(receiptCode);
-        const data = response?.data || response;
-        setReceiptId(data.id);
-        setCompanyId(data.company?.id || null);
+  const {
+    companyLoading,
 
-        const vatAmountSummary = data.vat_amount_summary || {};
+    clearBankAccounts,
+    loadCompanyByTaxCode,
+    loadCompanyBanks,
 
-        setManualVatSummary({
-          0:
-            vatAmountSummary.vat0amount !== null &&
-            vatAmountSummary.vat0amount !== undefined
-              ? formatViNumber(vatAmountSummary.vat0amount, 0)
-              : "",
-          5:
-            vatAmountSummary.vat5amount !== null &&
-            vatAmountSummary.vat5amount !== undefined
-              ? formatViNumber(vatAmountSummary.vat5amount, 0)
-              : "",
-          8:
-            vatAmountSummary.vat8amount !== null &&
-            vatAmountSummary.vat8amount !== undefined
-              ? formatViNumber(vatAmountSummary.vat8amount, 0)
-              : "",
-          10:
-            vatAmountSummary.vat10amount !== null &&
-            vatAmountSummary.vat10amount !== undefined
-              ? formatViNumber(vatAmountSummary.vat10amount, 0)
-              : "",
-        });
+    resetSupplierBank,
+  } = useImportSupplierBank();
 
-        const companyBankOptions = Array.isArray(data.company?.list_of_bank)
-        ? data.company.list_of_bank.map((bank) => ({
-            id: bank.id || "",
-            bank_account_name: bank.bank_name || "",
-            bank_account_number: bank.account_number || "",
-            is_default: Boolean(bank.is_default),
-          }))
-        : [];
 
-      setBankAccountOptions(companyBankOptions);
+  /* =========================================================
+     WAREHOUSE
+     ========================================================= */
 
-        setHeaderData((prev) => ({
-          ...prev,
-          terms: data.terms || "",
-          inward_date: formatISOToViDate(data.receipt_date),
-          warehouse_id: data.warehouse_id || data.warehouse?.id || "",
-          delivery_person: data.delivery_persion || "",
-          invoice_symbol: data.contract_code || "",
-          invoice_no: data.invoice_code || "",
-          invoice_date: formatISOToViDate(data.invoice_date),
-          supplier_code: data.company?.code || "",
-          supplier_name: data.company?.name || "",
-          tax_code: data.company?.tax_office_code || "",
-          address: data.company?.address || data.company?.address_tax_office || "",
-          description: data.description || "",
-          bank_account_id:
-            data.bank_account_id ||
-            data.bank_account?.id ||
-            data.company?.bank_account_id ||
-            "",
-          bank_account_name: data.bank_account_name || data.company?.bank_account_name || "",
-          bank_account_number:
-            data.bank_account_number || data.company?.bank_account_number || "",
-        }));
+  const {
+    warehouseList,
+    warehouseLoading,
+  } = useImportWarehouses();
 
-        const lines = data.inventory_lines || [];
 
-        setItems(
-          lines.length > 0
-            ? lines.map((line, index) => {
-                  const requestedQuantity = parseNumber(
-                    line.request_quantity || 0
-                  );
+  /* =========================================================
+     GOODS DROPDOWN
+     ========================================================= */
 
-                  const originalQuantity = parseNumber(line.original_quantity || 0);
-                  const unitPrice = parseNumber(line.unit_price || 0);
+  const {
+    goodsList,
+    goodsLoading,
 
-                  const selectedUnit = Array.isArray(line.units)
-                    ? line.units.find(
-                        (unitItem) => String(unitItem.unit_id) === String(line.goods_unit_id)
-                      )
-                    : null;
+    showGoodsDropdown,
+    activeGoodsRowId,
 
-                  return {
-                    id: line.inventory_id || line.id || index + 1,
-                    inventory_id: line.inventory_id || line.id || "",
+    openGoodsDropdown,
+    searchGoodsForRow,
 
-                    goods_id: line.goods_id || "",
-                    goods_code: line.goods_code || "",
-                    goods_name: line.goods_name || "",
+    hideGoodsDropdown,
+    closeGoodsDropdown,
 
-                    unit_id: line.goods_unit_id || "",
-                    unit: selectedUnit?.unit_name || line.unit_name || "",
+    toggleGoodsDropdown,
 
-                  unit_options: Array.isArray(line.units)
-                    ? line.units.map((unitItem) => ({
-                        unit_id: unitItem.unit_id || "",
-                        unit_name: unitItem.unit_name || "",
-                        conversion_ratio: unitItem.conversion_ratio || "",
-                        last_unit_price: unitItem.last_unit_price || 0,
-                        is_default: Boolean(unitItem.is_default),
-                      }))
-                    : [],
+    handleGoodsDropdownScroll,
 
-                    conversion_ratio:
-                      selectedUnit?.conversion_ratio !== null &&
-                      selectedUnit?.conversion_ratio !== undefined
-                        ? String(selectedUnit.conversion_ratio)
-                        : "",
+    refreshGoodsDropdown,
+  } = useImportGoodsDropdown();
 
-                    requested_quantity: formatViQuantity(requestedQuantity),
-                    actual_quantity: formatViQuantity(originalQuantity),
-                    marked_old: requestedQuantity === originalQuantity,
-                    unit_price: formatViNumber(unitPrice, 3),
-                    amount: formatViNumber(
-                      Math.round(originalQuantity * unitPrice),
-                      0
-                    ),
-                    vat: String(Number(line.vat || 0)),
-                    is_delete: false,
-                  };
-              })
-            : [
-                {
-                    id: 1,
-                    inventory_id: "",
-                    goods_id: "",
-                    goods_code: "",
-                    goods_name: "",
-                    unit_id: "",
-                    unit: "",
-                    unit_options: [],
-                    conversion_ratio: "",
-                    requested_quantity: "1,00000",
-                    actual_quantity: "0,00000",
-                    marked_old: false,
-                    unit_price: "0,00",
-                    amount: "0,00",
-                    vat: "0",
-                    is_delete: false,
-                },
-              ]
-        );
-      } catch (error) {
-        console.error("LOAD RECEIPT DETAIL ERROR:", error.response?.data || error);
-        alert("Không tải được chi tiết phiếu nhập");
-      } finally {
-        setDetailLoading(false);
+
+  /* =========================================================
+     RECEIPT ITEMS
+     ========================================================= */
+
+  const {
+    items,
+    setItems,
+
+    deletedItems,
+
+    insertRowAfter,
+
+    addRow:
+      handleAddRow,
+
+    deleteRow:
+      handleDeleteRow,
+
+    selectGoods,
+
+    changeItemUnit:
+      handleChangeItemUnit,
+
+    changeItemField:
+      handleChangeItemField,
+
+    resetItems,
+  } = useImportReceiptItems();
+
+
+  /* =========================================================
+     VAT
+     ========================================================= */
+
+  const {
+    manualVatSummary,
+
+    totalAmount,
+    vatSummary,
+    finalGrandTotal,
+
+    buildVatAmountSummaryPayload,
+
+    handleChangeManualVat,
+    handleBlurManualVat,
+
+    resetVat,
+    loadVatSummary,
+  } = useImportReceiptVat(
+    items,
+    parseNumber
+  );
+
+
+  /* =========================================================
+     RECEIPT CONTROLLER
+     ========================================================= */
+
+  const {
+    loadReceiptDetail,
+    saveReceiptData,
+    resetReceiptController,
+  } = useImportReceiptController({
+    receiptCode: id,
+
+    headerData,
+    items,
+    deletedItems,
+
+    setHeaderData,
+    setItems,
+
+    loadVatSummary,
+    loadCompanyBanks,
+
+    buildVatAmountSummaryPayload,
+  });
+
+  /* =========================================================
+     ENTER NAVIGATION
+     ========================================================= */
+
+  const handleEnterMoveNext = (
+    event
+  ) => {
+    if (
+      event.key !== "Enter" ||
+      event.nativeEvent?.isComposing ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const fields =
+      Array.from(
+        enterNavigationRef.current
+          ?.querySelectorAll(
+            '[data-enter-next="true"]:not(:disabled):not([readonly]):not([type="hidden"])'
+          ) || []
+      );
+
+    const currentIndex =
+      fields.indexOf(
+        event.currentTarget
+      );
+
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const direction =
+      event.shiftKey ? -1 : 1;
+
+    const nextField =
+      fields[
+        currentIndex +
+          direction
+      ];
+
+    event.currentTarget.blur();
+
+    if (!nextField) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      nextField.focus();
+
+      if (
+        nextField.tagName ===
+          "INPUT" &&
+        ![
+          "checkbox",
+          "radio",
+          "file",
+        ].includes(
+          nextField.type
+        ) &&
+        typeof nextField.select ===
+          "function"
+      ) {
+        nextField.select();
       }
+    });
+  };
+
+
+  /* =========================================================
+     HEADER HANDLERS
+     ========================================================= */
+
+  const handleLoadCompanyByTaxCode =
+    async () => {
+      await loadCompanyByTaxCode(
+        headerData.tax_code,
+        setHeaderData
+      );
     };
 
-    const resetNewReceiptForm = () => {
-      setReceiptId(null);
-      setCompanyId(null);
-      setDeletedItems([]);
-      setBankAccountOptions([]);
-      setShowBankDropdown(false);
 
-      setHeaderData({
-        terms: getCurrentTerms(),
-        inward_date: getTodayViDate(),
-        warehouse_id: "",
-        delivery_person: "",
-        invoice_symbol: "",
-        invoice_no: "",
-        invoice_date: "",
-        supplier_code: "",
-        supplier_name: "",
-        tax_code: "",
-        address: "",
-        description: "",
-        bank_account_id: "",
-        bank_account_name: "",
-        bank_account_number: "",
-      });
+  const handleHeaderChange = (
+    event
+  ) => {
+    const {
+      name,
+      value,
+    } = event.target;
 
-      setItems([
-        {
-          id: Date.now(),
-          inventory_id: "",
-          goods_id: "",
-          goods_code: "",
-          goods_name: "",
-          unit_id: "",
-          unit: "",
-          unit_options: [],
-          conversion_ratio: "",
-          requested_quantity: "1,00000",
-          actual_quantity: "0,00000",
-          marked_old: false,
-          unit_price: "0,00",
-          amount: "0,00",
-          vat: "0",
-          is_delete: false,
-        },
-      ]);
+    setHeaderData(
+      (previous) => ({
+        ...previous,
 
-      setManualVatSummary({
-        0: "",
-        5: "",
-        8: "",
-        10: "",
-      });
-    };
+        [name]: value,
 
-    useEffect(() => {
-      if (id && id !== "new") {
-        fetchReceiptDetail(id);
-      }
-    }, [id]);
-  
-  const handleSaveDraft = async () => {
-  try {
-    if (!headerData.inward_date) {
-      alert("Vui lòng nhập ngày nhập kho");
-      return;
-    }
-
-    if (!headerData.warehouse_id) {
-      alert("Vui lòng chọn kho nhập");
-      return;
-    }
-
-    if (!headerData.supplier_code || !headerData.supplier_name || !headerData.tax_code) {
-      alert("Vui lòng nhập đầy đủ thông tin nhà cung cấp");
-      return;
-    }
-
-    const validItems = items.filter((item) => item.goods_id);
-
-    if (validItems.length === 0) {
-      alert("Vui lòng chọn ít nhất một hàng hóa");
-      return;
-    }
-
-    const payload = buildReceiptPayload("WAITING_DELIVERY");
-    console.log("SAVE PAYLOAD:", payload);
-
-
-    if (id && id !== "new" && receiptId) {
-      await updateWarehouseReceipt(receiptId, payload);
-      alert("Lưu tạm phiếu nhập kho thành công");
-    } else {
-      await createWarehouseReceipt(payload);
-      alert("Lưu tạm phiếu nhập kho thành công");
-    }
-
-    navigate("/dashboard/activity/import/order");
-  } catch (error) {
-    console.error("SAVE DRAFT WAREHOUSE RECEIPT ERROR:", error.response?.data || error);
-    console.log("STATUS", error?.response?.status);
-    console.log("DATA", error?.response?.data);
-     console.log("FULL", error);
-    alert(
-      error.response?.data?.message ||
-        error.response?.data?.detail ||
-        "Lưu tạm phiếu nhập kho thất bại"
+        ...(
+          name ===
+            "bank_account_name" ||
+          name ===
+            "bank_account_number"
+            ? {
+                bank_account_id:
+                  "",
+              }
+            : {}
+        ),
+      })
     );
-  }
-};
 
-    const handleSaveDraftAndAddNew = async () => {
-      try {
-        if (!headerData.inward_date) {
-          alert("Vui lòng nhập ngày nhập kho");
-          return;
-        }
+    if (
+      name === "tax_code"
+    ) {
+      clearBankAccounts();
+    }
+  };
 
-        if (!headerData.warehouse_id) {
-          alert("Vui lòng chọn kho nhập");
-          return;
-        }
 
-        if (!headerData.supplier_code || !headerData.supplier_name || !headerData.tax_code) {
-          alert("Vui lòng nhập đầy đủ thông tin nhà cung cấp");
-          return;
-        }
+  /* =========================================================
+     ITEM HANDLERS
+     ========================================================= */
 
-        const validItems = items.filter((item) => item.goods_id);
+  const handleSelectGoods = (
+    goods
+  ) => {
+    selectGoods(
+      activeGoodsRowId,
+      goods
+    );
 
-        if (validItems.length === 0) {
-          alert("Vui lòng chọn ít nhất một hàng hóa");
-          return;
-        }
+    closeGoodsDropdown();
+  };
 
-        const payload = buildReceiptPayload("WAITING_DELIVERY");
 
-        if (id && id !== "new" && receiptId) {
-          await updateWarehouseReceipt(receiptId, payload);
-        } else {
-          await createWarehouseReceipt(payload);
-        }
+  const handleUnitPriceEnter = (
+    event,
+    rowId
+  ) => {
+    if (
+      event.key !== "Enter" ||
+      event.nativeEvent?.isComposing ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey
+    ) {
+      return;
+    }
 
-        alert("Lưu tạm thành công");
+    if (event.shiftKey) {
+      handleEnterMoveNext(
+        event
+      );
 
-        resetNewReceiptForm();
+      return;
+    }
 
-        navigate("/dashboard/activity/import/order-detail/new", { replace: true });
-      } catch (error) {
-        console.error("SAVE DRAFT AND ADD NEW ERROR:", error.response?.data || error);
-          console.log("STATUS", error?.response?.status);
-          console.log("DATA", error?.response?.data);
-           console.log("FULL", error);
+    event.preventDefault();
+
+    event.currentTarget.blur();
+
+    const newRow =
+      insertRowAfter(
+        rowId
+      );
+
+    closeGoodsDropdown();
+
+    /*
+     * Chờ React render dòng mới
+     * rồi focus về Mã hàng.
+     */
+    requestAnimationFrame(
+      () => {
+        requestAnimationFrame(
+          () => {
+            const goodsCodeInputs =
+              Array.from(
+                enterNavigationRef.current
+                  ?.querySelectorAll(
+                    "[data-goods-code-row-id]"
+                  ) || []
+              );
+
+            const newGoodsCodeInput =
+              goodsCodeInputs.find(
+                (input) =>
+                  input.dataset
+                    .goodsCodeRowId ===
+                  String(
+                    newRow.id
+                  )
+              );
+
+            if (
+              newGoodsCodeInput
+            ) {
+              newGoodsCodeInput.focus();
+              newGoodsCodeInput.select();
+            }
+          }
+        );
+      }
+    );
+  };
+
+
+  /* =========================================================
+     LOAD DETAIL
+     ========================================================= */
+
+  useEffect(() => {
+    if (
+      id &&
+      id !== "new"
+    ) {
+      loadReceiptDetail(
+        id
+      );
+    }
+  }, [id]);
+
+
+  /* =========================================================
+     RESET
+     ========================================================= */
+
+  const resetNewReceiptForm =
+    () => {
+      resetReceiptController();
+
+      resetSupplierBank();
+
+      setHeaderData(
+        createEmptyImportReceiptHeader()
+      );
+
+      resetItems();
+
+      resetVat();
+    };
+
+
+  /* =========================================================
+     SAVE
+     ========================================================= */
+
+  const saveReceipt = async ({
+    status,
+    successMessage,
+    addNew = false,
+  }) => {
+    const {
+      saved,
+      validationMessage,
+    } =
+      await saveReceiptData({
+        status,
+      });
+
+    if (!saved) {
+      if (
+        validationMessage
+      ) {
         alert(
-          error.response?.data?.message ||
-            error.response?.data?.detail ||
+          validationMessage
+        );
+      }
+
+      return;
+    }
+
+    alert(
+      successMessage
+    );
+
+    if (addNew) {
+      resetNewReceiptForm();
+
+      navigate(
+        "/dashboard/activity/import/order-detail/new",
+        {
+          replace: true,
+        }
+      );
+
+      return;
+    }
+
+    navigate(
+      "/dashboard/activity/import/order"
+    );
+  };
+
+
+  const handleSaveDraft =
+    async () => {
+      try {
+        await saveReceipt({
+          status:
+            "WAITING_DELIVERY",
+
+          successMessage:
+            "Lưu tạm phiếu nhập kho thành công",
+        });
+      } catch (error) {
+        console.error(
+          "SAVE DRAFT WAREHOUSE RECEIPT ERROR:",
+          error.response?.data ||
+            error
+        );
+
+        alert(
+          error.response?.data
+            ?.message ||
+            error.response?.data
+              ?.detail ||
+            "Lưu tạm phiếu nhập kho thất bại"
+        );
+      }
+    };
+
+
+  const handleComplete =
+    async () => {
+      try {
+        await saveReceipt({
+          status:
+            "RECEIVED",
+
+          successMessage:
+            id &&
+            id !== "new"
+              ? "Cập nhật phiếu nhập kho thành công"
+              : "Tạo phiếu nhập kho thành công",
+        });
+      } catch (error) {
+        console.error(
+          "CREATE WAREHOUSE RECEIPT ERROR:",
+          error.response?.data ||
+            error
+        );
+
+        alert(
+          error.response?.data
+            ?.message ||
+            error.response?.data
+              ?.detail ||
+            "Tạo phiếu nhập kho thất bại"
+        );
+      }
+    };
+
+
+  const handleSaveDraftAndAddNew =
+    async () => {
+      try {
+        await saveReceipt({
+          status:
+            "WAITING_DELIVERY",
+
+          successMessage:
+            "Lưu tạm thành công",
+
+          addNew: true,
+        });
+      } catch (error) {
+        console.error(
+          "SAVE DRAFT AND ADD NEW ERROR:",
+          error.response?.data ||
+            error
+        );
+
+        alert(
+          error.response?.data
+            ?.message ||
+            error.response?.data
+              ?.detail ||
             "Lưu tạm thất bại"
         );
       }
     };
 
-const handleOpenTransferPrint = () => {
-   if (!canPrintTransfer) {
-    alert("Bạn không có quyền in giấy đề nghị chuyển tiền");
-    return;
-  }
-
-  if (!id || id === "new") {
-    alert("Cần lưu phiếu trước khi in giấy đề nghị chuyển tiền");
-    return;
-  }
-
-  setPrintReason("");
-  setTransferBankId(headerData.bank_account_id || "");
-  setTransferBankName(headerData.bank_account_name || "");
-  setTransferBankAccountNumber(headerData.bank_account_number || "");
-  setShowPrintReasonModal(true);
-};
-
-const extractUserList = (response) => {
-  const payload = response?.data ?? response;
-
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (Array.isArray(payload?.results)) {
-    return payload.results;
-  }
-
-  if (Array.isArray(payload?.data)) {
-    return payload.data;
-  }
-
-  if (Array.isArray(payload?.data?.results)) {
-    return payload.data.results;
-  }
-
-  return [];
-};
-
-const loadReceiptSignerUsers = async () => {
-  try {
-    setReceiptUsersLoading(true);
-
-    const response = await getUserNames();
-    const users = extractUserList(response)
-      .filter((user) => {
-      const fullName = String(user?.full_name || "").trim();
-
-      return (
-        fullName &&
-        !fullName.toLowerCase().includes("test")
-      );
-    })
-      .sort((a, b) =>
-        String(a.full_name).localeCompare(
-          String(b.full_name),
-          "vi"
-        )
-      );
-
-    setReceiptUsers(users);
-  } catch (error) {
-    console.error(
-      "LOAD RECEIPT SIGNER USERS ERROR:",
-      error.response?.data || error
-    );
-
-    setReceiptUsers([]);
-
-    alert(
-      error.response?.data?.message ||
-        "Không tải được danh sách người ký"
-    );
-  } finally {
-    setReceiptUsersLoading(false);
-  }
-};
-
-const getUsersBySignerField = (field) => {
-  return receiptUsers.filter((user) => {
-    const userPosition = normalizePosition(
-      user.position?.name ||
-        user.position_name ||
-        user.position ||
-        ""
-    );
-
-    return field.match(userPosition);
-  });
-};
-
-const handleChangeReceiptSigner = (key, fullName) => {
-  setReceiptSigners((previous) => ({
-    ...previous,
-    [key]: fullName,
-  }));
-};
-
-const handleOpenReceiptPrint = async () => {
-  if (!canPrintReceipt) {
-    alert("Bạn không có quyền in phiếu nhập kho");
-    return;
-  }
-
-  if (!id || id === "new") {
-    alert("Cần lưu phiếu trước khi in phiếu nhập kho");
-    return;
-  }
-
-  // Chỉ mở modal, không reset tên đã chọn
-  setShowReceiptPrintModal(true);
-
-  // Chỉ gọi API lần đầu khi chưa có danh sách user
-  if (receiptUsers.length === 0) {
-    await loadReceiptSignerUsers();
-  }
-};
-
-const handleConfirmReceiptPrint = () => {
-  if (!receiptSigners.thuKho.trim()) {
-    alert("Vui lòng chọn người thủ kho");
-    return;
-  }
-
-  const printState = {
-    signerCungTieu: receiptSigners.cungTieu.trim(),
-    signerThuKho: receiptSigners.thuKho.trim(),
-    signerVatLieuVien: receiptSigners.vatLieuVien.trim(),
-    signerPhoPhongKHVT: receiptSigners.phoPhongKHVT.trim(),
-    signerTruongPhongKHVT:
-      receiptSigners.truongPhongKHVT.trim(),
-    signerGiamDoc: receiptSigners.giamDoc.trim(),
-
-    attachedDocumentNumber:
-      receiptAttachedDocumentNumber.trim(),
-  };
-
-  const hasVat = items.some(
-    (item) => Number(item.vat || 0) > 0
-  );
-
-  if (hasVat) {
-    navigate(
-      `/dashboard/activity/import/order/${id}/receipt-print-vat`,
-      {
-        state: printState,
-      }
-    );
-
-    return;
-  }
-
-  navigate(
-    `/dashboard/activity/import/order/${id}/receipt-print-no-vat`,
-    {
-      state: printState,
-    }
-  );
-};
-
-  const handleSelectTransferBank = (bankId) => {
-    setTransferBankId(bankId);
-
-    const selectedBank = bankAccountOptions.find(
-      (bank) => String(bank.id) === String(bankId)
-    );
-
-    setTransferBankName(selectedBank?.bank_account_name || "");
-    setTransferBankAccountNumber(selectedBank?.bank_account_number || "");
-  };
-
-  const handleConfirmTransferPrint = async () => {
-    if (!printReason.trim()) {
-      alert("Vui lòng nhập lý do in phiếu");
-      return;
-    }
-
-    let finalBankId = transferBankId;
-    let finalBankName = transferBankName.trim();
-    let finalBankAccountNumber = transferBankAccountNumber.trim();
-
-    if (!finalBankName || !finalBankAccountNumber) {
-      alert("Vui lòng chọn tài khoản ngân hàng hoặc nhập đầy đủ tài khoản mới");
-      return;
-    }
-
-    const selectedBank = bankAccountOptions.find(
-      (bank) => String(bank.id) === String(transferBankId)
-    );
-
-    if (selectedBank) {
-      finalBankId = selectedBank.id || "";
-      finalBankName = selectedBank.bank_account_name || "";
-      finalBankAccountNumber = selectedBank.bank_account_number || "";
-    } else {
-        if (companyId) {
-          try {
-            const newBank = await createCompanyBankAccount(companyId, {
-              bank_name: finalBankName,
-              bank_account_number: finalBankAccountNumber,
-            });
-
-            const bankData = newBank?.data || newBank;
-
-            finalBankId = bankData.id || "";
-            finalBankName = bankData.bank_name || finalBankName;
-            finalBankAccountNumber =
-              bankData.bank_account_number ||
-              bankData.account_number ||
-              finalBankAccountNumber;
-
-            setBankAccountOptions((prev) => [
-              ...prev,
-              {
-                id: finalBankId,
-                bank_account_name: finalBankName,
-                bank_account_number: finalBankAccountNumber,
-              },
-            ]);
-          } catch (error) {
-            console.error("CREATE BANK ACCOUNT ERROR:", error.response?.data || error);
-
-            // fallback: lưu DB lỗi thì vẫn dùng dữ liệu nhập tay để in
-            finalBankId = "";
-            finalBankName = transferBankName.trim();
-            finalBankAccountNumber = transferBankAccountNumber.trim();
-          }
-        } else {
-          // fallback: công ty chưa có id thì vẫn dùng dữ liệu nhập tay để in
-          finalBankId = "";
-          finalBankName = transferBankName.trim();
-          finalBankAccountNumber = transferBankAccountNumber.trim();
-        }
-      }
-
-      navigate(`/dashboard/activity/import/order/${id}/transfer-request-print`, {
-        state: {
-          printReason: printReason.trim(),
-
-          transferTaxCode: headerData.tax_code,
-          transferCompanyName: headerData.supplier_name,
-          transferCompanyAddress: headerData.address,
-
-          transferBankId: finalBankId,
-          transferBankName: finalBankName,
-          transferBankAccountNumber: finalBankAccountNumber,
-        },
-      });
-  };
-
-  const selectedConversionRatio =
-  items.find((item) => item.conversion_ratio)?.conversion_ratio || "";
-
-    const autoFillYear = (value) => {
-    const text = String(value || "").trim();
-
-    const match = text.match(/^(\d{1,2})\/(\d{1,2})$/);
-
-    if (!match) {
-      return value;
-    }
-
-    const currentYear = new Date().getFullYear();
-
-    const day = match[1].padStart(2, "0");
-    const month = match[2].padStart(2, "0");
-
-    return `${day}/${month}/${currentYear}`;
-  };
+  /* =========================================================
+     RENDER
+     ========================================================= */
 
   return (
-    <div className="import-order-detail-page" ref={enterNavigationRef}>
-      <div className="import-order-detail-header">
-        <div className="detail-header-left">
-          <h2>
-            {isCreateMode
-              ? "Lệnh nhập kho mua hàng"
-              : `Lệnh nhập kho mua hàng ${id}`}
-          </h2>
-
-          <select className="header-select" defaultValue="purchase">
-            <option value="purchase">Nhập kho mua hàng</option>
-            <option value="goods">Nhập kho hàng hóa</option>
-          </select>
-        </div>
-
-        <div className="detail-header-actions">
-          <button
-            className="header-icon-btn"
-            onClick={() => navigate("/dashboard/activity/import/order")}
-          >
-            <RiCloseLine />
-          </button>
-        </div>
-      </div>
+    <div
+      className="import-order-detail-page"
+      ref={
+        enterNavigationRef
+      }
+    >
+      <ImportReceiptPageHeader
+        id={id}
+        isCreateMode={
+          isCreateMode
+        }
+        onClose={() =>
+          navigate(
+            "/dashboard/activity/import/order"
+          )
+        }
+      />
 
       <div className="import-order-detail-body">
-        <div className="info-section-title">Thông tin phiếu nhập kho</div>
+        <ImportReceiptHeader
+          id={id}
+          headerData={
+            headerData
+          }
+          setHeaderData={
+            setHeaderData
+          }
+          warehouseList={
+            warehouseList
+          }
+          warehouseLoading={
+            warehouseLoading
+          }
+          companyLoading={
+            companyLoading
+          }
+          isPrintMode={
+            isPrintMode
+          }
+          isLockedWhenReceived={
+            isLockedWhenReceived
+          }
+          isLockedOnlyPrint={
+            isLockedOnlyPrint
+          }
+          onHeaderChange={
+            handleHeaderChange
+          }
+          onLoadCompanyByTaxCode={
+            handleLoadCompanyByTaxCode
+          }
+          onEnterMoveNext={
+            handleEnterMoveNext
+          }
+        />
 
-        <div className="import-voucher-card">
-        <div className="voucher-grid">
-            <div className="form-group">
-            <label>Kỳ</label>
-              <input
-                data-enter-next="true"
-                name="terms"
-                value={headerData.terms}
-                onKeyDown={handleEnterMoveNext}
-                onChange={handleHeaderChange}
-                placeholder="Nhập kỳ"
-                disabled={isLockedWhenReceived}
-              />
-            </div>
-
-          <div className="form-group">
-            <label>Số phiếu NK</label>
-            <input value={id && id !== "new" ? id : "Tự động tạo khi hoàn thành"} readOnly disabled={isPrintMode} />
-          </div>
-
-            <div className="form-group">
-            <label>
-                Ngày, tháng, năm NK <span>*</span>
-            </label>
-              <div className="input-with-icon">
-                <input
-                  data-enter-next="true"
-                  className="date-text-input"
-                  name="inward_date"
-                  value={headerData.inward_date}
-                  onKeyDown={handleEnterMoveNext}
-                  onChange={handleHeaderChange}
-                  onBlur={(e) =>
-                    setHeaderData((prev) => ({
-                      ...prev,
-                      inward_date: autoFillYear(e.target.value),
-                    }))
-                  }
-                  placeholder="dd/mm/yyyy"
-                  disabled={isLockedWhenReceived}
-                />
-
-                <button
-                  type="button"
-                  disabled={isLockedWhenReceived}
-                  onClick={openDatePicker}
-                >
-                  <RiCalendarLine />
-                  <input
-                    type="date"
-                    className="calendar-native-input"
-                    value={convertViDateToPickerDate(headerData.inward_date)}
-                    disabled={isLockedWhenReceived}
-                    onChange={(e) =>
-                      setHeaderData((prev) => ({
-                        ...prev,
-                        inward_date: formatPickerDateToViDate(e.target.value),
-                      }))
-                    }
-                  />
-                </button>
-              </div>
-            </div>
-            <div className="form-group">
-            <label>
-                Nhập kho <span>*</span>
-            </label>
-            <select
-                data-enter-next="true"
-                name="warehouse_id"
-                value={headerData.warehouse_id}
-                onKeyDown={handleEnterMoveNext}
-                onChange={handleHeaderChange}
-                disabled={isLockedWhenReceived}
-                >
-                <option value="">
-                    {warehouseLoading ? "Đang tải danh sách kho..." : "Chọn kho nhập"}
-                </option>
-
-                {warehouseList.map((warehouse) => (
-                    <option key={warehouse.id} value={warehouse.id}>
-                    {warehouse.code} - {warehouse.name}
-                    </option>
-            ))}
-            </select>
-            </div>
-
-            <div className="form-group">
-            <label>Người giao hàng</label>
-            <input
-                data-enter-next="true"
-                name="delivery_person"
-                value={headerData.delivery_person}
-                onKeyDown={handleEnterMoveNext}
-                onChange={handleHeaderChange}
-                placeholder="Nhập người giao hàng"
-                disabled={isLockedOnlyPrint}            
-              />
-            </div>
-
-            <div className="form-group">
-            <label>Ký hiệu HĐ</label>
-            <input
-                data-enter-next="true"
-                name="invoice_symbol"
-                value={headerData.invoice_symbol}
-                onKeyDown={handleEnterMoveNext}
-                onChange={handleHeaderChange}
-                placeholder="Nhập ký hiệu hóa đơn"
-                disabled={isLockedOnlyPrint}            
-            />
-            </div>
-
-            <div className="form-group">
-            <label>Số hóa đơn</label>
-            <input
-                data-enter-next="true"
-                name="invoice_no"
-                value={headerData.invoice_no}
-                onKeyDown={handleEnterMoveNext}
-                onChange={handleHeaderChange}
-                placeholder="Nhập số hóa đơn"
-                disabled={isLockedOnlyPrint}            
-            />
-            </div>
-
-            <div className="form-group">
-            <label>Ngày, tháng, năm hóa đơn</label>
-              <div className="input-with-icon">
-                <input
-                  data-enter-next="true"
-                  className="date-text-input"
-                  name="invoice_date"
-                  value={headerData.invoice_date}
-                  onKeyDown={handleEnterMoveNext}
-                  onChange={handleHeaderChange}
-                  onBlur={(e) =>
-                    setHeaderData((prev) => ({
-                      ...prev,
-                      invoice_date: autoFillYear(e.target.value),
-                    }))
-                  }
-                  placeholder="dd/mm/yyyy"
-                  disabled={isLockedOnlyPrint}
-                />
-
-                <button
-                  type="button"
-                  disabled={isLockedOnlyPrint}
-                  onClick={openDatePicker}
-                >
-                  <RiCalendarLine />
-                  <input
-                    type="date"
-                    className="calendar-native-input"
-                    value={convertViDateToPickerDate(headerData.invoice_date)}
-                    disabled={isLockedOnlyPrint}
-                    onChange={(e) =>
-                      setHeaderData((prev) => ({
-                        ...prev,
-                        invoice_date: formatPickerDateToViDate(e.target.value),
-                      }))
-                    }
-                  />
-                </button>
-              </div>
-            </div>
-
-            <div className="form-group">
-                <label>MST</label>
-
-                <div className="tax-code-load-row">
-                    <input
-                    data-enter-next="true"
-                    name="tax_code"
-                    value={headerData.tax_code}
-                    onKeyDown={handleEnterMoveNext}
-                    onChange={handleHeaderChange}
-                    placeholder="Nhập mã số thuế"
-                    disabled={isLockedOnlyPrint}            
-                    />
-
-                    <button
-                        type="button"
-                        className="load-company-btn"
-                        title="Load công ty theo MST"
-                        onClick={handleLoadCompanyByTaxCode}
-                        disabled={companyLoading || isLockedOnlyPrint}            
-                      >
-                      <RiLoader4Line className={companyLoading ? "loading-icon" : ""} />
-                    </button>
-                </div>
-              </div>
-
-            <div className="form-group">
-            <label>Mã KH</label>
-            <input
-                data-enter-next="true"
-                name="supplier_code"
-                value={headerData.supplier_code}
-                onKeyDown={handleEnterMoveNext}
-                onChange={handleHeaderChange}
-                placeholder="Nhập mã khách hàng / NCC"
-                disabled={isLockedOnlyPrint}            
-            />
-            </div>
-
-            <div className="form-group supplier-name-group">
-              <label>Tên đơn vị cung cấp</label>
-              <input
-                data-enter-next="true"
-                name="supplier_name"
-                value={headerData.supplier_name}
-                onKeyDown={handleEnterMoveNext}
-                onChange={handleHeaderChange}
-                placeholder="Nhập tên đơn vị cung cấp"
-                disabled={isLockedOnlyPrint}
-              />
-            </div>
-            <div className="form-group description-group">
-            <label>Diễn giải</label>
-            <input
-                data-enter-next="true"
-                name="description"
-                value={headerData.description}
-                onKeyDown={handleEnterMoveNext}
-                onChange={handleHeaderChange}
-                placeholder="Nhập diễn giải"
-                disabled={isPrintMode}
-            />
-            </div>
+        <div className="detail-section-title">
+          Chi tiết
         </div>
-        </div>
-        <div className="detail-section-title">Chi tiết</div>
 
         <div className="detail-card">
-          <div className="detail-search">
-            <RiSearchLine />
-            <input placeholder="Tìm kiếm" />
-          </div>
+          <ImportReceiptItemsTable
+            items={items}
+            isPrintMode={
+              isPrintMode
+            }
+            activeGoodsRowId={
+              activeGoodsRowId
+            }
+            showGoodsDropdown={
+              showGoodsDropdown
+            }
+            goodsList={
+              goodsList
+            }
+            goodsLoading={
+              goodsLoading
+            }
+            totalAmount={
+              totalAmount
+            }
+            onEnterMoveNext={
+              handleEnterMoveNext
+            }
+            onUnitPriceEnter={
+              handleUnitPriceEnter
+            }
+            onOpenGoodsDropdown={
+              openGoodsDropdown
+            }
+            onSearchGoodsForRow={
+              searchGoodsForRow
+            }
+            onToggleGoodsDropdown={
+              toggleGoodsDropdown
+            }
+            onGoodsDropdownScroll={
+              handleGoodsDropdownScroll
+            }
+            onOpenAddGoodsModal={() => {
+              hideGoodsDropdown();
 
-          <div className="order-detail-table-wrapper">
-            <table className="order-detail-table">
-                <colgroup>
-                  <col className="col-stt" />
-                  <col className="col-code" />
-                  <col className="col-name" />
-                  <col className="col-unit" />
-                  <col className="col-qty" />
-                  <col className="col-qty" />
-                  <col className="col-qty" />
-                  <col className="col-check" />
-                  <col className="col-price" />
-                  <col className="col-amount" />
-                  <col className="col-vat" />
-                  <col className="col-action" />
-                </colgroup>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Mã hàng</th>
-                  <th>Tên hàng</th>
-                  <th>ĐVT</th>
-                  <th>Tỷ lệ chuyển đổi</th>
-                  <th>SL yêu cầu</th>
-                  <th>SL thực nhập</th>
-                  <th>Đánh dấu đủ</th>
-                  <th>Đơn giá</th>
-                  <th>Thành tiền</th>
-                  <th>Thuế VAT</th>
-                  <th></th>
-                </tr>
-              </thead>
+              setShowAddGoodsModal(
+                true
+              );
+            }}
+            onSelectGoods={
+              handleSelectGoods
+            }
+            onChangeItemField={
+              handleChangeItemField
+            }
+            onChangeItemUnit={
+              handleChangeItemUnit
+            }
+            onAddRow={
+              handleAddRow
+            }
+            onDeleteRow={
+              handleDeleteRow
+            }
+          />
 
-              <tbody>
-                {items.map((item, index) => (
-                    <tr
-                      key={item.id}
-                      className={[
-                        "goods-row",
-                        activeGoodsRowId === item.id ? "goods-dropdown-active-row" : "",
-                        item.is_delete ? "deleted-goods-row" : "",
-                      ].join(" ")}
-                    >
-                    <td>{index + 1}</td>
-                    <td className="goods-code-dropdown-cell">
-                    <div className="goods-code-dropdown-box">
-                        <input
-                        data-enter-next="true"
-                        data-goods-code-row-id={String(item.id)}
-                        value={item.goods_code}
-                        placeholder="Chọn mã hàng"
-                        onKeyDown={handleEnterMoveNext}
-                        onFocus={() => {
-                            openGoodsDropdown(item.id, item.goods_code || "");
-                        }}
-                        onChange={(e) => {
-                            const value = e.target.value;
+          <ImportReceiptMoneySummary
+            manualVatSummary={
+              manualVatSummary
+            }
+            vatSummary={
+              vatSummary
+            }
+            finalGrandTotal={
+              finalGrandTotal
+            }
+            isPrintMode={
+              isPrintMode
+            }
+            onResetVat={
+              resetVat
+            }
+            onChangeManualVat={
+              handleChangeManualVat
+            }
+            onBlurManualVat={
+              handleBlurManualVat
+            }
+          />
 
-                            handleChangeItemField(item.id, "goods_code", value);
-
-                            setActiveGoodsRowId(item.id);
-                            setShowGoodsDropdown(true);
-                            setGoodsKeyword(value);
-                        }}
-                        />
-
-                        <button
-                        type="button"
-                        onClick={() => {
-                            if (showGoodsDropdown && activeGoodsRowId === item.id) {
-                              setShowGoodsDropdown(false);
-                              return;
-                            }
-
-                            openGoodsDropdown(item.id, item.goods_code || "");
-                        }}
-                        >
-                        ▾
-                        </button>
-
-                        {showGoodsDropdown && activeGoodsRowId === item.id && (
-                        <div
-                            className="goods-code-dropdown-list"
-                            onScroll={handleGoodsDropdownScroll}
-                        >
-                            <div className="goods-code-dropdown-header">
-                            <span>Mã hàng</span>
-                            <span>Tên hàng</span>
-                            <button
-                              type="button"
-                              className="goods-code-add-btn"
-                              title="Thêm hàng hóa"
-                              onMouseDown={(e) => e.preventDefault()}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowGoodsDropdown(false);
-                                setShowAddGoodsModal(true);
-                              }}
-                              disabled={isPrintMode}
-                            >
-                              +
-                            </button>
-                            </div>
-
-                            {goodsList.map((goods) => (
-                            <div
-                                key={goods.id}
-                                className="goods-code-dropdown-item"
-                                onClick={() => handleSelectGoods(goods)}
-                            >
-                                <span>{goods.code || goods.goods_code}</span>
-                                <span>{goods.name || goods.goods_name}</span>
-                                <span></span>
-                            </div>
-                            ))}
-
-                            {goodsLoading && (
-                            <div className="goods-code-dropdown-status">Đang tải...</div>
-                            )}
-
-                            {!goodsLoading && goodsList.length === 0 && (
-                            <div className="goods-code-dropdown-status">Không có dữ liệu</div>
-                            )}
-                        </div>
-                        )}
-                    </div>
-                    </td>
-                    <td>
-                      <input
-                        data-enter-next="true"
-                        className="table-text-input"
-                        value={item.goods_name || ""}
-                        onKeyDown={handleEnterMoveNext}
-                        placeholder="Tên hàng"
-                        onChange={(e) =>
-                          handleChangeItemField(item.id, "goods_name", e.target.value)
-                        }
-                        disabled={isPrintMode || !item.goods_id}
-                      />
-                    </td>
-                    <td>
-                      <select
-                        data-enter-next="true"
-                        className="table-unit-select"
-                        value={item.unit_id || ""}
-                        onKeyDown={handleEnterMoveNext}
-                        onChange={(e) => handleChangeItemUnit(item.id, e.target.value)}
-                        disabled={isPrintMode || !item.goods_id}
-                      >
-                        {item.unit_options && item.unit_options.length > 0 ? (
-                          item.unit_options.map((unitItem) => (
-                            <option key={unitItem.unit_id} value={unitItem.unit_id}>
-                              {unitItem.unit_name}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="">{item.unit || "Chọn ĐVT"}</option>
-                        )}
-                      </select>
-                    </td>
-
-                    <td className="number-col">
-                      <input
-                        className="table-number-input"
-                        value={item.conversion_ratio || ""}
-                        readOnly
-                        disabled
-                      />
-                    </td>
-
-                    <td className="number-col">
-                      <input
-                        data-enter-next="true"
-                        className="table-number-input"
-                        value={item.requested_quantity}
-                        onKeyDown={handleEnterMoveNext}
-                        onChange={(e) =>
-                          handleChangeItemField(item.id, "requested_quantity", e.target.value)
-                        }
-                        onBlur={(e) =>
-                          handleChangeItemField(
-                            item.id,
-                            "requested_quantity",
-                            formatViQuantity(e.target.value)
-                          )
-                        }
-                        disabled={isPrintMode}
-                      />
-                    </td>
-                    <td className="number-col">
-                    <input
-                        data-enter-next="true"
-                        className="table-number-input"
-                        value={item.actual_quantity}
-                        onKeyDown={handleEnterMoveNext}
-                        onChange={(e) =>
-                        handleChangeItemField(item.id, "actual_quantity", e.target.value)
-                        }
-                        onBlur={(e) =>
-                          handleChangeItemField(
-                            item.id,
-                            "actual_quantity",
-                            formatViQuantity(e.target.value)
-                          )
-                        }
-                        disabled={isPrintMode}
-                    />
-                    </td>
-                    <td className="center-col">
-                      <input
-                          type="checkbox"
-                          checked={item.marked_old}
-                          onChange={(e) =>
-                            handleChangeItemField(item.id, "marked_old", e.target.checked)
-                        }
-                          disabled={isPrintMode}
-                      />
-                    </td>
-                    <td className="number-col">
-                    <input
-                      data-enter-next="true"
-                      className="table-number-input"
-                      value={item.unit_price}
-                      onChange={(e) =>
-                        handleChangeItemField(
-                          item.id,
-                          "unit_price",
-                          e.target.value
-                        )
-                      }
-                      onBlur={(e) =>
-                        handleChangeItemField(
-                          item.id,
-                          "unit_price",
-                          formatViNumber(e.target.value, 3)
-                        )
-                      }
-                      onKeyDown={(e) =>
-                        handleUnitPriceEnter(e, item.id)
-                      }
-                      disabled={isPrintMode}
-                    />
-                    </td>
-                    <td className="number-col">{item.amount}</td>
-                    <td>
-                      <select
-                        className="table-vat-select"
-                        value={item.vat || "0"}
-                        onChange={(e) =>
-                          handleChangeItemField(item.id, "vat", e.target.value)
-                        }
-                        disabled={isPrintMode}
-                      >
-                        <option value="0">0%</option>
-                        <option value="5">5%</option>
-                        <option value="8">8%</option>
-                        <option value="10">10%</option>
-                      </select>
-                    </td>
-                      <td className="delete-row-col">
-                        <div className="detail-action-row add-row-action">
-                          <button
-                            type="button"
-                            className="goods-code-add-btn"
-                            onClick={() => handleAddRow(item.id)}
-                            disabled={isPrintMode}
-                          >
-                            <RiAddLine />
-                          </button>
-                          <button
-                            className="delete-row-btn"
-                            onClick={() => handleDeleteRow(item.id)}
-                            disabled={isPrintMode}
-                          >
-                            <RiDeleteBin6Line />
-                          </button>
-                        </div>
-                      </td>
-                  </tr>
-                ))}
-
-                <tr className="table-total-row">
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-
-                  <td className="number-col">
-                    {formatViQuantity(
-                      items.reduce((sum, item) => sum + parseNumber(item.requested_quantity), 0)
-                    )}
-                  </td>
-
-                  <td className="number-col">
-                    {formatViQuantity(
-                      items.reduce((sum, item) => sum + parseNumber(item.actual_quantity), 0)
-                    )}
-                  </td>
-
-                  <td></td>
-                  <td></td>
-                  <td className="number-col">
-                     {formatViNumber(totalAmount, 0)}
-                  </td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-            <div className="money-summary-wrap">
-              {!isPrintMode && (
-                <button
-                  type="button"
-                  className="recalculate-vat-btn"
-                  onClick={handleResetAllManualVat}
-                  disabled={
-                    manualVatSummary["0"] === "" &&
-                    manualVatSummary["5"] === "" &&
-                    manualVatSummary["8"] === "" &&
-                    manualVatSummary["10"] === ""
-                  }
-                >
-                  Tính lại Thuế
-                </button>
-              )}
-              <div className="money-summary">
-                <div className="money-row">
-                  <span>
-                    Thuế VAT 0%
-                    {manualVatSummary["0"] !== "" && (
-                      <em className="manual-vat-label"></em>
-                    )}
-                  </span>
-
-                  <div className="money-vat-edit">
-                    <input
-                      value={
-                        manualVatSummary["0"] !== ""
-                          ? manualVatSummary["0"]
-                          : formatViNumber(vatSummary["0"], 0)
-                      }
-                      onChange={(e) => handleChangeManualVat("0", e.target.value)}
-                      onBlur={(e) => handleBlurManualVat("0", e.target.value)}
-                      disabled={isPrintMode}
-                    />
-                  </div>
-                </div>
-
-                <div className="money-row">
-                  <span>
-                    Thuế VAT 5%
-                    {manualVatSummary["5"] !== "" && (
-                      <em className="manual-vat-label"></em>
-                    )}
-                  </span>
-
-                  <div className="money-vat-edit">
-                    <input
-                      value={
-                        manualVatSummary["5"] !== ""
-                          ? manualVatSummary["5"]
-                          : formatViNumber(vatSummary["5"], 0)
-                      }
-                      onChange={(e) => handleChangeManualVat("5", e.target.value)}
-                      onBlur={(e) => handleBlurManualVat("5", e.target.value)}
-                      disabled={isPrintMode}
-                    />
-                  </div>
-                </div>
-
-                <div className="money-row">
-                  <span>
-                    Thuế VAT 8%
-                    {manualVatSummary["8"] !== "" && (
-                      <em className="manual-vat-label"></em>
-                    )}
-                  </span>
-
-                  <div className="money-vat-edit">
-                    <input
-                      value={
-                        manualVatSummary["8"] !== ""
-                          ? manualVatSummary["8"]
-                          : formatViNumber(vatSummary["8"], 0)
-                      }
-                      onChange={(e) => handleChangeManualVat("8", e.target.value)}
-                      onBlur={(e) => handleBlurManualVat("8", e.target.value)}
-                      disabled={isPrintMode}
-                    />
-                  </div>
-                </div>
-
-                <div className="money-row">
-                  <span>
-                    Thuế VAT 10%
-                    {manualVatSummary["10"] !== "" && (
-                      <em className="manual-vat-label"></em>
-                    )}
-                  </span>
-
-                  <div className="money-vat-edit">
-                    <input
-                      value={
-                        manualVatSummary["10"] !== ""
-                          ? manualVatSummary["10"]
-                          : formatViNumber(vatSummary["10"], 0)
-                      }
-                      onChange={(e) => handleChangeManualVat("10", e.target.value)}
-                      onBlur={(e) => handleBlurManualVat("10", e.target.value)}
-                      disabled={isPrintMode}
-                    />
-                  </div>
-                </div>
-
-                <div className="money-row total">
-                  <span>Tổng cộng</span>
-                  <strong>{formatViNumber(finalGrandTotal, 0)}</strong>
-                </div>
-              </div>
-            </div>
-          <div className="table-bottom-bar">
-            <div>
-              Tổng số: <strong>{items.length}</strong>
-            </div>
-
-            <div className="table-pagination">
-              <span>Số dòng/trang</span>
-              <select defaultValue={20}>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-              <strong>1 - {items.length}</strong>
-              <button disabled>‹</button>
-              <button disabled>›</button>
-            </div>
-          </div>
+          <ImportReceiptTableFooter
+            totalRows={
+              items.length
+            }
+          />
         </div>
       </div>
 
-      <div className="import-order-detail-footer">
-        <button
-          className="cancel-footer-btn"
-          onClick={() => navigate("/dashboard/activity/import/order")}
-        >
-          {isPrintMode ? "Quay lại" : "Hủy"}
-        </button>
+      <ImportReceiptFooter
+        isPrintMode={
+          isPrintMode
+        }
 
-        {!isPrintMode && canSave && (
-          <button
-            className="save-draft-btn"
-            onClick={handleSaveDraftAndAddNew}
-          >
-            Lưu và thêm
-          </button>
-        )}
+        canSave={
+          canSave
+        }
 
-        {isPrintMode ? (
-          <>
-            {canPrintReceipt && (
-              <button className="complete-btn" onClick={handleOpenReceiptPrint}>
-                <RiPrinterLine />
-                <span>In Phiếu nhập kho</span>
-              </button>
-            )}
+        canComplete={
+          canComplete
+        }
 
-            {canPrintTransfer && (
-              <button className="complete-btn" onClick={handleOpenTransferPrint}>
-                <RiPrinterLine />
-                <span>In Giấy Đề Nghị Chuyển tiền</span>
-              </button>
-            )}
-          </>
-        ) : (
-          <>
-            {canSave && (
-              <button className="save-draft-btn" onClick={handleSaveDraft}>
-                Lưu tạm
-              </button>
-            )}
+        onCancel={() =>
+          navigate(
+            "/dashboard/activity/import/order"
+          )
+        }
 
-            {canComplete && (
-              <button className="complete-btn" onClick={handleComplete}>
-                Hoàn thành
-              </button>
-            )}
-          </>
-        )}
-      </div>
-          {showReceiptPrintModal && (
-            <div className="print-reason-modal-overlay">
-              <div className="print-reason-modal receipt-signer-modal">
-                <div className="print-reason-modal-header">
-                  <h3>Chọn người ký phiếu nhập kho</h3>
+        onSaveAndAdd={
+          handleSaveDraftAndAddNew
+        }
 
-                  <button
-                    type="button"
-                    onClick={() => setShowReceiptPrintModal(false)}
-                  >
-                    ×
-                  </button>
-                </div>
+        onSaveDraft={
+          handleSaveDraft
+        }
 
-                <div className="print-reason-modal-body">
-                  {receiptUsersLoading ? (
-                    <div className="receipt-signer-loading">
-                      <RiLoader4Line className="loading-icon" />
-                      <span>Đang tải danh sách người ký...</span>
-                    </div>
-                  ) : (
-                    <div className="receipt-signer-grid">
-                      {RECEIPT_SIGNER_FIELDS.map((field) => {
-                        const users = getUsersBySignerField(field);
+        onComplete={
+          handleComplete
+        }
+      />
 
-                        return (
-                          <div
-                            className="receipt-signer-field"
-                            key={field.key}
-                          >
-                            <label>
-                              {field.label}
-
-                              {field.required && (
-                                <span className="receipt-required">
-                                  {" "}*
-                                </span>
-                              )}
-                            </label>
-
-                            <select
-                              value={receiptSigners[field.key]}
-                              onChange={(event) =>
-                                handleChangeReceiptSigner(
-                                  field.key,
-                                  event.target.value
-                                )
-                              }
-                            >
-                              <option value="">
-                                Chọn {field.label.toLowerCase()}
-                              </option>
-
-                              {users.map((user) => (
-                                <option
-                                  key={
-                                    user.id ||
-                                    user.username ||
-                                    `${field.key}-${user.full_name}`
-                                  }
-                                  value={user.full_name}
-                                >
-                                  {user.full_name}
-                                </option>
-                              ))}
-                            </select>
-
-                            {users.length === 0 && (
-                              <small className="receipt-no-user">
-                                Không có người dùng thuộc position này
-                              </small>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <div className="receipt-document-field">
-                    <label>Số chứng từ kèm theo</label>
-
-                    <input
-                      value={receiptAttachedDocumentNumber}
-                      onChange={(event) =>
-                        setReceiptAttachedDocumentNumber(
-                          event.target.value
-                        )
-                      }
-                      placeholder="Nhập số chứng từ kèm theo"
-                    />
-                  </div>
-                </div>
-
-                <div className="print-reason-modal-footer">
-                  <button
-                    type="button"
-                    className="print-reason-cancel-btn"
-                    onClick={() => setShowReceiptPrintModal(false)}
-                  >
-                    Hủy
-                  </button>
-
-                  <button
-                    type="button"
-                    className="print-reason-confirm-btn"
-                    onClick={handleConfirmReceiptPrint}
-                    disabled={receiptUsersLoading}
-                  >
-                    <RiPrinterLine />
-                    Đồng ý in
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {showPrintReasonModal && (
-          <div className="print-reason-modal-overlay">
-            <div className="print-reason-modal">
-              <div className="print-reason-modal-header">
-                <h3>Nhập thông tin in giấy đề nghị chuyển tiền</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowPrintReasonModal(false)}
-                >
-                  ×
-                </button>
-              </div>
-                <div className="print-reason-modal-body">
-                  <div className="transfer-info-grid">
-                    <div className="form-group">
-                      <label>MST</label>
-                      <input value={headerData.tax_code} readOnly disabled />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Tên công ty</label>
-                      <input value={headerData.supplier_name} readOnly disabled />
-                    </div>
-
-                    <div className="form-group transfer-full-row">
-                      <label>Địa chỉ</label>
-                      <input value={headerData.address} readOnly disabled />
-                    </div>
-                      <div className="form-group transfer-full-row">
-                        <label>Chọn tài khoản ngân hàng đã lưu</label>
-                        <select
-                          value={transferBankId}
-                          onChange={(e) => handleSelectTransferBank(e.target.value)}
-                        >
-                          <option value="">Không chọn / Nhập tay</option>
-
-                          {bankAccountOptions.map((bank) => (
-                            <option key={bank.id} value={bank.id}>
-                              {bank.bank_account_name} - {bank.bank_account_number}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="form-group transfer-full-row">
-                        <label>Tên ngân hàng</label>
-                        <input
-                          value={transferBankName}
-                          onChange={(e) => {
-                            setTransferBankName(e.target.value);
-                            setTransferBankId("");
-                          }}
-                          placeholder="Nhập tên ngân hàng"
-                        />
-                      </div>
-
-                      <div className="form-group transfer-full-row">
-                        <label>Số tài khoản ngân hàng</label>
-                        <input
-                          value={transferBankAccountNumber}
-                          onChange={(e) => {
-                            setTransferBankAccountNumber(e.target.value);
-                            setTransferBankId("");
-                          }}
-                          placeholder="Nhập số tài khoản ngân hàng"
-                        />
-                      </div>
-                  </div>
-
-                  <label>Lý do</label>
-                  <textarea
-                    value={printReason}
-                    onChange={(e) => setPrintReason(e.target.value)}
-                    placeholder="Nhập lý do in phiếu"
-                    rows={4}
-                  />
-                </div>
-
-              <div className="print-reason-modal-footer">
-                <button
-                  type="button"
-                  className="print-reason-cancel-btn"
-                  onClick={() => setShowPrintReasonModal(false)}
-                >
-                  Hủy
-                </button>
-
-                <button
-                  type="button"
-                  className="print-reason-confirm-btn"
-                  onClick={handleConfirmTransferPrint}
-                >
-                  Đồng ý in
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {showAddGoodsModal && (
+      {showAddGoodsModal && (
         <GoodsFormModal
-          onClose={() => setShowAddGoodsModal(false)}
+          onClose={() => {
+            setShowAddGoodsModal(
+              false
+            );
+
+            closeGoodsDropdown();
+          }}
           onSuccess={(goods) => {
-            setShowAddGoodsModal(false);
+            setShowAddGoodsModal(
+              false
+            );
 
             if (goods) {
-              handleSelectGoods(goods);
+              handleSelectGoods(
+                goods
+              );
+            } else {
+              closeGoodsDropdown();
             }
 
-            if (showGoodsDropdown) {
-              fetchGoodsDropdown({
-                keyword: debouncedGoodsKeywordRef.current,
-                pageNumber: 1,
-                append: false,
-              });
-            }
+            refreshGoodsDropdown();
           }}
         />
-        )}
+      )}
     </div>
   );
 }

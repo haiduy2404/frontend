@@ -8,6 +8,7 @@ import {
 import "../../../styles/ProcessingA5Print.css";
 import { printWithPageSize, PAGE_SIZE } from "../../../utils/printUtils";
 import { getReleaseOrderByCode } from "../../../services/releaseOrderService";
+import { formatViDateLong } from "../../../utils/dateUtils";
 
 function ProcessingA5Print() {
   const navigate = useNavigate();
@@ -39,19 +40,6 @@ function ProcessingA5Print() {
     });
   };
 
-  const formatDateText = (value) => {
-    if (!value) return "Ngày.......tháng .... năm 2026";
-
-    const dateOnly = String(value).split("T")[0];
-
-    if (dateOnly.includes("/")) {
-      const [day, month, year] = dateOnly.split("/");
-      return `Ngày ${day} tháng ${month} năm ${year}`;
-    }
-
-    const [year, month, day] = dateOnly.split("-");
-    return `Ngày ${day} tháng ${month} năm ${year}`;
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -315,7 +303,7 @@ function ProcessingA5Print() {
                 </h1>
 
                 <div className="processing-print-date-a5">
-                  {formatDateText(release?.release_date)}
+                  {formatViDateLong(release?.release_date)}
                 </div>
               </div>
             </div>
