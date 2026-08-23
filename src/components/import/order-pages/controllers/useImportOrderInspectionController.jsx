@@ -339,19 +339,8 @@ function useImportOrderInspectionController({
             : documentQuantity;
 
         const rejectedQuantity =
-          item.rejected_quantity !==
-            null &&
-          item.rejected_quantity !==
-            undefined &&
-          item.rejected_quantity !==
-            ""
-            ? item.rejected_quantity
-            : parseInspectionNumber(
-                documentQuantity
-              ) -
-              parseInspectionNumber(
-                acceptedQuantity
-              );
+          parseInspectionNumber(documentQuantity) -
+          parseInspectionNumber(acceptedQuantity);
 
         return {
           id:
