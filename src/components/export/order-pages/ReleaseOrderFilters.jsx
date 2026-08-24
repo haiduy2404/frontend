@@ -20,7 +20,7 @@ function ReleaseOrderFilters({
           className="release-order-search"
           placeholder="Tìm theo số lệnh, đối tượng..."
           value={search}
-          onChange={onSearchChange}
+          onChange={(event) => onSearchChange(event.target.value)}
         />
       </div>
 
