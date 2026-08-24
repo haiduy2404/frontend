@@ -224,6 +224,7 @@
 .industrial-a5-signer-name-row {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
+  margin-top: 9mm;
   text-align: center;
   font-size: 11px;
 }
