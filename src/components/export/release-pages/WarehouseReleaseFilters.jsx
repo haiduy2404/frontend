@@ -23,18 +23,15 @@ function WarehouseReleaseFilters({
       </div>
 
       <div className="warehouse-release-filter-row">
-        <select
-          name="status"
-          value={filters.status}
-          onChange={onFilterChange}
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option value="PENDING">Đang xuất kho</option>
-          <option value="WAITING_RELEASE">Chờ xuất kho</option>
-          <option value="RELEASED">Đã xuất kho</option>
-          <option value="COMPLETED">Hoàn thành</option>
-          <option value="CANCELLED">Đã hủy</option>
-        </select>
+          <select
+            name="status"
+            value={filters.status}
+            onChange={onFilterChange}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="WAIT_TO_APPROVE">Đang chờ duyệt</option>
+            <option value="COMPLETED">Đã hoàn thành</option>
+          </select>
 
         <select
           name="time_type"
