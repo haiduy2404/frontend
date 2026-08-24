@@ -268,6 +268,7 @@ const useImportReceiptPrint = () => {
 
     openReceiptPrintModal,
     closeReceiptPrintModal,
+    loadReceiptSignerUsers,
 
     buildReceiptPrintState,
   };

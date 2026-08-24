@@ -1,7 +1,10 @@
-import "../../../styles/InspectionDetailPage.css";
+import "../../../styles/ImportOrderPage.css";
 
 function ImportInspectionPrintModal({
   open,
+
+  users = [],
+  loading,
 
   warehouseKeeperName,
   inspectionOpinion,
@@ -44,25 +47,46 @@ function ImportInspectionPrintModal({
           <label>
             Người thủ kho
           </label>
+            <select
+              className="inspection-print-warehouse-select"
+              value={
+                warehouseKeeperName
+              }
+              onChange={(event) =>
+                onChangeWarehouseKeeper(
+                  event.target.value
+                )
+              }
+              disabled={loading}
+              autoFocus
+            >
+              <option value="">
+                {loading
+                  ? "Đang tải danh sách thủ kho..."
+                  : "Chọn người thủ kho"}
+              </option>
 
-          <input
-            value={
-              warehouseKeeperName
-            }
-            onChange={(event) =>
-              onChangeWarehouseKeeper(
-                event.target.value
-              )
-            }
-            placeholder="Nhập người thủ kho"
-            autoFocus
-          />
-
+              {users.map((user) => (
+                <option
+                  key={
+                    user.id ||
+                    user.username ||
+                    user.full_name
+                  }
+                  value={
+                    user.full_name || ""
+                  }
+                >
+                  {user.full_name || "-"}
+                </option>
+              ))}
+            </select>
           <label className="inspection-opinion-label">
             Ý kiến của Ban kiểm nghiệm
           </label>
 
           <textarea
+            className="inspection-print-opinion"
             value={
               inspectionOpinion
             }

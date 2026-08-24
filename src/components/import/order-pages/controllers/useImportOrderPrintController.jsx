@@ -34,7 +34,9 @@ import {
 import useImportSupplierBank from "../../../../hooks/order-detail/useImportSupplierBank.js";
 import useImportReceiptPrint from "../../../../hooks/order-detail/useImportReceiptPrint.js";
 import useImportTransferPrint from "../../../../hooks/order-detail/useImportTransferPrint.js";
-
+import {
+  getUsersBySignerField,
+} from "../../../../utils/signerUtils";
 
 function useImportOrderPrintController({
   selectedRow,
@@ -132,11 +134,17 @@ function useImportOrderPrintController({
 
     openReceiptPrintModal,
     closeReceiptPrintModal,
+    loadReceiptSignerUsers,
 
     buildReceiptPrintState,
   } =
     useImportReceiptPrint();
 
+const warehouseKeeperUsers =
+  getUsersBySignerField(
+    receiptUsers,
+    "thuKho"
+  );
 
   /* =========================================================
      TRANSFER PRINT HOOK
@@ -527,7 +535,7 @@ function useImportOrderPrintController({
 
   const openInspection =
     useCallback(
-      () => {
+      async () => {
         if (!receiptCode) {
           alert(
             "Vui lòng chọn phiếu nhập kho cần in"
@@ -536,13 +544,7 @@ function useImportOrderPrintController({
           return;
         }
 
-        /*
-         * Không cần GET thêm.
-         * Trang print inspection tự lấy receipt theo code.
-         */
-        setWarehouseKeeperName(
-          ""
-        );
+        setWarehouseKeeperName("");
 
         setInspectionOpinion(
           "Số lượng đủ, đạt yêu cầu"
@@ -551,9 +553,17 @@ function useImportOrderPrintController({
         setShowInspectionPrintModal(
           true
         );
+
+        if (
+          receiptUsers.length === 0
+        ) {
+          await loadReceiptSignerUsers();
+        }
       },
       [
         receiptCode,
+        receiptUsers.length,
+        loadReceiptSignerUsers,
       ]
     );
 
@@ -686,10 +696,14 @@ function useImportOrderPrintController({
 
 
     /* =========================
-       INSPECTION
+      INSPECTION
     ========================= */
 
     showInspectionPrintModal,
+
+    warehouseKeeperUsers,
+    warehouseKeeperUsersLoading:
+      receiptUsersLoading,
 
     warehouseKeeperName,
     setWarehouseKeeperName,

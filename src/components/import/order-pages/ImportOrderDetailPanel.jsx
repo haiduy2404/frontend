@@ -504,6 +504,14 @@ function ImportOrderDetailPanel({
           print.showInspectionPrintModal
         }
 
+        users={
+          print.warehouseKeeperUsers
+        }
+
+        loading={
+          print.warehouseKeeperUsersLoading
+        }
+
         warehouseKeeperName={
           print.warehouseKeeperName
         }
