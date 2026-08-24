@@ -102,14 +102,13 @@
   margin-top: 1mm;
 }
 
+/* Nội dung chạy liền dòng như tờ đã ký: nhãn và giá trị nằm cùng một dòng,
+   không chia cột cố định nên giá trị không bị dồn/xuống dòng. */
 .transfer-row {
-  display: grid;
-  grid-template-columns: 52mm 1fr;
-  column-gap: 4mm; /* thêm dòng này */
-  align-items: baseline;
   font-size: 13pt;
-  line-height: 1.2;
+  line-height: 1.25;
   margin-bottom: 1.2mm;
+  text-align: left;
 }
 
 .transfer-row label {
@@ -120,7 +119,7 @@
 .transfer-row span {
   white-space: normal;
   overflow-wrap: break-word;
-  padding-left: 7mm;
+  margin-left: 3mm;
 }
 
 .transfer-value-bold {
