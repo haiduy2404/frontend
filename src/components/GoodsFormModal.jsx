@@ -758,9 +758,9 @@ function GoodsFormModal({
                       </div>
 
                       <div className="conversion-row-preview">
-                        1 {conversionUnitName || "ĐV"} ={" "}
+                        1 {primaryUnitName || "ĐVT chính"} ={" "}
                         <strong>{item.ratio || "..."}</strong>{" "}
-                        {primaryUnitName || "ĐVT chính"}
+                        {conversionUnitName || "ĐV"}
                       </div>
                       <button
                         type="button"
@@ -782,14 +782,14 @@ function GoodsFormModal({
                 </span>
               </div>
             )}
-
             <div className="conversion-guide">
               <RiInformationLine />
               <div>
                 <strong>Cách nhập hệ số</strong>
                 <span>
-                  Ví dụ: ĐVT chính là kg, 1 tấn = 1000 kg thì hệ số của tấn là
-                  1000.
+                  Hệ số cho biết 1 ĐVT chính tương đương bao nhiêu ĐVT quy đổi.
+                  Ví dụ: ĐVT chính là Cuộn, 1 Cuộn = 100 m thì nhập hệ số 100
+                  cho đơn vị m.
                 </span>
               </div>
             </div>
