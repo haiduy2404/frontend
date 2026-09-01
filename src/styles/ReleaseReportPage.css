@@ -609,3 +609,21 @@
     width: auto;
   }
 }
+
+.release-report-summary-row {
+  background: #f3f4f6;
+  font-weight: 700;
+}
+
+.release-report-summary-row td {
+  border-top: 2px solid #9ca3af;
+}
+
+.release-report-summary-label {
+  text-align: right;
+  font-weight: 700;
+}
+
+.release-report-summary-row .release-report-total {
+  font-weight: 700;
+}

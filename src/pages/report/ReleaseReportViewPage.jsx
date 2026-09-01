@@ -389,6 +389,23 @@ function ReleaseReportViewPage() {
     };
   };
 
+  const pageTotals = useMemo(() => {
+    return rows.reduce(
+      (total, row) => {
+        const view = getRowView(row);
+
+        total.quantity += normalizeNumber(view.quantity);
+        total.amount += normalizeNumber(view.amount);
+
+        return total;
+      },
+      {
+        quantity: 0,
+        amount: 0,
+      }
+    );
+  }, [rows]);
+
   if (!canDo("view_report")) {
     return (
       <div className="no-permission-page">
@@ -553,6 +570,25 @@ function ReleaseReportViewPage() {
                 })
               )}
             </tbody>
+            <tfoot>
+              <tr className="release-report-summary-row">
+                <td colSpan={9} className="release-report-summary-label">
+                  TỔNG
+                </td>
+
+                <td className="release-report-number">
+                  {formatQuantity(pageTotals.quantity)}
+                </td>
+
+                <td className="release-report-number">
+                  —
+                </td>
+
+                <td className="release-report-number release-report-total">
+                  {formatMoney(pageTotals.amount)}
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
 
