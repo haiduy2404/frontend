@@ -165,3 +165,129 @@ body.app-responsive aside {
   }
 
 }
+
+/* =========================================================
+   IMPORT ORDER PAGE - MOBILE
+========================================================= */
+
+@media screen and (max-width: 768px) {
+  /* Toàn trang */
+  body.app-responsive .warehouse-import-page {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+
+    padding: 8px;
+    overflow-x: hidden;
+  }
+
+
+  /* ================================
+     HEADER
+  ================================= */
+
+  body.app-responsive .warehouse-import-page-header {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  body.app-responsive .warehouse-import-page-header h1 {
+    font-size: 24px;
+  }
+
+
+  /* ================================
+     BỎ SPLIT 2 CỘT
+  ================================= */
+
+  body.app-responsive .warehouse-import-main {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    overflow: visible;
+  }
+
+
+  /* ================================
+     LEFT - DANH SÁCH
+     
+     !important ở đây là cần thiết vì
+     JSX đang set width inline theo px
+  ================================= */
+
+  body.app-responsive .warehouse-import-left-column {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex-basis: auto !important;
+
+    height: auto !important;
+
+    overflow: visible;
+  }
+
+
+  /* ================================
+     SPLITTER
+  ================================= */
+
+  body.app-responsive .warehouse-import-splitter,
+  body.app-responsive [class*="import-splitter"] {
+    display: none !important;
+  }
+
+
+  /* ================================
+     RIGHT - CHI TIẾT
+  ================================= */
+
+  body.app-responsive .warehouse-import-right-column {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+
+    flex: none !important;
+
+    overflow: visible;
+  }
+
+
+  /* ================================
+     FILTER
+  ================================= */
+
+  body.app-responsive .warehouse-import-left-column input,
+  body.app-responsive .warehouse-import-left-column select {
+    max-width: 100%;
+  }
+
+
+  /* ================================
+     BẢNG TRONG CHI TIẾT
+  ================================= */
+
+  body.app-responsive
+    .warehouse-import-right-column
+    [class*="table-wrapper"],
+  body.app-responsive
+    .warehouse-import-right-column
+    [class*="table-container"] {
+    width: 100%;
+    max-width: 100%;
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+
+  body.app-responsive
+    .warehouse-import-right-column
+    table {
+    min-width: 700px;
+  }
+}
