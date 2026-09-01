@@ -2987,3 +2987,298 @@ button:disabled {
   line-height: 1.2;
   font-weight: 750;
 }
+
+/* =========================================================
+   RELEASE ORDER PAGE - MOBILE
+   Desktop giữ nguyên hoàn toàn
+========================================================= */
+
+@media screen and (max-width: 768px) {
+
+  /* =====================================================
+     PAGE
+  ===================================================== */
+
+  body.app-responsive .release-order-page {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+
+    flex: 0 0 auto !important;
+
+    overflow: visible !important;
+  }
+
+
+  /* =====================================================
+     MAIN LAYOUT
+
+     Desktop:
+       LEFT | splitter | RIGHT
+
+     Mobile:
+       LEFT
+       RIGHT
+  ===================================================== */
+
+  body.app-responsive .release-order-layout {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+
+    flex: 0 0 auto !important;
+
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+
+    overflow: visible !important;
+  }
+
+
+  /* =====================================================
+     LEFT COLUMN
+
+     Cần chiều cao xác định để:
+       filter
+       list scroll
+       pagination
+     hoạt động đúng.
+     
+     !important cho width/flex vì JSX có inline style.
+  ===================================================== */
+
+  body.app-responsive .release-order-left-column {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+
+    height: 620px;
+    min-height: 620px;
+    max-height: 620px;
+
+    flex: 0 0 620px !important;
+    flex-basis: 620px !important;
+
+    overflow: hidden;
+
+    border-right: 0;
+    border-bottom: 1px solid #e2e8f0;
+
+    background: #ffffff;
+  }
+
+
+  /* =====================================================
+     LIST PANEL
+  ===================================================== */
+
+  body.app-responsive .release-order-list-panel {
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow: hidden;
+  }
+
+
+  body.app-responsive .release-order-list-scroll {
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    -webkit-overflow-scrolling: touch;
+
+    /*
+     Desktop đang chừa 40px do pagination bị kéo lên.
+     Mobile pagination không kéo nữa.
+    */
+    padding-bottom: 0 !important;
+  }
+
+
+  /* =====================================================
+     PAGINATION
+
+     Desktop đang:
+       transform: translateY(-40px)
+
+     Mobile đưa về vị trí thật.
+  ===================================================== */
+
+  body.app-responsive .release-order-pagination {
+    height: 46px;
+    min-height: 46px;
+
+    flex: 0 0 46px;
+
+    transform: none !important;
+
+    position: relative;
+  }
+
+
+  /* =====================================================
+     SPLITTER
+  ===================================================== */
+
+  body.app-responsive .release-order-column-splitter {
+    display: none !important;
+  }
+
+
+  /* =====================================================
+     RIGHT COLUMN
+  ===================================================== */
+
+  body.app-responsive .release-order-right-column {
+    width: 100% !important;
+    min-width: 0;
+
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+
+    flex: 0 0 auto !important;
+
+    overflow: visible !important;
+  }
+
+
+  /* =====================================================
+     DETAIL PANEL
+  ===================================================== */
+
+  body.app-responsive .release-order-detail-panel {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+
+    flex: 0 0 auto !important;
+
+    overflow: visible !important;
+  }
+
+
+  body.app-responsive .release-order-detail-scroll {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+
+    flex: 0 0 auto !important;
+
+    padding: 12px;
+
+    overflow: visible !important;
+  }
+
+
+  /* =====================================================
+     DETAIL BODY
+
+     Desktop:
+       nội dung | thao tác
+
+     Mobile:
+       nội dung
+       thao tác
+  ===================================================== */
+
+  body.app-responsive .release-order-detail-body-layout {
+    width: 100%;
+
+    grid-template-columns: minmax(0, 1fr) !important;
+
+    gap: 12px;
+  }
+
+
+  body.app-responsive .release-order-detail-main-content,
+  body.app-responsive .release-order-side-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+
+  body.app-responsive .release-order-side-panel {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+
+  /* =====================================================
+     SUMMARY
+     4 ô desktop -> 2 x 2 trên điện thoại
+  ===================================================== */
+
+  body.app-responsive .release-order-summary-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    overflow: hidden;
+  }
+
+
+  body.app-responsive .release-order-summary-item {
+    min-height: 82px;
+
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+
+  body.app-responsive
+  .release-order-summary-item:nth-child(2n) {
+    border-right: 0;
+  }
+
+
+  body.app-responsive
+  .release-order-summary-item:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+
+  /* =====================================================
+     GOODS TABLE
+     Không ép bảng vào màn hình.
+     Cho vuốt ngang.
+  ===================================================== */
+
+  body.app-responsive .release-order-goods-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+
+  /* =====================================================
+     MODAL HÀNG HÓA
+  ===================================================== */
+
+  body.app-responsive .release-order-goods-modal-overlay {
+    padding: 10px;
+  }
+
+
+  body.app-responsive .release-order-goods-modal {
+    width: calc(100vw - 20px);
+    height: calc(100dvh - 20px);
+
+    max-height: none;
+  }
+}
