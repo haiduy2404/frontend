@@ -8,7 +8,7 @@ import {
 
 import "../../../styles/ImportOrderPage.css";
 import "../../../styles/ImportOrderDetailPage.css";
-import "../../../styles/ImportOrderResizable.css";
+//import "../../../styles/ImportOrderResizable.css";
 
 import useImportOrderListController from "../../../hooks/order-page/useImportOrderListController.jsx";
 import useImportOrderDetailController from "../../../hooks/order-page/useImportOrderDetailController.jsx";
