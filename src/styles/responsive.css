@@ -476,3 +476,101 @@ body.app-responsive aside {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* =========================================================
+   FIX IMPORT DETAIL MOBILE BỊ MẤT NỘI DUNG
+========================================================= */
+
+@media screen and (max-width: 768px) {
+
+  body.app-responsive .warehouse-import-right-column {
+    width: 100% !important;
+
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+
+    flex: 0 0 auto !important;
+
+    display: block !important;
+
+    overflow: visible !important;
+  }
+
+
+  body.app-responsive
+    .warehouse-import-right-column
+    > .warehouse-import-detail {
+
+    width: 100% !important;
+
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+
+    flex: 0 0 auto !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    overflow: visible !important;
+
+    scrollbar-gutter: auto !important;
+  }
+
+
+  /* Header phiếu */
+  body.app-responsive .import-order-detail-header {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 70px;
+
+    flex: 0 0 auto !important;
+  }
+
+
+  /* Summary */
+  body.app-responsive .import-order-summary-grid {
+    flex: 0 0 auto !important;
+  }
+
+
+  /* Nội dung detail */
+  body.app-responsive .import-order-detail-body-layout {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 0 !important;
+
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+
+    align-items: start;
+
+    overflow: visible !important;
+  }
+
+
+  body.app-responsive .import-order-detail-main-content {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 0 !important;
+
+    overflow: visible !important;
+  }
+
+
+  body.app-responsive .import-order-detail-side-panel {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 0 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    overflow: visible !important;
+  }
+}
