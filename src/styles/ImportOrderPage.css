@@ -3155,3 +3155,124 @@
 .inspection-print-opinion::placeholder {
   color: #94a3b8;
 }
+
+/* =========================================================
+   IMPORT ORDER - MOBILE
+   Chỉ sửa layout, desktop giữ nguyên
+========================================================= */
+
+@media screen and (max-width: 768px) {
+
+  /* Root */
+  body.app-responsive .warehouse-import-page {
+    height: auto;
+    min-height: 0;
+
+    overflow: visible;
+  }
+
+
+  /* MAIN:
+     desktop đang height: 0,
+     mobile phải cho cao tự nhiên */
+  body.app-responsive .warehouse-import-main {
+    height: auto;
+    min-height: 0;
+
+    flex: 0 0 auto;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: visible;
+  }
+
+
+  /* LEFT COLUMN:
+     cần chiều cao xác định để list bên trong vẫn dùng
+     flex + height: 0 như desktop */
+  body.app-responsive .warehouse-import-left-column {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+
+    height: 620px;
+    min-height: 620px;
+    max-height: 620px;
+
+    flex: 0 0 620px !important;
+    flex-basis: 620px !important;
+
+    overflow: hidden;
+
+    border-right: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+
+  /* Splitter desktop không dùng trên mobile */
+  body.app-responsive .detail-splitter {
+    display: none !important;
+  }
+
+
+  /* RIGHT COLUMN */
+  body.app-responsive .warehouse-import-right-column {
+    width: 100%;
+    min-width: 0;
+
+    height: auto;
+    min-height: 0;
+
+    flex: 0 0 auto;
+
+    overflow: visible;
+  }
+
+
+  /* DETAIL ROOT */
+  body.app-responsive
+    .warehouse-import-right-column
+    > .warehouse-import-detail {
+    width: 100%;
+
+    height: auto;
+    min-height: 0;
+
+    flex: 0 0 auto;
+
+    overflow: visible;
+  }
+
+
+  /* Detail: desktop 2 cột -> mobile 1 cột */
+  body.app-responsive .import-order-detail-body-layout {
+    grid-template-columns: minmax(0, 1fr);
+
+    padding: 0 12px 16px;
+  }
+
+
+  /* Summary giữ dạng ngang và cho vuốt */
+  body.app-responsive .import-order-summary-grid {
+    margin-inline: 12px;
+
+    grid-template-columns:
+      repeat(5, minmax(145px, 1fr));
+
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+
+  /* Footer list:
+     desktop đang kéo lên -40px,
+     mobile trả về vị trí thật */
+  body.app-responsive .warehouse-import-list-pagination {
+    transform: none;
+  }
+
+  body.app-responsive .import-order-card-list {
+    padding-bottom: 0;
+  }
+}
