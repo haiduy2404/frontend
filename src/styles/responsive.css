@@ -1,0 +1,167 @@
+/* ============================================================
+   GLOBAL RESPONSIVE
+   Chỉ hoạt động khi body có .app-responsive
+
+   Trang PRINT không có class này nên hoàn toàn không bị tác động.
+============================================================ */
+
+
+/* ============================================================
+   GLOBAL FIX
+============================================================ */
+
+body.app-responsive {
+  max-width: 100%;
+}
+
+body.app-responsive *,
+body.app-responsive *::before,
+body.app-responsive *::after {
+  box-sizing: border-box;
+}
+
+body.app-responsive img,
+body.app-responsive video,
+body.app-responsive canvas {
+  max-width: 100%;
+}
+
+body.app-responsive main,
+body.app-responsive section,
+body.app-responsive article,
+body.app-responsive aside {
+  min-width: 0;
+}
+
+
+/* ============================================================
+   TABLET
+============================================================ */
+
+@media screen and (max-width: 1024px) {
+
+  body.app-responsive {
+    overflow-x: hidden;
+  }
+
+  body.app-responsive [class*="table-wrapper"],
+  body.app-responsive [class*="table-container"] {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+}
+
+
+/* ============================================================
+   MOBILE
+============================================================ */
+
+@media screen and (max-width: 768px) {
+
+  body.app-responsive {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+
+  /* =========================
+     FLEX
+  ========================= */
+
+  body.app-responsive [class*="toolbar"] {
+    flex-wrap: wrap;
+  }
+
+  body.app-responsive [class*="header"] {
+    max-width: 100%;
+  }
+
+
+  /* =========================
+     INPUT
+  ========================= */
+
+  body.app-responsive input,
+  body.app-responsive select,
+  body.app-responsive textarea {
+    max-width: 100%;
+  }
+
+  /*
+    iPhone sẽ tự zoom nếu input nhỏ hơn 16px.
+  */
+  body.app-responsive input,
+  body.app-responsive select,
+  body.app-responsive textarea {
+    font-size: max(16px, 1em);
+  }
+
+
+  /* =========================
+     TABLE
+  ========================= */
+
+  body.app-responsive [class*="table-wrapper"],
+  body.app-responsive [class*="table-container"],
+  body.app-responsive [class*="table-scroll"] {
+    width: 100%;
+    max-width: 100%;
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /*
+    Không ép bảng 10-15 cột xuống 390px.
+    Cho phép kéo ngang.
+  */
+  body.app-responsive table {
+    max-width: none;
+  }
+
+
+  /* =========================
+     MODAL
+  ========================= */
+
+  body.app-responsive [class*="modal-content"],
+  body.app-responsive [class*="modal-container"],
+  body.app-responsive [class*="modal-dialog"] {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+  }
+
+
+  /* =========================
+     PAGINATION
+  ========================= */
+
+  body.app-responsive [class*="pagination"] {
+    max-width: 100%;
+  }
+
+  body.app-responsive [class*="pagination-buttons"] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+}
+
+
+/* ============================================================
+   SMALL MOBILE
+============================================================ */
+
+@media screen and (max-width: 480px) {
+
+  body.app-responsive [class*="modal-content"],
+  body.app-responsive [class*="modal-container"],
+  body.app-responsive [class*="modal-dialog"] {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+  }
+
+}

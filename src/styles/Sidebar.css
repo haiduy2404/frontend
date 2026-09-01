@@ -773,3 +773,282 @@
 .sidebar.collapsed .report-mega-menu {
   display: none;
 }
+
+/* =========================================================
+   MOBILE SIDEBAR
+========================================================= */
+
+.sidebar-mobile-close {
+  display: none;
+}
+
+
+@media screen and (max-width: 768px) {
+  /* ==========================
+     SIDEBAR DRAWER
+  ========================== */
+
+  .sidebar,
+  .sidebar.collapsed {
+    width: min(82vw, 300px);
+    min-width: min(82vw, 300px);
+    max-width: 300px;
+
+    height: 100dvh;
+
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    z-index: 1000;
+
+    flex: none;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    transform: translateX(-105%);
+
+    transition: transform 0.22s ease;
+  }
+
+  .sidebar.mobile-open,
+  .sidebar.collapsed.mobile-open {
+    transform: translateX(0);
+  }
+
+
+  /* ==========================
+     BRAND
+  ========================== */
+
+  .sidebar .sidebar-brand,
+  .sidebar.collapsed .sidebar-brand {
+    width: 100%;
+
+    height: 64px;
+    min-height: 64px;
+
+    padding: 6px 10px 6px 16px;
+
+    flex: 0 0 64px;
+  }
+
+  .sidebar .sidebar-brand-link,
+  .sidebar.collapsed .sidebar-brand-link {
+    flex: 1 1 auto;
+
+    width: auto;
+
+    justify-content: flex-start;
+  }
+
+  .sidebar .sidebar-brand-logo,
+  .sidebar.collapsed .sidebar-brand-logo {
+    width: 145px;
+    height: 48px;
+
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  .sidebar-mobile-close {
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 38px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 0;
+    border-radius: 6px;
+
+    background: rgba(255, 255, 255, 0.06);
+
+    color: #ffffff;
+
+    font-size: 27px;
+    line-height: 1;
+
+    cursor: pointer;
+  }
+
+
+  /* ==========================
+     KHÔNG COLLAPSE TRÊN MOBILE
+  ========================== */
+
+  .sidebar.collapsed .sidebar-text,
+  .sidebar.collapsed .sidebar-arrow {
+    display: block;
+  }
+
+  .sidebar.collapsed .sidebar-text {
+    flex: 1 1 auto;
+  }
+
+  .sidebar.collapsed .sidebar-arrow {
+    flex: 0 0 auto;
+  }
+
+
+  /* ==========================
+     MAIN MENU
+  ========================== */
+
+  .sidebar .sidebar-menu,
+  .sidebar.collapsed .sidebar-menu {
+    width: 100%;
+
+    flex: 0 0 auto;
+
+    min-height: auto;
+
+    padding: 12px 10px;
+
+    overflow: visible;
+  }
+
+  .sidebar .sidebar-item,
+  .sidebar.collapsed .sidebar-item {
+    width: 100%;
+
+    padding: 0 11px;
+
+    justify-content: flex-start;
+  }
+
+  .sidebar .sidebar-main-link,
+  .sidebar.collapsed .sidebar-main-link {
+    width: calc(100% + 22px);
+    height: 40px;
+
+    margin: 0 -11px;
+    padding: 0 11px;
+
+    justify-content: flex-start;
+
+    gap: 10px;
+  }
+
+  .sidebar .sidebar-icon,
+  .sidebar.collapsed .sidebar-icon {
+    width: 20px;
+    min-width: 20px;
+
+    flex: 0 0 20px;
+  }
+
+
+  /* ==========================
+     SUBMENU
+  ========================== */
+
+  .sidebar.collapsed .sidebar-submenu {
+    display: flex;
+  }
+
+  .sidebar.collapsed .sidebar-submenu-group {
+    display: flex;
+  }
+
+
+  /* ==========================
+     EXTRA MENU
+  ========================== */
+
+  .sidebar .sidebar-extra-menu,
+  .sidebar.collapsed .sidebar-extra-menu {
+    width: 100%;
+
+    flex: 0 0 auto;
+
+    padding: 10px;
+  }
+
+  .sidebar.collapsed .sidebar-extra-menu .sidebar-item {
+    width: 100%;
+
+    margin-inline: 0;
+  }
+
+
+  /* =========================================================
+     CATEGORY / REPORT TRÊN MOBILE
+     Không bung mega menu sang bên phải nữa
+  ========================================================= */
+
+  .sidebar-category-wrap,
+  .sidebar-report-wrap {
+    height: auto;
+
+    min-height: 40px;
+
+    flex-wrap: wrap;
+  }
+
+  .category-mega-menu,
+  .report-mega-menu {
+    position: static;
+
+    left: auto;
+    bottom: auto;
+
+    width: 100%;
+    min-height: 0;
+
+    flex: 0 0 100%;
+
+    margin: 8px 0 6px;
+    padding: 14px;
+
+    border-radius: 6px;
+
+    box-shadow: none;
+  }
+
+  .category-mega-menu {
+    grid-template-columns: 1fr;
+
+    gap: 16px;
+  }
+
+  .category-mega-menu::before,
+  .report-mega-menu::before {
+    display: none;
+  }
+
+  .category-title,
+  .report-title {
+    margin-bottom: 8px;
+  }
+
+  .category-link,
+  .report-link {
+    padding: 8px 4px;
+  }
+
+
+  /* collapsed class không được giấu mega menu ở mobile */
+  .sidebar.collapsed .category-mega-menu {
+    display: grid;
+  }
+
+  .sidebar.collapsed .report-mega-menu {
+    display: block;
+  }
+
+
+  /* ==========================
+     BOTTOM / COLLAPSE
+  ========================== */
+
+  .sidebar-bottom {
+    display: none;
+  }
+}

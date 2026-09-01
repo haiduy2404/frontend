@@ -1,10 +1,12 @@
 import React, {
+  useEffect,
   useState,
 } from "react";
 
 import {
   Link,
   NavLink,
+  useLocation,
 } from "react-router-dom";
 
 import "../styles/Sidebar.css";
@@ -12,7 +14,11 @@ import "../styles/Sidebar.css";
 import logo from "../assets/logo.png";
 
 
-const Sidebar = () => {
+const Sidebar = ({
+  mobileOpen = false,
+  onMobileClose,
+}) => {
+  const location = useLocation();
   const [
     activeMenu,
     setActiveMenu,
@@ -33,6 +39,31 @@ const Sidebar = () => {
     setCollapsed,
   ] = useState(false);
 
+  // Khi đổi route thì tự đóng sidebar trên mobile
+  useEffect(() => {
+    onMobileClose?.();
+  }, [location.pathname, onMobileClose]);
+
+
+  // Khi màn hình xuống mobile thì bỏ trạng thái collapsed
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+
+    const handleViewportChange = () => {
+      if (mediaQuery.matches) {
+        setCollapsed(false);
+      }
+    };
+
+    handleViewportChange();
+
+    mediaQuery.addEventListener("change", handleViewportChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleViewportChange);
+    };
+  }, []);
+
 
   const toggleMenu = (
     menu
@@ -50,13 +81,13 @@ const Sidebar = () => {
 
 
   return (
-    <aside
-      className={`sidebar ${
-        collapsed
-          ? "collapsed"
-          : ""
-      }`}
-    >
+      <aside
+        className={`sidebar ${
+          collapsed ? "collapsed" : ""
+        } ${
+          mobileOpen ? "mobile-open" : ""
+        }`}
+      >
       {/* =====================================================
           LOGO
           ===================================================== */}
@@ -73,6 +104,15 @@ const Sidebar = () => {
             className="sidebar-brand-logo"
           />
         </Link>
+
+        <button
+          type="button"
+          className="sidebar-mobile-close"
+          onClick={onMobileClose}
+          aria-label="Đóng menu"
+        >
+          ×
+        </button>
       </div>
 
 

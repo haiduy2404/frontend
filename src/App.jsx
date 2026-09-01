@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
   useNavigate,
+  useLocation,
   Outlet,
 } from "react-router-dom";
 import DashboardHomePage from "./pages/dashboard/DashboardHomePage";
@@ -50,6 +51,7 @@ import ReleaseReportViewPage from "./pages/report/ReleaseReportViewPage";
 import ShowDetailGoodsPrint from "./pages/activity/release/Show_Detail_Goods_Print";
 
 import "./styles/auth.css";
+import "./styles/responsive.css";
 
 // Bridges global auth events from the axios interceptor to router navigation.
 function AuthEventBridge() {
@@ -70,11 +72,38 @@ function AuthEventBridge() {
   return null;
 }
 
+function ResponsiveRouteBridge() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const pathname = location.pathname.toLowerCase();
+
+    const isPrintPage = pathname.includes("print");
+
+    if (isPrintPage) {
+      document.body.classList.remove("app-responsive");
+      document.body.classList.add("app-print-page");
+    } else {
+      document.body.classList.remove("app-print-page");
+      document.body.classList.add("app-responsive");
+    }
+
+    return () => {
+      document.body.classList.remove("app-responsive");
+      document.body.classList.remove("app-print-page");
+    };
+  }, [location.pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <AuthEventBridge />
+        <ResponsiveRouteBridge />
+
         <Routes>
           <Route path="/" element={<GuestRoute><LoginPage /></GuestRoute>} />
           <Route path="/no-permission" element={<NoPermissionPage />} />
