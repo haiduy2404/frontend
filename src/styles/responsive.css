@@ -168,87 +168,160 @@ body.app-responsive aside {
 
 /* =========================================================
    IMPORT ORDER PAGE - MOBILE
+   Cho hoạt động giống Warehouse Transfer:
+   List ở trên -> Detail ở dưới -> toàn trang scroll tự nhiên
 ========================================================= */
 
 @media screen and (max-width: 768px) {
-  /* Toàn trang */
+
+  /* =======================================================
+     PAGE
+  ======================================================= */
+
   body.app-responsive .warehouse-import-page {
     width: 100%;
-    min-width: 0;
-    max-width: 100%;
+    height: auto !important;
+    min-height: 0;
 
-    padding: 8px;
-    overflow-x: hidden;
+    display: block;
+
+    overflow: visible !important;
   }
 
 
-  /* ================================
-     HEADER
-  ================================= */
-
-  body.app-responsive .warehouse-import-page-header {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-
-  body.app-responsive .warehouse-import-page-header h1 {
-    font-size: 24px;
-  }
-
-
-  /* ================================
-     BỎ SPLIT 2 CỘT
-  ================================= */
+  /* =======================================================
+     MAIN
+     Desktop dùng workspace cố định.
+     Mobile bỏ hoàn toàn cơ chế đó.
+  ======================================================= */
 
   body.app-responsive .warehouse-import-main {
     width: 100%;
 
+    height: auto !important;
+    min-height: 0 !important;
+
+    flex: none !important;
+
     display: flex;
-    flex-direction: column;
+    flex-direction: column !important;
 
-    gap: 12px;
+    overflow: visible !important;
 
-    overflow: visible;
+    background: transparent;
   }
 
 
-  /* ================================
-     LEFT - DANH SÁCH
-     
-     !important ở đây là cần thiết vì
-     JSX đang set width inline theo px
-  ================================= */
+  /* =======================================================
+     LEFT LIST
+     Override cả inline width từ leftPaneWidth
+  ======================================================= */
 
   body.app-responsive .warehouse-import-left-column {
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    flex-basis: auto !important;
 
     height: auto !important;
 
-    overflow: visible;
+    flex: none !important;
+    flex-basis: auto !important;
+
+    overflow: visible !important;
+
+    border-right: 0;
   }
 
 
-  /* ================================
-     SPLITTER
-  ================================= */
+  /* =======================================================
+     FILTER
+  ======================================================= */
 
-  body.app-responsive .warehouse-import-splitter,
-  body.app-responsive [class*="import-splitter"] {
-    display: none !important;
+  body.app-responsive .import-order-sidebar-filters {
+    width: 100%;
+  }
+
+  body.app-responsive .import-order-sidebar-filter-grid,
+  body.app-responsive .import-order-sidebar-date-grid {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
   }
 
 
-  /* ================================
-     RIGHT - CHI TIẾT
-  ================================= */
+  /* =======================================================
+     LIST PANE
+     Đây là phần quan trọng.
+     Phải bỏ height:0 của desktop.
+  ======================================================= */
 
-  body.app-responsive .warehouse-import-right-column {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
+  body.app-responsive
+    .warehouse-import-left-column
+    .warehouse-import-list-pane {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 0 !important;
+
+    flex: none !important;
+
+    display: block;
+
+    overflow: visible !important;
+  }
+
+  body.app-responsive .warehouse-import-list-content {
+    height: auto !important;
+    min-height: 0 !important;
+
+    flex: none !important;
+
+    display: block;
+
+    overflow: visible !important;
+  }
+
+  body.app-responsive .import-order-list-wrapper {
+    height: auto !important;
+    min-height: 0 !important;
+
+    flex: none !important;
+
+    display: block;
+
+    overflow: visible !important;
+  }
+
+
+  /* =======================================================
+     DANH SÁCH CARD
+     
+     Không cho 224 phiếu xổ hết ra.
+     Giữ một vùng cao vừa phải giống phiếu Điều chuyển.
+  ======================================================= */
+
+  body.app-responsive .import-order-card-list {
+    height: 420px !important;
+    min-height: 420px !important;
+    max-height: 420px;
+
+    flex: none !important;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+
+  /* =======================================================
+     PAGINATION
+  ======================================================= */
+
+  body.app-responsive .warehouse-import-list-pagination,
+  body.app-responsive .warehouse-import-pagination {
+    height: 48px !important;
+    min-height: 48px;
 
     flex: none !important;
 
@@ -256,38 +329,137 @@ body.app-responsive aside {
   }
 
 
-  /* ================================
-     FILTER
-  ================================= */
+  /* =======================================================
+     SPLITTER
+     Mobile không resize.
+  ======================================================= */
 
-  body.app-responsive .warehouse-import-left-column input,
-  body.app-responsive .warehouse-import-left-column select {
-    max-width: 100%;
+  body.app-responsive .detail-splitter,
+  body.app-responsive .import-vertical-splitter,
+  body.app-responsive [class*="import-order-splitter"],
+  body.app-responsive [class*="warehouse-import-splitter"] {
+    display: none !important;
   }
 
 
-  /* ================================
-     BẢNG TRONG CHI TIẾT
-  ================================= */
+  /* =======================================================
+     RIGHT DETAIL
+  ======================================================= */
+
+  body.app-responsive .warehouse-import-right-column {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+
+    height: auto !important;
+
+    flex: none !important;
+
+    overflow: visible !important;
+
+    background: transparent;
+  }
+
 
   body.app-responsive
     .warehouse-import-right-column
-    [class*="table-wrapper"],
-  body.app-responsive
-    .warehouse-import-right-column
-    [class*="table-container"] {
+    > .warehouse-import-detail {
+    width: 100%;
+
+    height: auto !important;
+    min-height: 0 !important;
+
+    flex: none !important;
+
+    overflow: visible !important;
+  }
+
+
+  /* =======================================================
+     DETAIL HEADER
+  ======================================================= */
+
+  body.app-responsive .import-order-detail-header {
+    padding: 14px 12px;
+  }
+
+  body.app-responsive .import-order-detail-header-main {
+    gap: 10px;
+  }
+
+
+  /* =======================================================
+     SUMMARY
+     Desktop 5 cột -> mobile 2 cột
+  ======================================================= */
+
+  body.app-responsive .import-order-summary-grid {
+    margin: 0 12px 12px;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    overflow: hidden;
+  }
+
+  body.app-responsive .import-order-summary-item {
+    min-height: 84px;
+
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+
+  /* =======================================================
+     DETAIL BODY
+     Desktop:
+         MAIN | SIDE PANEL
+
+     Mobile:
+         MAIN
+         SIDE PANEL
+  ======================================================= */
+
+  body.app-responsive .import-order-detail-body-layout {
+    width: 100%;
+
+    padding: 0 12px 16px;
+
+    display: grid;
+    grid-template-columns: 1fr;
+
+    gap: 12px;
+  }
+
+
+  body.app-responsive .import-order-detail-main-content,
+  body.app-responsive .import-order-detail-side-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+
+  /* =======================================================
+     WORKFLOW
+  ======================================================= */
+
+  body.app-responsive .import-order-workflow {
+    width: 100%;
+  }
+
+
+  /* =======================================================
+     TABLE HÀNG HÓA
+     vẫn cho kéo ngang
+  ======================================================= */
+
+  body.app-responsive .import-list-detail-table-wrapper {
     width: 100%;
     max-width: 100%;
 
     overflow-x: auto;
+    overflow-y: visible;
 
     -webkit-overflow-scrolling: touch;
-  }
-
-
-  body.app-responsive
-    .warehouse-import-right-column
-    table {
-    min-width: 700px;
   }
 }
