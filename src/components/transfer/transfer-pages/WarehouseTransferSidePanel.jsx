@@ -11,7 +11,11 @@ import WarehouseTransferDocumentsPanel from "./WarehouseTransferDocumentsPanel";
 
 import { isPendingTransferStatus } from "./utils/warehouseTransferUtils";
 
-export default function WarehouseTransferSidePanel({ detail, actions }) {
+export default function WarehouseTransferSidePanel({
+  detail,
+  transferId,
+  actions,
+}) {
   const transfer = detail.raw;
   const pending = isPendingTransferStatus(detail.status);
 
@@ -131,7 +135,14 @@ export default function WarehouseTransferSidePanel({ detail, actions }) {
       {/* =====================================================
           TÀI LIỆU LIÊN QUAN
       ===================================================== */}
-      <WarehouseTransferDocumentsPanel detail={detail} />
+      <WarehouseTransferDocumentsPanel
+        detail={detail}
+        transferId={transferId}
+        canManage={
+          actions.canCreate ||
+          actions.canUpdate
+        }
+      />
 
       {/* =====================================================
           GHI CHÚ

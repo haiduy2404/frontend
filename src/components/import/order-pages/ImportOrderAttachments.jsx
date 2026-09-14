@@ -17,8 +17,8 @@ import attachmentService, {
 } from "../../../services/attachmentService";
 
 
-export default function WarehouseTransferDocumentsPanel({
-  transferId,
+function ImportOrderAttachments({
+  receiptId,
   canManage = false,
 }) {
   const fileInputRef =
@@ -45,13 +45,13 @@ export default function WarehouseTransferDocumentsPanel({
   ] = useState(0);
 
   const [
-    downloadingId,
-    setDownloadingId,
+    deletingId,
+    setDeletingId,
   ] = useState(null);
 
   const [
-    deletingId,
-    setDeletingId,
+    downloadingId,
+    setDownloadingId,
   ] = useState(null);
 
   const [
@@ -67,11 +67,11 @@ export default function WarehouseTransferDocumentsPanel({
 
   /* =========================================================
      LOAD ATTACHMENTS
-  ========================================================= */
+     ========================================================= */
 
   const loadAttachments =
     async () => {
-      if (!transferId) {
+      if (!receiptId) {
         setAttachments([]);
         return;
       }
@@ -82,13 +82,12 @@ export default function WarehouseTransferDocumentsPanel({
       try {
         const response =
           await attachmentService.getAttachments(
-            ATTACHMENT_TICKET_TYPES.TRANSFER,
-            transferId
+            ATTACHMENT_TICKET_TYPES.RECEIPT,
+            receiptId
           );
 
         setAttachments(
-          response?.data?.results ||
-          []
+          response?.data?.results || []
         );
       } catch (err) {
         setAttachments([]);
@@ -105,16 +104,16 @@ export default function WarehouseTransferDocumentsPanel({
 
 
   useEffect(() => {
-    setError("");
     setNotice("");
+    setError("");
 
     loadAttachments();
-  }, [transferId]);
+  }, [receiptId]);
 
 
   /* =========================================================
-     OPEN FILE PICKER
-  ========================================================= */
+     SELECT / UPLOAD
+     ========================================================= */
 
   const handleOpenFilePicker =
     () => {
@@ -129,27 +128,23 @@ export default function WarehouseTransferDocumentsPanel({
     };
 
 
-  /* =========================================================
-     UPLOAD
-  ========================================================= */
-
   const handleFileChange =
     async (event) => {
       const files =
         Array.from(
-          event.target.files ||
-          []
+          event.target.files || []
         );
 
       /*
-       * Reset input để nếu user chọn lại
-       * đúng file cũ thì onChange vẫn chạy.
+       * Reset input ngay.
+       * Nhờ vậy chọn lại đúng file vừa chọn
+       * vẫn phát sinh onChange.
        */
       event.target.value = "";
 
       if (
-        !transferId ||
-        files.length === 0
+        !receiptId ||
+        !files.length
       ) {
         return;
       }
@@ -169,15 +164,14 @@ export default function WarehouseTransferDocumentsPanel({
 
       setUploading(true);
       setUploadPercent(0);
-
       setError("");
       setNotice("");
 
       try {
         const response =
           await attachmentService.uploadAttachments(
-            ATTACHMENT_TICKET_TYPES.TRANSFER,
-            transferId,
+            ATTACHMENT_TICKET_TYPES.RECEIPT,
+            receiptId,
             files,
             (percent) => {
               setUploadPercent(
@@ -187,24 +181,22 @@ export default function WarehouseTransferDocumentsPanel({
           );
 
         const uploaded =
-          response?.data?.uploaded ||
-          [];
+          response?.data?.uploaded || [];
 
         const duplicates =
-          response?.data?.duplicates ||
-          [];
+          response?.data?.duplicates || [];
 
         if (
           duplicates.length > 0
         ) {
           setNotice(
             `${uploaded.length} file đã tải lên. ` +
-            `${duplicates.length} file đã có trong phiếu, đã bỏ qua.`
+              `${duplicates.length} file đã có trong phiếu, đã bỏ qua.`
           );
         } else {
           setNotice(
             response?.message ||
-            `Đã tải lên ${uploaded.length} file.`
+              `Đã tải lên ${uploaded.length} file.`
           );
         }
 
@@ -224,7 +216,7 @@ export default function WarehouseTransferDocumentsPanel({
 
   /* =========================================================
      DOWNLOAD
-  ========================================================= */
+     ========================================================= */
 
   const handleDownload =
     async (attachment) => {
@@ -239,6 +231,10 @@ export default function WarehouseTransferDocumentsPanel({
       setError("");
 
       try {
+        /*
+         * API chỉ lấy presigned URL.
+         * Browser sẽ tải trực tiếp từ MinIO.
+         */
         await attachmentService.downloadAttachment(
           attachment.id
         );
@@ -258,7 +254,7 @@ export default function WarehouseTransferDocumentsPanel({
 
   /* =========================================================
      DELETE
-  ========================================================= */
+     ========================================================= */
 
   const handleDelete =
     async (attachment) => {
@@ -291,19 +287,6 @@ export default function WarehouseTransferDocumentsPanel({
             attachment.id
           );
 
-        /*
-         * File đã bị xóa logic khỏi BE,
-         * bỏ ngay khỏi danh sách FE.
-         */
-        setAttachments(
-          (current) =>
-            current.filter(
-              (item) =>
-                item.id !==
-                attachment.id
-            )
-        );
-
         const data =
           response?.data;
 
@@ -320,6 +303,19 @@ export default function WarehouseTransferDocumentsPanel({
             "Đã xóa file khỏi hệ thống."
           );
         }
+
+        /*
+         * Xóa luôn khỏi UI,
+         * không cần đợi gọi list lại.
+         */
+        setAttachments(
+          (current) =>
+            current.filter(
+              (item) =>
+                item.id !==
+                attachment.id
+            )
+        );
       } catch (err) {
         setError(
           attachmentService.getAttachmentErrorMessage(
@@ -335,8 +331,8 @@ export default function WarehouseTransferDocumentsPanel({
 
 
   /* =========================================================
-     FORMAT DATE
-  ========================================================= */
+     DATE
+     ========================================================= */
 
   const formatDate =
     (value) => {
@@ -362,37 +358,32 @@ export default function WarehouseTransferDocumentsPanel({
 
 
   /* =========================================================
-     NO TRANSFER
-  ========================================================= */
+     RENDER
+     ========================================================= */
 
-  if (!transferId) {
+  if (!receiptId) {
     return null;
   }
 
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
-
   return (
-    <section className="warehouse-transfer-side-card warehouse-transfer-documents-card">
-      <div className="warehouse-transfer-documents-title">
-        <h3>
+    <section className="import-order-side-card">
+      <div className="import-order-side-title import-order-attachment-title">
+        <span>
           TÀI LIỆU LIÊN QUAN
-        </h3>
+        </span>
 
-        <span className="warehouse-transfer-documents-count">
+        <span className="import-order-attachment-count">
           {attachments.length}
         </span>
       </div>
 
 
-      {/* =====================================================
+      {/* =================================
           UPLOAD
-      ===================================================== */}
-
+      ================================= */}
       {canManage && (
-        <div className="warehouse-transfer-document-upload">
+        <div className="import-order-attachment-upload">
           <input
             ref={fileInputRef}
             type="file"
@@ -405,7 +396,7 @@ export default function WarehouseTransferDocumentsPanel({
 
           <button
             type="button"
-            className="warehouse-transfer-document-upload-btn"
+            className="import-order-attachment-upload-button"
             disabled={
               uploading
             }
@@ -414,7 +405,7 @@ export default function WarehouseTransferDocumentsPanel({
             }
           >
             {uploading ? (
-              <RiLoader4Line className="warehouse-transfer-spin" />
+              <RiLoader4Line className="import-action-loading-icon" />
             ) : (
               <RiUpload2Line />
             )}
@@ -426,11 +417,14 @@ export default function WarehouseTransferDocumentsPanel({
             </span>
           </button>
 
+          <div className="import-order-attachment-hint">
+            Tối đa 25 MB/file, 20 file/lần
+          </div>
 
           {uploading && (
-            <div className="warehouse-transfer-document-progress">
+            <div className="import-order-attachment-progress">
               <div
-                className="warehouse-transfer-document-progress-bar"
+                className="import-order-attachment-progress-bar"
                 style={{
                   width:
                     `${uploadPercent}%`,
@@ -438,50 +432,39 @@ export default function WarehouseTransferDocumentsPanel({
               />
             </div>
           )}
-
-
-          <small className="warehouse-transfer-document-hint">
-            Tối đa 25 MB/file, 20 file/lần
-          </small>
         </div>
       )}
 
 
-      {/* =====================================================
+      {/* =================================
           MESSAGE
-      ===================================================== */}
-
+      ================================= */}
       {error && (
-        <div className="warehouse-transfer-document-message error">
+        <div className="import-order-attachment-message error">
           {error}
         </div>
       )}
 
       {notice && (
-        <div className="warehouse-transfer-document-message success">
+        <div className="import-order-attachment-message success">
           {notice}
         </div>
       )}
 
 
-      {/* =====================================================
-          LOADING
-      ===================================================== */}
-
+      {/* =================================
+          CONTENT
+      ================================= */}
       {loading ? (
-        <div className="warehouse-transfer-document-empty">
-          <RiLoader4Line className="warehouse-transfer-spin" />
+        <div className="import-order-attachment-loading">
+          <RiLoader4Line className="import-action-loading-icon" />
 
           <span>
             Đang tải tài liệu...
           </span>
         </div>
       ) : attachments.length === 0 ? (
-        /* ===================================================
-           EMPTY
-        =================================================== */
-
-        <div className="warehouse-transfer-document-empty">
+        <div className="import-order-attachment-empty">
           <RiFileTextLine />
 
           <span>
@@ -489,19 +472,15 @@ export default function WarehouseTransferDocumentsPanel({
           </span>
         </div>
       ) : (
-        /* ===================================================
-           LIST
-        =================================================== */
-
-        <div className="warehouse-transfer-document-list">
+        <div className="import-order-document-list">
           {attachments.map(
             (attachment) => {
-              const downloading =
-                downloadingId ===
-                attachment.id;
-
               const deleting =
                 deletingId ===
+                attachment.id;
+
+              const downloading =
+                downloadingId ===
                 attachment.id;
 
               return (
@@ -509,14 +488,11 @@ export default function WarehouseTransferDocumentsPanel({
                   key={
                     attachment.id
                   }
-                  className="warehouse-transfer-document-item"
+                  className="import-order-document-item import-order-attachment-item"
                 >
-                  <div className="warehouse-transfer-document-file-icon">
-                    <RiFileTextLine />
-                  </div>
+                  <RiFileTextLine className="import-order-attachment-file-icon" />
 
-
-                  <div className="warehouse-transfer-document-info">
+                  <div className="import-order-attachment-info">
                     <strong
                       title={
                         attachment.original_name
@@ -527,7 +503,7 @@ export default function WarehouseTransferDocumentsPanel({
                       }
                     </strong>
 
-                    <small>
+                    <span>
                       {attachmentService.formatAttachmentSize(
                         attachment.size_bytes
                       )}
@@ -537,13 +513,11 @@ export default function WarehouseTransferDocumentsPanel({
                             attachment.created_at
                           )}`
                         : ""}
-                    </small>
+                    </span>
                   </div>
 
 
-                  <div className="warehouse-transfer-document-actions">
-                    {/* DOWNLOAD */}
-
+                  <div className="import-order-attachment-actions">
                     <button
                       type="button"
                       title="Tải xuống"
@@ -557,14 +531,12 @@ export default function WarehouseTransferDocumentsPanel({
                       }
                     >
                       {downloading ? (
-                        <RiLoader4Line className="warehouse-transfer-spin" />
+                        <RiLoader4Line className="import-action-loading-icon" />
                       ) : (
                         <RiDownload2Line />
                       )}
                     </button>
 
-
-                    {/* DELETE */}
 
                     {canManage && (
                       <button
@@ -581,7 +553,7 @@ export default function WarehouseTransferDocumentsPanel({
                         }
                       >
                         {deleting ? (
-                          <RiLoader4Line className="warehouse-transfer-spin" />
+                          <RiLoader4Line className="import-action-loading-icon" />
                         ) : (
                           <RiDeleteBin6Line />
                         )}
@@ -597,3 +569,6 @@ export default function WarehouseTransferDocumentsPanel({
     </section>
   );
 }
+
+
+export default ImportOrderAttachments;

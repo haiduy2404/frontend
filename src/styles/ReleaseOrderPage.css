@@ -3282,3 +3282,355 @@ button:disabled {
     max-height: none;
   }
 }
+
+/* ============================================================
+   RELEASE ORDER - ATTACHMENTS
+============================================================ */
+
+
+/* ============================================================
+   UPLOAD AREA
+============================================================ */
+
+.release-order-attachment-upload {
+  padding: 10px 12px 12px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.release-order-attachment-upload-button {
+  width: 100%;
+  min-height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 7px 10px;
+
+  border: 1px dashed #94a3b8;
+  border-radius: 6px;
+
+  background: #f8fafc;
+  color: #334155;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.release-order-attachment-upload-button:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #64748b;
+  color: #0f172a;
+}
+
+.release-order-attachment-upload-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.release-order-attachment-upload-button svg {
+  flex: 0 0 auto;
+  font-size: 17px;
+}
+
+.release-order-attachment-hint {
+  display: block;
+
+  margin-top: 6px;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+
+/* ============================================================
+   UPLOAD PROGRESS
+============================================================ */
+
+.release-order-attachment-progress {
+  width: 100%;
+  height: 4px;
+
+  margin-top: 8px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #e5e7eb;
+}
+
+.release-order-attachment-progress-bar {
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: #2563eb;
+
+  transition: width 0.2s ease;
+}
+
+
+/* ============================================================
+   MESSAGE
+============================================================ */
+
+.release-order-attachment-message {
+  margin: 8px 12px;
+  padding: 8px 10px;
+
+  border-radius: 5px;
+
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.release-order-attachment-message.error {
+  border: 1px solid #fecaca;
+
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.release-order-attachment-message.success {
+  border: 1px solid #bbf7d0;
+
+  background: #f0fdf4;
+  color: #166534;
+}
+
+
+/* ============================================================
+   EMPTY / LOADING
+============================================================ */
+
+.release-order-attachment-empty {
+  min-height: 72px;
+
+  padding: 14px 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  color: #94a3b8;
+
+  font-size: 12px;
+  text-align: center;
+}
+
+.release-order-attachment-empty > svg {
+  flex: 0 0 auto;
+
+  font-size: 18px;
+}
+
+
+/* ============================================================
+   DOCUMENT LIST
+============================================================ */
+
+.release-order-document-list {
+  display: flex;
+  flex-direction: column;
+
+  padding: 4px 0;
+}
+
+.release-order-document-item {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 9px 12px;
+
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.release-order-document-item:last-child {
+  border-bottom: 0;
+}
+
+.release-order-document-item:hover {
+  background: #f8fafc;
+}
+
+.release-order-document-item > svg {
+  flex: 0 0 auto;
+
+  font-size: 18px;
+
+  color: #64748b;
+}
+
+
+/* ============================================================
+   FILE INFO
+============================================================ */
+
+.release-order-attachment-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.release-order-attachment-info strong {
+  max-width: 100%;
+
+  display: block;
+
+  overflow: hidden;
+
+  color: #1e293b;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  line-height: 1.4;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.release-order-attachment-info small {
+  display: block;
+
+  margin-top: 2px;
+
+  overflow: hidden;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+  line-height: 1.3;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* ============================================================
+   FILE ACTIONS
+============================================================ */
+
+.release-order-attachment-actions {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.release-order-attachment-actions button {
+  width: 28px;
+  height: 28px;
+
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 5px;
+
+  background: transparent;
+
+  color: #475569;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.release-order-attachment-actions button:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.release-order-attachment-actions button.danger {
+  color: #dc2626;
+}
+
+.release-order-attachment-actions button.danger:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.release-order-attachment-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.release-order-attachment-actions button svg {
+  font-size: 16px;
+}
+
+
+/* ============================================================
+   LOADING ICON
+============================================================ */
+
+.release-order-loading-icon {
+  animation: release-order-attachment-spin 0.8s linear infinite;
+}
+
+@keyframes release-order-attachment-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* ============================================================
+   SIDE CARD FIX
+============================================================ */
+
+/*
+  Để tên file dài không làm bung sidebar.
+*/
+.release-order-side-card {
+  min-width: 0;
+}
+
+.release-order-side-card .release-order-side-title {
+  min-width: 0;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media screen and (max-width: 1024px) {
+  .release-order-document-item {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .release-order-attachment-upload {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}

@@ -6,9 +6,12 @@ import {
   RiFileTextLine,
 } from "react-icons/ri";
 
+import ReleaseOrderAttachments
+  from "./ReleaseOrderAttachments";
 
 function ReleaseOrderSidePanel({
   selectedRow,
+  releaseId,
   selectedCount,
 
   canCreate,
@@ -144,7 +147,6 @@ function ReleaseOrderSidePanel({
           CÁC PHIẾU IN
         </div>
 
-
         <button
           type="button"
           className="release-order-side-action"
@@ -163,6 +165,18 @@ function ReleaseOrderSidePanel({
           </span>
         </button>
       </section>
+
+
+      {/* =================================
+          TÀI LIỆU LIÊN QUAN
+      ================================= */}
+      <ReleaseOrderAttachments
+        releaseId={releaseId}
+        canManage={
+          canCreate ||
+          canUpdate
+        }
+      />
     </aside>
   );
 }

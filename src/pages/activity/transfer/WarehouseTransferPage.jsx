@@ -41,7 +41,11 @@ export default function WarehouseTransferPage() {
         />
       </aside>
 
-      <WarehouseTransferDetailPanel detail={detail.detail} actions={actions} />
+      <WarehouseTransferDetailPanel
+        detail={detail.detail}
+        transferId={list.selectedRow?.id}
+        actions={actions}
+      />
     </div>
   );
 }

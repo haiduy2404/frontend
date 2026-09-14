@@ -240,6 +240,7 @@ function ImportOrderDetailPanel({
           completing={completing}
           rejecting={rejecting}
 
+          canCreate={canCreate}
           canApprove={canApprove}
           canUpdate={canUpdate}
           canDelete={canDelete}

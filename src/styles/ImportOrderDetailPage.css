@@ -1641,3 +1641,246 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   ATTACHMENTS
+============================================================ */
+
+.import-order-attachment-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.import-order-attachment-count {
+  min-width: 22px;
+  height: 22px;
+
+  padding: 0 7px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: #eef2f7;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* ============================================================
+   UPLOAD
+============================================================ */
+
+.import-order-attachment-upload {
+  padding: 10px 12px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.import-order-attachment-upload-button {
+  width: 100%;
+
+  min-height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  border: 1px dashed #94a3b8;
+  border-radius: 6px;
+
+  background: #f8fafc;
+
+  color: #334155;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.import-order-attachment-upload-button:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #64748b;
+}
+
+.import-order-attachment-upload-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.import-order-attachment-hint {
+  margin-top: 6px;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+  text-align: center;
+}
+
+
+/* ============================================================
+   PROGRESS
+============================================================ */
+
+.import-order-attachment-progress {
+  height: 4px;
+
+  margin-top: 8px;
+
+  overflow: hidden;
+
+  background: #e5e7eb;
+
+  border-radius: 999px;
+}
+
+.import-order-attachment-progress-bar {
+  height: 100%;
+
+  background: #2563eb;
+
+  transition: width 0.2s ease;
+}
+
+
+/* ============================================================
+   MESSAGE
+============================================================ */
+
+.import-order-attachment-message {
+  margin: 8px 12px;
+  padding: 8px 10px;
+
+  border-radius: 5px;
+
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.import-order-attachment-message.error {
+  color: #991b1b;
+  background: #fef2f2;
+}
+
+.import-order-attachment-message.success {
+  color: #166534;
+  background: #f0fdf4;
+}
+
+
+/* ============================================================
+   LOADING / EMPTY
+============================================================ */
+
+.import-order-attachment-loading,
+.import-order-attachment-empty {
+  min-height: 72px;
+
+  padding: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  color: #94a3b8;
+
+  font-size: 12px;
+}
+
+
+/* ============================================================
+   FILE ITEM
+============================================================ */
+
+.import-order-attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.import-order-attachment-file-icon {
+  flex: 0 0 auto;
+}
+
+.import-order-attachment-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.import-order-attachment-info strong {
+  display: block;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 12px;
+}
+
+.import-order-attachment-info span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+}
+
+
+/* ============================================================
+   FILE ACTIONS
+============================================================ */
+
+.import-order-attachment-actions {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.import-order-attachment-actions button {
+  width: 28px;
+  height: 28px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 4px;
+
+  background: transparent;
+
+  color: #475569;
+
+  cursor: pointer;
+}
+
+.import-order-attachment-actions button:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.import-order-attachment-actions button.danger {
+  color: #dc2626;
+}
+
+.import-order-attachment-actions button.danger:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.import-order-attachment-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

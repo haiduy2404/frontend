@@ -11,7 +11,11 @@ import {
   formatQuantity,
 } from "./utils/warehouseTransferUtils";
 
-export default function WarehouseTransferDetailPanel({ detail, actions }) {
+export default function WarehouseTransferDetailPanel({
+  detail,
+  transferId,
+  actions,
+}) {
   const [goodsModalOpen, setGoodsModalOpen] = useState(false);
 
   if (!detail) {
@@ -109,6 +113,7 @@ export default function WarehouseTransferDetailPanel({ detail, actions }) {
 
           <WarehouseTransferSidePanel
             detail={detail}
+            transferId={transferId}
             actions={actions}
           />
         </div>

@@ -10,6 +10,7 @@ import ReleaseOrderSidePanel from "./ReleaseOrderSidePanel";
 
 function ReleaseOrderDetailPanel({
   selectedRow,
+  releaseId,
   selectedCount,
   getReleaseStatusText,
 
@@ -87,6 +88,7 @@ function ReleaseOrderDetailPanel({
 
             <ReleaseOrderSidePanel
               selectedRow={selectedRow}
+              releaseId={releaseId}
               selectedCount={selectedCount}
 
               canCreate={canCreate}

@@ -376,6 +376,10 @@ function ReleaseOrderPage() {
               detailRow
             }
 
+            releaseId={
+              selectedRow?.id
+            }
+
             selectedCount={
               selectedIds.length
             }

@@ -9,6 +9,9 @@ import {
   RiLoader4Line,
 } from "react-icons/ri";
 
+import ImportOrderAttachments
+  from "./ImportOrderAttachments.jsx";
+
 
 function ImportOrderSidePanel({
   selectedRow,
@@ -18,6 +21,7 @@ function ImportOrderSidePanel({
 
   canApprove,
 
+  canCreate,
   canUpdate,
   canDelete,
 
@@ -320,60 +324,18 @@ function ImportOrderSidePanel({
     </section>
 
 
-      {/* =================================
-          TÀI LIỆU LIÊN QUAN
-      ================================= */}
-      <section className="import-order-side-card">
-        <div className="import-order-side-title">
-          TÀI LIỆU LIÊN QUAN
-        </div>
-
-        <div className="import-order-document-list">
-          <div className="import-order-document-item">
-            <RiFileTextLine />
-
-            <div>
-              <strong>
-                Đơn đặt hàng
-              </strong>
-
-              <span>
-                Chưa có tài liệu
-              </span>
-            </div>
-          </div>
-
-
-          <div className="import-order-document-item">
-            <RiFileTextLine />
-
-            <div>
-              <strong>
-                Biên bản kiểm nghiệm
-              </strong>
-
-              <span>
-                Chưa có tài liệu
-              </span>
-            </div>
-          </div>
-
-
-          <div className="import-order-document-item">
-            <RiFileTextLine />
-
-            <div>
-              <strong>
-                Hóa đơn nhà cung cấp
-              </strong>
-
-              <span>
-                Chưa có tài liệu
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+    {/* =================================
+        TÀI LIỆU LIÊN QUAN
+    ================================= */}
+    <ImportOrderAttachments
+      receiptId={
+        selectedRow.id
+      }
+      canManage={
+        canCreate ||
+        canUpdate
+      }
+    />
     </aside>
   );
 }
