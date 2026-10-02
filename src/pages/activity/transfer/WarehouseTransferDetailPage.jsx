@@ -24,7 +24,7 @@ import {
 } from "../../../services/warehouseTransferService";
 
 import { getWarehouses } from "../../../services/warehouseService";
-import { getOpeningStocks } from "../../../services/openingStockService";
+import { getGoods } from "../../../services/goodsService";
 
 export default function WarehouseTransferDetailPage() {
   const navigate = useNavigate();
@@ -227,26 +227,25 @@ export default function WarehouseTransferDetailPage() {
     }
   };
 
-  const loadStockItems = async (warehouseId, keyword = "") => {
-    try {
-      if (!warehouseId) {
-        setStockItems([]);
-        return;
-      }
+const loadStockItems = async (_warehouseId, keyword = "") => {
+  try {
+    const data = await getGoods({
+      search: keyword,
+      page: 1,
+      page_size: 100,
+    });
 
-      const data = await getOpeningStocks({
-        warehouse_id: warehouseId,
-        search: keyword,
-        page: 1,
-        page_size: 100,
-      });
+    setStockItems(unwrapList(data));
+  } catch (err) {
+    console.error(
+      "Load goods error:",
+      err.response?.data || err
+    );
 
-      setStockItems(unwrapList(data));
-    } catch (err) {
-      console.error("Load stock balance error:", err.response?.data || err);
-      setStockItems([]);
-    }
-  };
+    setStockItems([]);
+  }
+};
+
         const loadTransfer = async () => {
         try {
             if (!code || code === "new") return;
@@ -472,23 +471,28 @@ useEffect(() => {
     }));
   };
 
-  const handleFromWarehouseChange = async (warehouseId) => {
-    const selectedWarehouse = warehouses.find(
-      (warehouse) => String(warehouse.id) === String(warehouseId)
-    );
+const handleFromWarehouseChange = async (warehouseId) => {
+  const selectedWarehouse = warehouses.find(
+    (warehouse) =>
+      String(warehouse.id) === String(warehouseId)
+  );
 
-    setForm((prev) => ({
-      ...prev,
-      from_warehouse_id: warehouseId,
-      from_warehouse_address:
-        selectedWarehouse?.address ||
-        selectedWarehouse?.warehouse_address ||
-        "",
-    }));
+  setForm((prev) => ({
+    ...prev,
+    from_warehouse_id: warehouseId,
+    from_warehouse_address:
+      selectedWarehouse?.address ||
+      selectedWarehouse?.warehouse_address ||
+      "",
+  }));
 
-    setRows([createEmptyRow()]);
-    await loadStockItems(warehouseId);
-  };
+  setRows([createEmptyRow()]);
+
+  await loadStockItems(
+    warehouseId,
+    ""
+  );
+};
 
   const handleToWarehouseChange = (warehouseId) => {
     const selectedWarehouse = warehouses.find(
@@ -646,48 +650,81 @@ useEffect(() => {
     );
   };
 
-    const handleSelectInventory = (rowId, item) => {
-    if (!item) return;
+const handleSelectInventory = (rowId, goods) => {
+  if (!goods) return;
 
-    const remainingQuantity =
-        item.remaining_quantity ||
-        item.stock_quantity ||
-        item.quantity ||
-        item.original_quantity ||
-        0;
+  const units = Array.isArray(goods.units)
+    ? goods.units
+    : [];
 
-    const conversionRate =
-        item.conversion_rate || item.conversion_ratio || item.ratio || 1;
+  const defaultUnit =
+    units.find((unit) => unit.is_default) ||
+    units[0] ||
+    null;
 
-    setRows((prev) =>
-        prev.map((row) => {
-        if (row.row_id !== rowId) return row;
+  const conversionRate =
+    defaultUnit?.conversion_ratio !== null &&
+    defaultUnit?.conversion_ratio !== undefined
+      ? Number(defaultUnit.conversion_ratio)
+      : 1;
 
-        const qty = parseNumber(row.transfer_quantity || 1);
+  setRows((prev) =>
+    prev.map((row) => {
+      if (row.row_id !== rowId) return row;
 
-        return {
-            ...row,
-            inventory_id: item.inventory_id || item.id || "",
-            goods_id: item.goods_id || item.goods?.id || item.id || "",
-            goods_unit_id: item.unit_id || item.goods_unit_id || "",
-            goods_code: item.goods_code || item.code || item.goods?.code || "",
-            goods_name: item.goods_name || item.name || item.goods?.name || "",
-            unit_name:
-            item.unit_name ||
-            item.goods_unit_name ||
-            item.unit ||
-            item.goods_unit?.name ||
-            "",
-            conversion_rate: conversionRate,
-            remaining_quantity: formatViNumber(remainingQuantity, 2),
-            transfer_main_quantity: formatViNumber(
+      const qty = parseNumber(
+        row.transfer_quantity || 1
+      );
+
+      return {
+        ...row,
+
+        // Không còn lấy từ stock-balance
+        inventory_id: "",
+
+        goods_id:
+          goods.goods_id ||
+          goods.id ||
+          "",
+
+        goods_unit_id:
+          defaultUnit?.unit_id ||
+          goods.unit_id ||
+          "",
+
+        goods_code:
+          goods.goods_code ||
+          goods.code ||
+          "",
+
+        goods_name:
+          goods.goods_name ||
+          goods.name ||
+          "",
+
+        unit_name:
+          defaultUnit?.unit_name ||
+          goods.unit_name ||
+          goods.unit ||
+          "",
+
+        conversion_rate: conversionRate,
+
+        // getGoods không phải API tồn kho theo kho
+        remaining_quantity:
+          goods.quantity ??
+          goods.remaining_quantity ??
+          0,
+
+        transfer_main_quantity:
+          formatViNumber(
             qty * parseNumber(conversionRate),
             2
-            ),
-        };
-        })
-    );
-    };
+          ),
+      };
+    })
+  );
+};
 
   const validateBeforeSave = () => {
     if (!form.from_warehouse_id) {
@@ -1399,9 +1436,9 @@ useEffect(() => {
               {stockItems.map((item) => (
                 <div
                   key={
-                    item.inventory_id ||
                     item.goods_id ||
-                    item.id
+                    item.id ||
+                    item.code
                   }
                   className="warehouse-transfer-detail-goods-dropdown-item"
                   onMouseDown={(e) => {

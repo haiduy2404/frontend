@@ -315,13 +315,7 @@ function ProcessingA5Print() {
                     Tên người nhận chế biến:
                   </span>
 
-                  <span className="processing-info-dotted">
-                    <strong>
-                      {release?.release_target?.name ||
-                        release?.release_target ||
-                        ""}
-                    </strong>
-                  </span>
+                  <span className="processing-info-dotted"></span>
                 </div>
 
                 <div className="processing-info-field processing-info-unit">
@@ -345,13 +339,7 @@ function ProcessingA5Print() {
                     Nhận tại kho:
                   </span>
 
-                  <span className="processing-info-dotted">
-                    <strong>
-                      {release?.warehouse?.name ||
-                        release?.warehouse_name ||
-                        ""}
-                    </strong>
-                  </span>
+                  <span className="processing-info-dotted"></span>
                 </div>
               </div>
             </div>
