@@ -31,6 +31,134 @@ import {
   RiCalendarLine,
 } from "react-icons/ri";
 
+// Dropdown dùng chung cho Đơn vị lĩnh vật tư và Đối tượng xuất kho.
+const normalizeReferenceSearch = (text) =>
+  String(text ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim();
+
+function ReleaseReferenceCombobox({ value, options, placeholder, disabled, onChange, onManual }) {
+  const [open, setOpen] = useState(false);
+  const [keyword, setKeyword] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const rootRef = useRef(null);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOutside = (event) => {
+      if (!rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [open]);
+
+  useEffect(() => {
+    if (open) searchRef.current?.focus();
+    else setKeyword("");
+  }, [open]);
+
+  const uniqueOptions = Array.from(
+    new Map(
+      [...(options || []), ...(value && !(options || []).some((x) => x.name === value)
+        ? [{ id: `current-${value}`, name: value }] : [])]
+        .filter((x) => x?.name)
+        .map((x) => [x.name, x])
+    ).values()
+  );
+  const visibleOptions = uniqueOptions.filter((item) =>
+    normalizeReferenceSearch(item.name).includes(normalizeReferenceSearch(keyword))
+  );
+
+  const selectValue = (nextValue) => {
+    onChange(nextValue);
+    setOpen(false);
+    setActiveIndex(0);
+  };
+
+  const handleListKeys = (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((index) => Math.min(index + 1, visibleOptions.length - 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((index) => Math.max(0, index - 1));
+    } else if (event.key === "Enter" && !event.nativeEvent?.isComposing) {
+      event.preventDefault();
+      if (visibleOptions[activeIndex]) selectValue(visibleOptions[activeIndex].name);
+    }
+  };
+
+  return (
+    <div className={`release-reference-combobox${open ? " is-open" : ""}`} ref={rootRef}>
+      <button
+        type="button"
+        className="release-reference-trigger"
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => { setActiveIndex(0); setOpen((previous) => !previous); }}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown" && !open) { event.preventDefault(); setOpen(true); }
+        }}
+      >
+        <span className={value ? "" : "is-placeholder"} title={value || placeholder}>
+          {value || placeholder}
+        </span>
+        <span className="release-reference-chevron" aria-hidden="true">⌄</span>
+      </button>
+
+      {open && !disabled && (
+        <div className="release-reference-popup">
+          <div className="release-reference-search">
+            <RiSearchLine aria-hidden="true" />
+            <input
+              ref={searchRef}
+              type="text"
+              value={keyword}
+              placeholder="Tìm kiếm trong danh sách..."
+              onChange={(event) => { setKeyword(event.target.value); setActiveIndex(0); }}
+              onKeyDown={handleListKeys}
+              aria-label={`Tìm ${placeholder.toLowerCase()}`}
+            />
+          </div>
+          <button type="button" className="release-reference-manual" onClick={() => { setOpen(false); onManual(); }}>
+            + Không chọn / Nhập tay
+          </button>
+          <div className="release-reference-results" role="listbox">
+            {visibleOptions.map((item, index) => (
+              <button
+                type="button"
+                role="option"
+                aria-selected={value === item.name}
+                key={item.id || item.name}
+                className={`release-reference-option${index === activeIndex ? " is-active" : ""}${value === item.name ? " is-selected" : ""}`}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => selectValue(item.name)}
+                title={item.name}
+              >
+                <span>{item.name}</span>
+                {value === item.name && <span aria-hidden="true">✓</span>}
+              </button>
+            ))}
+            {visibleOptions.length === 0 && (
+              <div className="release-reference-empty">Không tìm thấy kết quả phù hợp</div>
+            )}
+          </div>
+          <div className="release-reference-count">{visibleOptions.length} đơn vị / đối tượng phù hợp</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReleaseOrderDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -1542,6 +1670,7 @@ const handleComplete = async () => {
                         <button
                         type="button"
                         className="switch-select-btn"
+                        disabled={isPrintMode}
                         onClick={() => {
                             setReceiverUnitMode("select");
                             setHeaderData((prev) => ({
@@ -1554,41 +1683,14 @@ const handleComplete = async () => {
                         </button>
                     </>
                     ) : (
-                    <select
-                      data-enter-next="true"
-                      onKeyDown={handleEnterMoveNext}
+                    <ReleaseReferenceCombobox
                       value={headerData.receiver_unit}
-                      onChange={(e) => {
-                        if (e.target.value === "__manual__") {
-                          setReceiverUnitMode("manual");
-                          return;
-                        }
-
-                        setHeaderData((prev) => ({
-                          ...prev,
-                          receiver_unit: e.target.value,
-                        }));
-                      }}
+                      options={receiverUnitOptions}
+                      placeholder="Chọn đơn vị lĩnh vật tư"
                       disabled={isPrintMode}
-                    >
-                <option value="">Chọn đơn vị lĩnh vật tư</option>
-                <option value="__manual__">Không chọn / Nhập tay</option>
-
-                {headerData.receiver_unit &&
-                    !receiverUnitOptions.some(
-                    (item) => item.name === headerData.receiver_unit
-                    ) && (
-                    <option value={headerData.receiver_unit}>
-                        {headerData.receiver_unit}
-                    </option>
-                )}
-
-                {receiverUnitOptions.map((item) => (
-                    <option key={item.id || item.name} value={item.name}>
-                    {item.name}
-                    </option>
-                ))}
-                </select>
+                      onChange={(name) => setHeaderData((prev) => ({ ...prev, receiver_unit: name }))}
+                      onManual={() => setReceiverUnitMode("manual")}
+                    />
             )}
             </div>
             <div className="form-group">
@@ -1615,6 +1717,7 @@ const handleComplete = async () => {
                 <button
                     type="button"
                     className="switch-select-btn"
+                        disabled={isPrintMode}
                     onClick={() => {
                     setReleaseTargetMode("select");
                     setHeaderData((prev) => ({
@@ -1627,43 +1730,14 @@ const handleComplete = async () => {
                 </button>
                 </>
             ) : (
-                <select
-                  data-enter-next="true"
-                  onKeyDown={handleEnterMoveNext}
+                <ReleaseReferenceCombobox
                   value={headerData.release_target}
-                  onChange={(e) => {
-                    const value = e.target.value;
-
-                    if (value === "__manual__") {
-                      setReleaseTargetMode("manual");
-                      return;
-                    }
-
-                    setHeaderData((prev) => ({
-                      ...prev,
-                      release_target: value,
-                    }));
-                  }}
+                  options={releaseTargetOptions}
+                  placeholder="Chọn đối tượng xuất kho"
                   disabled={isPrintMode}
-                >
-                <option value="">Chọn đối tượng xuất kho</option>
-                <option value="__manual__">Không chọn / Nhập tay</option>
-
-                {headerData.release_target &&
-                    !releaseTargetOptions.some(
-                    (item) => item.name === headerData.release_target
-                    ) && (
-                    <option value={headerData.release_target}>
-                        {headerData.release_target}
-                    </option>
-                )}
-
-                {releaseTargetOptions.map((item) => (
-                    <option key={item.id || item.name} value={item.name}>
-                    {item.name}
-                    </option>
-                ))}
-                </select>
+                  onChange={(name) => setHeaderData((prev) => ({ ...prev, release_target: name }))}
+                  onManual={() => setReleaseTargetMode("manual")}
+                />
             )}
             </div>
             <div className="form-group">
