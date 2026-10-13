@@ -310,8 +310,8 @@ function GoodsFormModal({
   };
 
   const handleChangePrimaryUnit = (e) => {
-    // Hàng hóa đã tồn tại => KHÔNG cho đổi ĐVT chính
-    if (editingGoodsId) return;
+    // TẠM THỜI CHO PHÉP SỬA ĐVT CHÍNH
+    // if (editingGoodsId) return;
 
     setFormData((prev) => ({
       ...prev,
@@ -325,7 +325,7 @@ function GoodsFormModal({
     if (!targetUnit) return;
 
     // ĐVT đã lưu => tuyệt đối không cho xóa
-    if (targetUnit.is_existing) return;
+    //if (targetUnit.is_existing) return;
 
     // Chỉ xóa ĐVT vừa thêm mới, chưa lưu
     setConversionUnits((prev) =>
@@ -339,7 +339,7 @@ function GoodsFormModal({
     if (!targetUnit) return;
 
     // ĐVT đã lưu => không cho sửa bất kỳ thông tin nào
-    if (targetUnit.is_existing) return;
+    //if (targetUnit.is_existing) return;
 
     setConversionUnits((prev) =>
       prev.map((item) =>
@@ -645,7 +645,7 @@ function GoodsFormModal({
                     name="unit_id"
                     value={formData.unit_id}
                     onChange={handleChangePrimaryUnit}
-                    disabled={!!editingGoodsId}
+                    //disabled={!!editingGoodsId}
                   >
                     <option value="">
                       {unitLoading ? "Đang tải ĐVT..." : "Chọn ĐVT chính"}
@@ -715,7 +715,7 @@ function GoodsFormModal({
                         <label>Đơn vị tính</label>
                         <select
                           value={item.unit_id}
-                          disabled={item.is_existing}
+                          //disabled={item.is_existing}
                           onChange={(e) =>
                             handleChangeConversionUnit(
                               item.temp_id,
@@ -766,7 +766,7 @@ function GoodsFormModal({
                         type="button"
                         className="remove-conversion-btn"
                         title="Tạm thời không cho phép xóa"
-                        disabled
+                        //disabled
                       >
                         <RiDeleteBin6Line />
                       </button>
