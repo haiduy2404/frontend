@@ -1,0 +1,462 @@
+/* Báo cáo nhập - xuất - tồn. Bám đúng bảng màu và bo góc của các trang báo cáo
+   khác (xem TheKhoExportPage.css) để hai trang đứng cạnh nhau không lệch nhau. */
+
+.stock-summary-page {
+  min-height: 100%;
+  padding: 24px;
+  background: #f3f6fa;
+  color: #172033;
+  box-sizing: border-box;
+}
+
+.stock-summary-page *,
+.stock-summary-page *::before,
+.stock-summary-page *::after {
+  box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.stock-summary-page-header {
+  margin-bottom: 20px;
+}
+
+.stock-summary-page-kicker {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.stock-summary-page-header h1 {
+  margin: 4px 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.stock-summary-page-header p {
+  margin: 0;
+  max-width: 76ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #52606d;
+}
+
+/* ---------------------------------------------------------------- filters */
+
+.stock-summary-filter-card {
+  padding: 20px;
+  border: 1px solid #dde4ec;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.stock-summary-filter-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.stock-summary-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stock-summary-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.stock-summary-field input[type="month"],
+.stock-summary-select-button {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  color: #172033;
+}
+
+.stock-summary-select-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+
+.stock-summary-select-button:hover {
+  border-color: #94a3b8;
+}
+
+.stock-summary-select-button > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-summary-caret {
+  flex: 0 0 auto;
+  color: #64748b;
+}
+
+/* ---------------------------------------------------------------- dropdown */
+
+.stock-summary-dropdown {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.stock-summary-dropdown-search {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.stock-summary-dropdown-clear {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.stock-summary-dropdown-list {
+  max-height: 260px;
+  margin-top: 6px;
+  overflow-y: auto;
+}
+
+.stock-summary-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.stock-summary-dropdown-option:hover {
+  background: #f1f5f9;
+}
+
+.stock-summary-dropdown-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-summary-dropdown-status {
+  padding: 10px 4px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ---------------------------------------------------------------- goods */
+
+.stock-summary-goods-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-summary-goods-clear {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- actions */
+
+.stock-summary-hint {
+  margin-top: 14px;
+  font-size: 13px;
+  color: #52606d;
+}
+
+.stock-summary-form-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+.stock-summary-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.stock-summary-export-btn,
+.stock-summary-running-btn,
+.stock-summary-reset-btn,
+.stock-summary-download-btn,
+.stock-summary-connection-error button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.stock-summary-export-btn,
+.stock-summary-download-btn {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.stock-summary-export-btn:disabled,
+.stock-summary-download-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.stock-summary-running-btn {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.stock-summary-reset-btn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+/* ---------------------------------------------------------------- modal */
+
+.stock-summary-modal-overlay {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.stock-summary-progress-modal {
+  width: 100%;
+  max-width: 520px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+}
+
+.stock-summary-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stock-summary-modal-header h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.stock-summary-modal-close {
+  border: 0;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- progress */
+
+.stock-summary-progress-section {
+  margin-top: 18px;
+}
+
+.stock-summary-progress-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #52606d;
+}
+
+.stock-summary-progress-meta > span:last-child {
+  margin-left: auto;
+  font-weight: 700;
+  color: #172033;
+}
+
+.stock-summary-state-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.stock-summary-state-badge.state-running,
+.stock-summary-state-badge.state-queued {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.stock-summary-state-badge.state-done {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.stock-summary-state-badge.state-failed,
+.stock-summary-state-badge.state-cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.stock-summary-progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.stock-summary-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #2563eb;
+  transition: width 0.3s ease;
+}
+
+/* ---------------------------------------------------------------- states */
+
+.stock-summary-connection-warning,
+.stock-summary-connection-error,
+.stock-summary-job-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.stock-summary-connection-warning {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.stock-summary-connection-error,
+.stock-summary-job-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.stock-summary-connection-error button {
+  height: 30px;
+  margin-left: auto;
+  padding: 0 12px;
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------------- result */
+
+.stock-summary-result-box {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  background: #f0fdf4;
+}
+
+.stock-summary-result-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.stock-summary-result-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  margin: 14px 0;
+}
+
+.stock-summary-result-grid span {
+  display: block;
+  font-size: 12px;
+  color: #52606d;
+}
+
+.stock-summary-result-grid strong {
+  font-size: 16px;
+}
+
+.stock-summary-retention-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #52606d;
+}
+
+@media (max-width: 640px) {
+  .stock-summary-page {
+    padding: 16px;
+  }
+
+  .stock-summary-actions {
+    flex-direction: column-reverse;
+  }
+
+  .stock-summary-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
