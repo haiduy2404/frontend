@@ -602,6 +602,29 @@ const Sidebar = ({
 
 
                   <NavLink
+                    to="/dashboard/report/stock-summary"
+                    className={({
+                      isActive,
+                    }) =>
+                      isActive
+                        ? "report-link active"
+                        : "report-link"
+                    }
+                    onClick={() => {
+                      setActiveMenu(
+                        "report"
+                      );
+
+                      setOpenMenu(
+                        ""
+                      );
+                    }}
+                  >
+                    Báo cáo nhập - xuất - tồn
+                  </NavLink>
+
+
+                  <NavLink
                     to="/dashboard/report/stock-card"
                     className={({
                       isActive,

@@ -35,6 +35,32 @@ const POLLING_DELAY = 2500;
 const MAX_POLLING_ERRORS = 5;
 const TERMINAL_STATES = ["done", "failed", "cancelled"];
 
+// Celery chết thì AsyncResult trả PENDING mãi mãi và API vẫn trả 200, nên nếu
+// chỉ chặn 400/404 và lỗi mạng thì FE hỏi lại đều đặn đến khi user đóng tab.
+// Backend đã chặn gốc (ping worker, xem inventory/utils/celery_health.py); hai
+// hằng số dưới đây là lớp phòng thủ thứ hai, cho trường hợp chính backend không
+// trả lời được.
+//
+//   GIÃN NHỊP  : trạng thái không đổi thì chờ lâu hơn, tới trần 20s.
+//   NGƯỠNG TREO: đứng yên quá 2 phút thì dừng hẳn, nhường cho user bấm thử lại.
+//
+// Ngưỡng tính theo THỜI GIAN chứ không theo số lần hỏi: "5 lần không đổi" ở nhịp
+// 2,5 giây mới là 12 giây, mà một job đang kiểm tra số liệu đứng yên lâu hơn thế
+// là bình thường — đếm theo lần sẽ cắt nhầm job còn sống.
+const MAX_POLLING_DELAY = 20000;
+const POLLING_BACKOFF = 1.6;
+const STALL_TIMEOUT_MS = 120000;
+
+/** Dấu vân tay của tiến độ. Đổi dấu = job còn nhúc nhích. */
+const progressSignature = (job) =>
+  [
+    job?.state,
+    job?.stage,
+    job?.percent,
+    job?.processed_goods,
+    job?.total_goods,
+  ].join("|");
+
 const EMPTY_GOODS_FILTER = {
   goods_group_ids: [],
   goods_ids: [],
@@ -187,11 +213,15 @@ function TheKhoExportPage() {
   const [exportJob, setExportJob] = useState(null);
   const [pollingStopped, setPollingStopped] = useState(false);
   const [connectionErrorCount, setConnectionErrorCount] = useState(0);
+  const [stalledSeconds, setStalledSeconds] = useState(0);
 
   const pollingTimerRef = useRef(null);
   const pollingFunctionRef = useRef(null);
   const activeJobIdRef = useRef(null);
   const pollingErrorCountRef = useRef(0);
+  const pollingDelayRef = useRef(POLLING_DELAY);
+  const lastSignatureRef = useRef(null);
+  const stalledSinceRef = useRef(null);
 
   const isJobActive = ["queued", "running"].includes(exportJob?.state);
 
@@ -334,6 +364,14 @@ function TheKhoExportPage() {
     }
   }, []);
 
+  /** Về lại nhịp nhanh nhất. Gọi khi job vừa nhúc nhích, hoặc khi user thử lại. */
+  const resetPollingPace = useCallback(() => {
+    pollingDelayRef.current = POLLING_DELAY;
+    lastSignatureRef.current = null;
+    stalledSinceRef.current = null;
+    setStalledSeconds(0);
+  }, []);
+
   const schedulePolling = useCallback(
     (jobId, delay = POLLING_DELAY) => {
       stopPolling();
@@ -367,7 +405,33 @@ function TheKhoExportPage() {
           return;
         }
 
-        schedulePolling(jobId);
+        const signature = progressSignature(job);
+
+        if (signature !== lastSignatureRef.current) {
+          lastSignatureRef.current = signature;
+          stalledSinceRef.current = null;
+          pollingDelayRef.current = POLLING_DELAY;
+          setStalledSeconds(0);
+        } else {
+          stalledSinceRef.current ??= Date.now();
+          const stalledFor = Date.now() - stalledSinceRef.current;
+          setStalledSeconds(Math.round(stalledFor / 1000));
+
+          if (stalledFor >= STALL_TIMEOUT_MS) {
+            // Không kết luận "thất bại": job có thể vẫn đang chạy, chỉ là FE
+            // không còn cơ sở nào để tin như vậy.
+            stopPolling();
+            setPollingStopped(true);
+            return;
+          }
+
+          pollingDelayRef.current = Math.min(
+            Math.round(pollingDelayRef.current * POLLING_BACKOFF),
+            MAX_POLLING_DELAY
+          );
+        }
+
+        schedulePolling(jobId, pollingDelayRef.current);
       } catch (error) {
         const status = error?.response?.status;
 
@@ -404,7 +468,14 @@ function TheKhoExportPage() {
           return;
         }
 
-        schedulePolling(jobId);
+        // Giãn nhịp cả khi lỗi: server đang hỏng mà dội thêm request vào chỉ làm
+        // nó hỏng lâu hơn.
+        pollingDelayRef.current = Math.min(
+          Math.round(pollingDelayRef.current * POLLING_BACKOFF),
+          MAX_POLLING_DELAY
+        );
+
+        schedulePolling(jobId, pollingDelayRef.current);
       }
     },
     [schedulePolling, stopPolling]
@@ -605,6 +676,7 @@ function TheKhoExportPage() {
   ========================= */
 
   const handleRetryPolling = () => {
+    resetPollingPace();
     const jobId = exportJob?.job_id;
 
     if (!jobId) {
@@ -617,6 +689,7 @@ function TheKhoExportPage() {
 
     activeJobIdRef.current = jobId;
     localStorage.setItem(STORAGE_KEY, jobId);
+      resetPollingPace();
 
     pollExportJob(jobId);
   };
@@ -1060,17 +1133,36 @@ function TheKhoExportPage() {
               </div>
             )}
 
+            {stalledSeconds >= 20 &&
+              !pollingStopped &&
+              !TERMINAL_STATES.includes(exportJob.state) && (
+                <div className="the-kho-connection-warning">
+                  <RiAlertLine />
+
+                  Tiến độ chưa đổi trong {stalledSeconds}s — đang
+                  giãn nhịp kiểm tra. Sẽ ngừng theo dõi nếu đứng
+                  yên quá {Math.round(STALL_TIMEOUT_MS / 1000)}s.
+                </div>
+              )}
+
             {pollingStopped &&
               !TERMINAL_STATES.includes(exportJob.state) && (
                 <div className="the-kho-connection-error">
                   <RiErrorWarningLine />
 
                   <div>
-                    <strong>Mất kết nối tới máy chủ</strong>
+                    <strong>
+                      {connectionErrorCount >= MAX_POLLING_ERRORS
+                        ? "Mất kết nối tới máy chủ"
+                        : "Tiến độ đứng yên quá lâu"}
+                    </strong>
 
                     <span>
-                      Job vẫn có thể đang chạy. Bấm thử lại để
-                      tiếp tục cập nhật tiến độ.
+                      {connectionErrorCount >= MAX_POLLING_ERRORS
+                        ? "Job vẫn có thể đang chạy. Bấm thử lại để tiếp tục cập nhật tiến độ."
+                        : `Không nhúc nhích quá ${Math.round(
+                            STALL_TIMEOUT_MS / 1000
+                          )}s, có thể worker đã dừng. Bấm thử lại nếu muốn theo dõi tiếp.`}
                     </span>
                   </div>
 

@@ -1,5 +1,5 @@
 import { RiUser3Line } from "react-icons/ri";
-import { formatISOToViDate } from "../../../utils/dateUtils";
+import { formatApiDateTimeVi } from "../../../utils/dateUtils";
 
 function WarehouseReleaseDetailHeader({
   selectedRow,
@@ -41,7 +41,7 @@ function WarehouseReleaseDetailHeader({
           </strong>
           <span>•</span>
           <span>
-            {formatISOToViDate(selectedRow.created_at) || "-"}
+            {formatApiDateTimeVi(selectedRow.created_at)}
           </span>
         </div>
       </div>

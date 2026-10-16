@@ -16,6 +16,8 @@ import attachmentService, {
   ATTACHMENT_TICKET_TYPES,
 } from "../../../services/attachmentService";
 
+import { formatApiDateVi } from "../../../utils/dateUtils";
+
 
 function ImportOrderAttachments({
   receiptId,
@@ -334,27 +336,10 @@ function ImportOrderAttachments({
      DATE
      ========================================================= */
 
-  const formatDate =
-    (value) => {
-      if (!value) {
-        return "";
-      }
-
-      const date =
-        new Date(value);
-
-      if (
-        Number.isNaN(
-          date.getTime()
-        )
-      ) {
-        return "";
-      }
-
-      return date.toLocaleDateString(
-        "vi-VN"
-      );
-    };
+  // Ngày của API là chuỗi DD/MM/YYYY; new Date() đọc theo kiểu Mỹ nên "05/10"
+  // thành 10/05, còn ngày > 12 thì ra Invalid Date. Xem parseApiDateTime.
+  const formatDate = (value) =>
+    formatApiDateVi(value, "");
 
 
   /* =========================================================

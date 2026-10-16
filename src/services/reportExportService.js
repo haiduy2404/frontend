@@ -6,6 +6,9 @@ const BASE = "/inventory/reports";
 export const REPORT_RECEIPT_SUMMARY = "receipt-company-summary";
 export const REPORT_RELEASE = "release";
 export const REPORT_RECEIPT_DETAIL = "receipt";
+// Nhập - xuất - tồn theo tháng. Dùng chung đường tạo job / tiến độ / tải file
+// với các báo cáo trên, chỉ khác bộ lọc gửi lên.
+export const REPORT_STOCK_SUMMARY = "stock-summary";
 /**
  * Tạo job xuất Excel.
  *

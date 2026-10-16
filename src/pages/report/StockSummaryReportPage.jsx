@@ -28,9 +28,38 @@ import { useAuth } from "../../contexts/AuthContext";
 
 // Job id được giữ lại để F5 giữa chừng vẫn theo dõi tiếp được, không phải xuất lại.
 const STORAGE_KEY = "stock_summary_export_job_id";
+
 const POLLING_DELAY = 2000;
 const MAX_POLLING_ERRORS = 5;
 const TERMINAL_STATES = ["done", "failed", "cancelled"];
+
+// Celery chết thì AsyncResult trả PENDING mãi mãi, và API vẫn trả 200. Không có
+// chốt chặn thì FE hỏi lại mỗi 2 giây đến khi user đóng tab — đúng kiểu spam
+// request mà server đang chết lại càng không chịu nổi.
+//
+// Hai lớp xử lý, cố ý tách riêng:
+//
+//   1. GIÃN NHỊP: mỗi lần trạng thái không đổi thì chờ lâu hơn, tới trần 20s.
+//      Giảm tải ngay cả khi job vẫn còn sống, không cần phán đoán gì.
+//   2. NGƯỠNG TREO: không nhúc nhích quá 2 phút thì dừng hẳn, để user tự bấm
+//      thử lại.
+//
+// Ngưỡng tính theo THỜI GIAN chứ không theo số lần hỏi: "5 lần không đổi" ở nhịp
+// 2 giây mới là 10 giây, mà một job đang đọc số liệu nặng đứng yên lâu hơn thế
+// là chuyện bình thường — đếm theo lần sẽ cắt nhầm job còn sống.
+const MAX_POLLING_DELAY = 20000;
+const POLLING_BACKOFF = 1.6;
+const STALL_TIMEOUT_MS = 120000;
+
+/** Dấu vân tay của tiến độ. Đổi dấu = job còn nhúc nhích. */
+const progressSignature = (job) =>
+  [
+    job?.state,
+    job?.stage,
+    job?.percent,
+    job?.processed_rows,
+    job?.total_rows,
+  ].join("|");
 
 const EMPTY_GOODS_FILTER = {
   goods_group_ids: [],
@@ -142,6 +171,7 @@ function StockSummaryReportPage() {
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [pollingStopped, setPollingStopped] = useState(false);
   const [connectionErrorCount, setConnectionErrorCount] = useState(0);
+  const [stalledSeconds, setStalledSeconds] = useState(0);
   const [formError, setFormError] = useState("");
 
   const warehouseBoxRef = useRef(null);
@@ -151,6 +181,9 @@ function StockSummaryReportPage() {
   const pollingFunctionRef = useRef(null);
   const activeJobIdRef = useRef(null);
   const pollingErrorCountRef = useRef(0);
+  const pollingDelayRef = useRef(POLLING_DELAY);
+  const lastSignatureRef = useRef(null);
+  const stalledSinceRef = useRef(null);
 
   const canViewReport = canDo("view_report");
   const isJobActive = ["queued", "running"].includes(exportJob?.state);
@@ -274,6 +307,14 @@ function StockSummaryReportPage() {
     }
   }, []);
 
+  /** Về lại nhịp nhanh nhất. Gọi khi job vừa nhúc nhích, hoặc khi user thử lại. */
+  const resetPollingPace = useCallback(() => {
+    pollingDelayRef.current = POLLING_DELAY;
+    lastSignatureRef.current = null;
+    stalledSinceRef.current = null;
+    setStalledSeconds(0);
+  }, []);
+
   const schedulePolling = useCallback(
     (jobId, delay = POLLING_DELAY) => {
       stopPolling();
@@ -305,7 +346,33 @@ function StockSummaryReportPage() {
           return;
         }
 
-        schedulePolling(jobId);
+        const signature = progressSignature(job);
+
+        if (signature !== lastSignatureRef.current) {
+          lastSignatureRef.current = signature;
+          stalledSinceRef.current = null;
+          pollingDelayRef.current = POLLING_DELAY;
+          setStalledSeconds(0);
+        } else {
+          stalledSinceRef.current ??= Date.now();
+          const stalledFor = Date.now() - stalledSinceRef.current;
+          setStalledSeconds(Math.round(stalledFor / 1000));
+
+          if (stalledFor >= STALL_TIMEOUT_MS) {
+            // Không kết luận "thất bại": job có thể vẫn đang chạy, chỉ là FE
+            // không còn cơ sở nào để tin như vậy. Dừng hỏi và nhường cho user.
+            stopPolling();
+            setPollingStopped(true);
+            return;
+          }
+
+          pollingDelayRef.current = Math.min(
+            Math.round(pollingDelayRef.current * POLLING_BACKOFF),
+            MAX_POLLING_DELAY
+          );
+        }
+
+        schedulePolling(jobId, pollingDelayRef.current);
       } catch (error) {
         const status = error?.response?.status;
 
@@ -341,7 +408,14 @@ function StockSummaryReportPage() {
           return;
         }
 
-        schedulePolling(jobId);
+        // Giãn nhịp cả khi lỗi: server đang hỏng thì dội thêm request vào chỉ
+        // làm nó hỏng lâu hơn.
+        pollingDelayRef.current = Math.min(
+          Math.round(pollingDelayRef.current * POLLING_BACKOFF),
+          MAX_POLLING_DELAY
+        );
+
+        schedulePolling(jobId, pollingDelayRef.current);
       }
     },
     [schedulePolling, stopPolling]
@@ -422,6 +496,7 @@ function StockSummaryReportPage() {
       activeJobIdRef.current = jobId;
       localStorage.setItem(STORAGE_KEY, jobId);
       pollingErrorCountRef.current = 0;
+      resetPollingPace();
       setConnectionErrorCount(0);
       setPollingStopped(false);
       setExportJob({ ...job, state: job?.state || "queued", percent: 0 });
@@ -442,6 +517,7 @@ function StockSummaryReportPage() {
 
     activeJobIdRef.current = jobId;
     pollingErrorCountRef.current = 0;
+    resetPollingPace();
     setConnectionErrorCount(0);
     setPollingStopped(false);
     pollExportJob(jobId);
@@ -740,9 +816,23 @@ function StockSummaryReportPage() {
               </div>
             )}
 
+            {stalledSeconds >= 20 && !pollingStopped && (
+              <div className="stock-summary-connection-warning">
+                Tiến độ chưa đổi trong {stalledSeconds}s — đang giãn nhịp kiểm
+                tra. Sẽ ngừng theo dõi nếu đứng yên quá{" "}
+                {Math.round(STALL_TIMEOUT_MS / 1000)}s.
+              </div>
+            )}
+
             {pollingStopped && (
               <div className="stock-summary-connection-error">
-                <span>Đã ngừng theo dõi tiến độ.</span>
+                <span>
+                  {connectionErrorCount >= MAX_POLLING_ERRORS
+                    ? "Không kết nối được tới server, đã ngừng theo dõi."
+                    : `Tiến độ đứng yên quá ${Math.round(
+                        STALL_TIMEOUT_MS / 1000
+                      )}s, đã ngừng theo dõi. Có thể worker đã dừng.`}
+                </span>
                 <button type="button" onClick={handleRetryPolling}>
                   Thử lại
                 </button>

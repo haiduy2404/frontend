@@ -9,6 +9,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import DashboardHomePage from "./pages/dashboard/DashboardHomePage";
+import StockSummaryReportPage from "./pages/report/StockSummaryReportPage";
 import TheKhoExportPage from "./pages/report/TheKhoExportPage";
 import ReleaseOrderPage from "./pages/activity/release/ReleaseOrderPage";
 import ReleaseOrderDetailPage from "./pages/activity/release/ReleaseOrderDetailPage";
@@ -183,6 +184,15 @@ function App() {
                 element={
                   <RequireRole roles={["view_report"]}>
                     <ReleaseReportPage />
+                  </RequireRole>
+                }
+              />
+
+              <Route
+                path="report/stock-summary"
+                element={
+                  <RequireRole roles={["view_report"]}>
+                    <StockSummaryReportPage />
                   </RequireRole>
                 }
               />

@@ -3,6 +3,8 @@ import {
   RiUser3Line,
 } from "react-icons/ri";
 
+import { formatApiDateTimeVi } from "../../../utils/dateUtils";
+
 function ImportOrderDetailHeader({
   selectedRow,
   getReceiptStatusText,
@@ -28,38 +30,10 @@ function ImportOrderDetailHeader({
     }
   };
 
-  const formatDateTime = (
-    value
-  ) => {
-    if (!value) {
-      return "-";
-    }
-
-    const date =
-      new Date(value);
-
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return "-";
-    }
-
-    return new Intl.DateTimeFormat(
-      "vi-VN",
-      {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-
-        hour: "2-digit",
-        minute: "2-digit",
-
-        hour12: false,
-      }
-    ).format(date);
-  };
+  // new Date(value) từng đọc "05/10/2026" theo kiểu Mỹ và hiện ra 10/05/2026;
+  // ngày > 12 thì ra Invalid Date, UI mất hẳn ngày. Xem parseApiDateTime.
+  const formatDateTime = (value) =>
+    formatApiDateTimeVi(value);
 
   const creatorName =
     selectedRow

@@ -1,3 +1,5 @@
+import { formatApiDateTimeVi } from "../../../../utils/dateUtils";
+
 export const normalizeWarehouseTransferPage = (data) => {
   const candidates = [
     data,
@@ -150,21 +152,10 @@ export const formatQuantity = (value) =>
     maximumFractionDigits: 2,
   }).format(toNumber(value));
 
-export const formatDateTimeVi = (value) => {
-  if (!value) return "-";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
-};
+// new Date(value) ở đây từng đọc "05/10/2026" theo kiểu Mỹ và hiện ra 10/05/2026;
+// ngày > 12 thì ra Invalid Date, UI mất hẳn ngày. Xem parseApiDateTime.
+export const formatDateTimeVi = (value) =>
+  formatApiDateTimeVi(value);
 
 export const buildWarehouseTransferDetailView = (transfer) => {
   if (!transfer) return null;

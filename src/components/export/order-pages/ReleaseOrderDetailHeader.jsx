@@ -4,7 +4,7 @@ import {
 } from "react-icons/ri";
 
 import {
-  formatISOToViDate,
+  formatApiDateTimeVi,
 } from "../../../utils/dateUtils";
 
 
@@ -52,9 +52,9 @@ function ReleaseOrderDetailHeader({
               </span>
 
               <span>
-                {formatISOToViDate(
+                {formatApiDateTimeVi(
                   selectedRow.created_at
-                ) || "-"}
+                )}
               </span>
             </div>
           </>
