@@ -745,7 +745,7 @@ function GoodsFormModal({
                           min="0"
                           step="any"
                           value={item.ratio}
-                          disabled={item.is_existing}
+                          //disabled={item.is_existing}
                           onChange={(e) =>
                             handleChangeConversionUnit(
                               item.temp_id,
