@@ -181,7 +181,7 @@ function ImportReceiptHeader({
               }
               onChange={onHeaderChange}
               disabled={
-                isLockedWhenReceived
+                isPrintMode
               }
             >
               <option value="">
