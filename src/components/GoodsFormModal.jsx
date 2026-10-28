@@ -645,7 +645,7 @@ function GoodsFormModal({
                     name="unit_id"
                     value={formData.unit_id}
                     onChange={handleChangePrimaryUnit}
-                    //disabled={!!editingGoodsId}
+                    disabled={!!editingGoodsId}
                   >
                     <option value="">
                       {unitLoading ? "Đang tải ĐVT..." : "Chọn ĐVT chính"}
@@ -715,7 +715,7 @@ function GoodsFormModal({
                         <label>Đơn vị tính</label>
                         <select
                           value={item.unit_id}
-                          //disabled={item.is_existing}
+                          disabled={item.is_existing}
                           onChange={(e) =>
                             handleChangeConversionUnit(
                               item.temp_id,
@@ -745,7 +745,7 @@ function GoodsFormModal({
                           min="0"
                           step="any"
                           value={item.ratio}
-                          //disabled={item.is_existing}
+                          disabled={item.is_existing}
                           onChange={(e) =>
                             handleChangeConversionUnit(
                               item.temp_id,
@@ -766,7 +766,7 @@ function GoodsFormModal({
                         type="button"
                         className="remove-conversion-btn"
                         title="Tạm thời không cho phép xóa"
-                        //disabled
+                        disabled
                       >
                         <RiDeleteBin6Line />
                       </button>

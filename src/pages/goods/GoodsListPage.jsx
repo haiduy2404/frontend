@@ -600,7 +600,7 @@ function GoodsListPage() {
                           <button
                             className="row-delete-btn"
                             title="Tạm thời chưa hỗ trợ xóa hàng hóa"
-                            //disabled
+                            disabled
                             onClick={() => handleDeleteGoods(goods)}
                           >
                             <RiDeleteBin6Line />
