@@ -23,7 +23,6 @@ import {
   getReportExportStatus,
 } from "../../services/reportExportService";
 import { readBlobError, saveBlobFile } from "../../services/theKhoService";
-import { getWarehouses } from "../../services/warehouseService";
 import { useAuth } from "../../contexts/AuthContext";
 
 // Job id được giữ lại để F5 giữa chừng vẫn theo dõi tiếp được, không phải xuất lại.
@@ -90,17 +89,6 @@ const countMonths = (from, to) => {
 
 const unwrapResponseData = (response) => response?.data ?? response;
 
-const unwrapWarehouseList = (response) => {
-  const body = response?.data ?? response;
-  const data = body?.data ?? body;
-
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.results)) return data.results;
-  if (Array.isArray(data?.items)) return data.items;
-
-  return [];
-};
-
 const getStageText = (job) => {
   switch (job?.stage) {
     case "counting":
@@ -156,11 +144,6 @@ function StockSummaryReportPage() {
   const [fromMonth, setFromMonth] = useState(getCurrentMonth);
   const [toMonth, setToMonth] = useState(getCurrentMonth);
 
-  const [warehouses, setWarehouses] = useState([]);
-  const [warehouseIds, setWarehouseIds] = useState([]);
-  const [warehouseSearch, setWarehouseSearch] = useState("");
-  const [warehouseLoading, setWarehouseLoading] = useState(false);
-  const [showWarehouseDropdown, setShowWarehouseDropdown] = useState(false);
 
   const [goodsFilter, setGoodsFilter] = useState(EMPTY_GOODS_FILTER);
   const [showGoodsFilterModal, setShowGoodsFilterModal] = useState(false);
@@ -174,9 +157,6 @@ function StockSummaryReportPage() {
   const [stalledSeconds, setStalledSeconds] = useState(0);
   const [formError, setFormError] = useState("");
 
-  const warehouseBoxRef = useRef(null);
-  const warehouseRequestIdRef = useRef(0);
-  const warehouseSearchTimerRef = useRef(null);
   const pollingTimerRef = useRef(null);
   const pollingFunctionRef = useRef(null);
   const activeJobIdRef = useRef(null);
@@ -188,100 +168,6 @@ function StockSummaryReportPage() {
   const canViewReport = canDo("view_report");
   const isJobActive = ["queued", "running"].includes(exportJob?.state);
   const monthCount = countMonths(fromMonth, toMonth);
-
-  /* =========================
-     KHO
-  ========================= */
-
-  const fetchWarehouses = useCallback(async (keyword = "") => {
-    const requestId = ++warehouseRequestIdRef.current;
-
-    try {
-      setWarehouseLoading(true);
-
-      const response = await getWarehouses({
-        search: String(keyword || "").trim(),
-        page: 1,
-        page_size: 100,
-      });
-
-      // Bỏ qua kết quả của request cũ: gõ nhanh thì phản hồi về không theo thứ tự.
-      if (requestId !== warehouseRequestIdRef.current) return;
-
-      setWarehouses(unwrapWarehouseList(response));
-    } catch (error) {
-      if (requestId !== warehouseRequestIdRef.current) return;
-
-      console.error("LOAD WAREHOUSES ERROR:", error?.response?.data || error);
-      setWarehouses([]);
-    } finally {
-      if (requestId === warehouseRequestIdRef.current) {
-        setWarehouseLoading(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchWarehouses("");
-  }, [fetchWarehouses]);
-
-  useEffect(() => {
-    if (warehouseSearchTimerRef.current) {
-      window.clearTimeout(warehouseSearchTimerRef.current);
-    }
-
-    warehouseSearchTimerRef.current = window.setTimeout(() => {
-      fetchWarehouses(warehouseSearch);
-    }, 500);
-
-    return () => {
-      if (warehouseSearchTimerRef.current) {
-        window.clearTimeout(warehouseSearchTimerRef.current);
-      }
-    };
-  }, [warehouseSearch, fetchWarehouses]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        warehouseBoxRef.current &&
-        !warehouseBoxRef.current.contains(event.target)
-      ) {
-        setShowWarehouseDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const toggleWarehouse = (id) => {
-    const key = String(id);
-
-    setWarehouseIds((previous) =>
-      previous.includes(key)
-        ? previous.filter((item) => item !== key)
-        : [...previous, key]
-    );
-  };
-
-  const selectedWarehouseText = useMemo(() => {
-    if (warehouseIds.length === 0) return "Tất cả kho";
-
-    const selected = warehouses.filter((warehouse) =>
-      warehouseIds.includes(String(warehouse?.id))
-    );
-
-    if (selected.length === 0) {
-      return `Đã chọn ${warehouseIds.length} kho`;
-    }
-
-    if (selected.length <= 3) {
-      return selected.map((warehouse) => warehouse.code).join(", ");
-    }
-
-    return `Đã chọn ${warehouseIds.length} kho`;
-  }, [warehouses, warehouseIds]);
 
   const goodsFilterText = useMemo(() => {
     const groups = goodsFilter.goods_group_ids.length;
@@ -449,10 +335,7 @@ function StockSummaryReportPage() {
   const handleResetFilters = () => {
     setFromMonth(getCurrentMonth());
     setToMonth(getCurrentMonth());
-    setWarehouseIds([]);
-    setWarehouseSearch("");
     setGoodsFilter(EMPTY_GOODS_FILTER);
-    setShowWarehouseDropdown(false);
     setFormError("");
   };
 
@@ -480,7 +363,6 @@ function StockSummaryReportPage() {
       const response = await createReportExport(REPORT_STOCK_SUMMARY, {
         from_month: fromMonth,
         to_month: toMonth,
-        warehouse_ids: warehouseIds,
         goods_ids: goodsFilter.goods_ids,
         goods_group_ids: goodsFilter.goods_group_ids,
       });
@@ -581,8 +463,8 @@ function StockSummaryReportPage() {
           <h1>Báo cáo nhập - xuất - tồn</h1>
           <p>
             Tồn đầu kỳ, phát sinh nhập, phát sinh xuất và tồn cuối kỳ của từng
-            mã vật tư, theo từng tháng. Điều chuyển tính là xuất ở kho nguồn và
-            nhập ở kho đích.
+            mã vật tư theo từng tháng, cộng gộp mọi kho bạn quản lý. Điều chuyển
+            giữa các kho không tính là nhập hay xuất.
           </p>
         </div>
       </div>
@@ -607,72 +489,6 @@ function StockSummaryReportPage() {
               value={toMonth}
               onChange={(event) => setToMonth(event.target.value)}
             />
-          </div>
-
-          <div className="stock-summary-field" ref={warehouseBoxRef}>
-            <label htmlFor="stock-summary-warehouse">Kho</label>
-            <button
-              id="stock-summary-warehouse"
-              type="button"
-              className="stock-summary-select-button"
-              onClick={() => setShowWarehouseDropdown((open) => !open)}
-            >
-              <span>{selectedWarehouseText}</span>
-              <span className="stock-summary-caret">▾</span>
-            </button>
-
-            {showWarehouseDropdown && (
-              <div className="stock-summary-dropdown">
-                <input
-                  type="text"
-                  className="stock-summary-dropdown-search"
-                  placeholder="Tìm theo mã hoặc tên kho…"
-                  value={warehouseSearch}
-                  onChange={(event) => setWarehouseSearch(event.target.value)}
-                />
-
-                {warehouseIds.length > 0 && (
-                  <button
-                    type="button"
-                    className="stock-summary-dropdown-clear"
-                    onClick={() => setWarehouseIds([])}
-                  >
-                    Bỏ chọn tất cả ({warehouseIds.length})
-                  </button>
-                )}
-
-                <div className="stock-summary-dropdown-list">
-                  {warehouseLoading && (
-                    <div className="stock-summary-dropdown-status">
-                      Đang tải…
-                    </div>
-                  )}
-
-                  {!warehouseLoading && warehouses.length === 0 && (
-                    <div className="stock-summary-dropdown-status">
-                      Không có kho nào khớp.
-                    </div>
-                  )}
-
-                  {warehouses.map((warehouse) => (
-                    <label
-                      key={warehouse.id}
-                      className="stock-summary-dropdown-option"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={warehouseIds.includes(String(warehouse.id))}
-                        onChange={() => toggleWarehouse(warehouse.id)}
-                      />
-                      <span>
-                        <strong>{warehouse.code}</strong>
-                        {warehouse.name ? ` — ${warehouse.name}` : ""}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="stock-summary-field">
@@ -707,7 +523,7 @@ function StockSummaryReportPage() {
                 fromMonth
               )} - ${formatMonth(toMonth)}.`
             : "Chọn khoảng tháng hợp lệ."}
-          {" Để trống kho hoặc vật tư nghĩa là lấy tất cả."}
+          {" Để trống vật tư nghĩa là lấy tất cả."}
         </div>
 
         {formError && (
