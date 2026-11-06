@@ -51,6 +51,58 @@ const MAX_POLLING_DELAY = 20000;
 const POLLING_BACKOFF = 1.6;
 const STALL_TIMEOUT_MS = 120000;
 
+// Job lưu ở localStorage quá tuổi này thì bỏ, không tự mở lại modal nữa. Trước
+// đây chỉ lưu job_id trần: job kẹt "queued" (Celery PENDING) sẽ bị khôi phục mỗi
+// lần vào trang, nút "Xuất thẻ kho" biến thành "Xem tiến độ" và user bị nhốt.
+const SAVED_JOB_MAX_AGE_MS = 30 * 60 * 1000;
+
+const saveActiveJob = (jobId) => {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ job_id: jobId, saved_at: Date.now() })
+    );
+  } catch {
+    // Không lưu được thì thôi — chỉ mất khả năng khôi phục khi tải lại trang.
+  }
+};
+
+const clearSavedJob = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // bỏ qua
+  }
+};
+
+/** Trả job_id còn hạn, hoặc null. Giá trị cũ (job_id trần) hay quá hạn bị xóa. */
+const readSavedJobId = () => {
+  let raw;
+
+  try {
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+
+  if (!raw) return null;
+
+  try {
+    const saved = JSON.parse(raw);
+    const fresh =
+      saved?.job_id &&
+      Number.isFinite(saved?.saved_at) &&
+      Date.now() - saved.saved_at < SAVED_JOB_MAX_AGE_MS;
+
+    if (fresh) return saved.job_id;
+  } catch {
+    // định dạng cũ — rơi xuống xóa
+  }
+
+  clearSavedJob();
+  return null;
+};
+
 /** Dấu vân tay của tiến độ. Đổi dấu = job còn nhúc nhích. */
 const progressSignature = (job) =>
   [
@@ -223,7 +275,10 @@ function TheKhoExportPage() {
   const lastSignatureRef = useRef(null);
   const stalledSinceRef = useRef(null);
 
-  const isJobActive = ["queued", "running"].includes(exportJob?.state);
+  // Đã ngừng theo dõi (đứng yên quá lâu / mất kết nối) thì không coi là "đang
+  // chạy" nữa, để user tạo được yêu cầu mới thay vì bị kẹt ở "Xem tiến độ".
+  const isJobActive =
+    ["queued", "running"].includes(exportJob?.state) && !pollingStopped;
 
   const canViewReport =
     canDo("view_opening_stock") || canDo("view_report");
@@ -401,7 +456,7 @@ function TheKhoExportPage() {
         if (TERMINAL_STATES.includes(job?.state)) {
           stopPolling();
           activeJobIdRef.current = null;
-          localStorage.removeItem(STORAGE_KEY);
+          clearSavedJob();
           return;
         }
 
@@ -422,6 +477,8 @@ function TheKhoExportPage() {
             // không còn cơ sở nào để tin như vậy.
             stopPolling();
             setPollingStopped(true);
+            // Không giữ job này để khôi phục lần sau, kẻo vào trang lại bị kẹt.
+            clearSavedJob();
             return;
           }
 
@@ -438,7 +495,7 @@ function TheKhoExportPage() {
         if (status === 400 || status === 404) {
           stopPolling();
           activeJobIdRef.current = null;
-          localStorage.removeItem(STORAGE_KEY);
+          clearSavedJob();
           setPollingStopped(true);
 
           setExportJob((previous) => ({
@@ -465,6 +522,7 @@ function TheKhoExportPage() {
         if (nextErrorCount >= MAX_POLLING_ERRORS) {
           stopPolling();
           setPollingStopped(true);
+          clearSavedJob();
           return;
         }
 
@@ -486,7 +544,7 @@ function TheKhoExportPage() {
   }, [pollExportJob]);
 
   useEffect(() => {
-    const savedJobId = localStorage.getItem(STORAGE_KEY);
+    const savedJobId = readSavedJobId();
 
     if (!savedJobId) {
       return undefined;
@@ -502,7 +560,8 @@ function TheKhoExportPage() {
       warnings: [],
     });
 
-    setShowProgressModal(true);
+    // Theo dõi ngầm, không tự bật modal che cả trang. User bấm "Xem tiến độ"
+    // nếu muốn xem.
     pollExportJob(savedJobId);
 
     return undefined;
@@ -651,7 +710,7 @@ function TheKhoExportPage() {
       setShowProgressModal(true);
 
       activeJobIdRef.current = job.job_id;
-      localStorage.setItem(STORAGE_KEY, job.job_id);
+      saveActiveJob(job.job_id);
 
       schedulePolling(job.job_id, 500);
     } catch (error) {
@@ -688,8 +747,7 @@ function TheKhoExportPage() {
     setPollingStopped(false);
 
     activeJobIdRef.current = jobId;
-    localStorage.setItem(STORAGE_KEY, jobId);
-      resetPollingPace();
+    saveActiveJob(jobId);
 
     pollExportJob(jobId);
   };
@@ -728,6 +786,19 @@ function TheKhoExportPage() {
   };
 
   const handleCloseProgressModal = () => {
+    setShowProgressModal(false);
+  };
+
+  /** Bỏ theo dõi job hiện tại (chỉ ở FE — job trên server không bị hủy). */
+  const handleAbandonJob = () => {
+    stopPolling();
+    resetPollingPace();
+    activeJobIdRef.current = null;
+    clearSavedJob();
+    pollingErrorCountRef.current = 0;
+    setConnectionErrorCount(0);
+    setPollingStopped(false);
+    setExportJob(null);
     setShowProgressModal(false);
   };
 
@@ -1351,6 +1422,17 @@ function TheKhoExportPage() {
             )}
 
             <div className="the-kho-modal-footer">
+              {["queued", "running"].includes(exportJob.state) && (
+                <button
+                  type="button"
+                  className="the-kho-secondary-btn"
+                  onClick={handleAbandonJob}
+                  title="Ngừng theo dõi job này để tạo yêu cầu xuất mới"
+                >
+                  Bỏ theo dõi
+                </button>
+              )}
+
               <button
                 type="button"
                 className="the-kho-secondary-btn"
