@@ -10,8 +10,6 @@ function WarehouseReleaseDetailPanel({
   selectedRow,
   selectedCount,
 
-  getReleaseStatusText,
-
   detailRows,
   detailSearch,
   detailLoading,
@@ -44,7 +42,6 @@ function WarehouseReleaseDetailPanel({
     <div className="warehouse-release-detail-panel">
       <WarehouseReleaseDetailHeader
         selectedRow={selectedRow}
-        getReleaseStatusText={getReleaseStatusText}
       />
 
       {!selectedRow ? (

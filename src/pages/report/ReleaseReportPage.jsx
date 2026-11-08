@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "../../styles/ReleaseReportPage.css";
 
 import { getWarehouses } from "../../services/warehouseService";
-import { getReleaseReferencesPageable } from "../../services/releaseOrderService";
+import { searchReleaseReferences } from "../../services/releaseOrderService";
+import SearchableSelect from "../../components/SearchableSelect";
 import GoodsFilterModal from "../../components/GoodsFilterModal";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -80,11 +81,9 @@ function ReleaseReportPage() {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
 
   const [warehouses, setWarehouses] = useState([]);
-  const [receiverUnits, setReceiverUnits] = useState([]);
-  const [releaseTargets, setReleaseTargets] = useState([]);
 
-  const [warehouseLoading, setWarehouseLoading] = useState(false);
-  const [referenceLoading, setReferenceLoading] = useState(false);
+  // true ngay từ đầu: trang luôn tải danh sách kho khi mở.
+  const [warehouseLoading, setWarehouseLoading] = useState(true);
 
   const [selectedGoodsFilter, setSelectedGoodsFilter] = useState({
     goods_group_ids: [],
@@ -99,88 +98,90 @@ function ReleaseReportPage() {
     [warehouses]
   );
 
-  const receiverUnitOptions = useMemo(
-    () => receiverUnits.map(normalizeOption).filter((item) => item.value),
-    [receiverUnits]
+  // Đơn vị lĩnh / đối tượng xuất kho chỉ có nghĩa trong một kho và một khoảng
+  // ngày cụ thể: danh sách chọn chỉ gồm mục có trên lệnh xuất ĐÃ HOÀN THÀNH trong
+  // khoảng đó, nên chọn mục nào cũng ra số liệu. Chưa đủ ba thứ thì khoá lại.
+  const datesValid =
+    Boolean(filters.start_date) &&
+    Boolean(filters.end_date) &&
+    filters.start_date <= filters.end_date;
+
+  const canPickReferences = Boolean(filters.warehouse_id) && datesValid;
+
+  const referenceHint = !filters.warehouse_id
+    ? "-- Chọn kho xuất trước --"
+    : !filters.start_date || !filters.end_date
+    ? "-- Chọn Từ ngày và Đến ngày trước --"
+    : !datesValid
+    ? "-- Khoảng ngày không hợp lệ --"
+    : "";
+
+  // Đổi kho hoặc ngày thì kết quả tìm cũ không còn đúng: SearchableSelect xoá bộ
+  // nhớ đệm mỗi khi khoá này đổi.
+  const referenceReloadKey = `${filters.warehouse_id}|${filters.start_date}|${filters.end_date}`;
+
+  const makeReferenceLoader = useCallback(
+    (type) => async (search, signal, limit) => {
+      const response = await searchReleaseReferences(
+        {
+          type,
+          warehouse_id: filters.warehouse_id,
+          start_date: filters.start_date,
+          end_date: filters.end_date,
+          search,
+          limit,
+        },
+        { signal }
+      );
+      return unwrapList(response)
+        .map(normalizeOption)
+        .filter((item) => item.value);
+    },
+    [filters.warehouse_id, filters.start_date, filters.end_date]
   );
 
-  const releaseTargetOptions = useMemo(
-    () => releaseTargets.map(normalizeOption).filter((item) => item.value),
-    [releaseTargets]
+  const loadReceiverUnits = useMemo(
+    () => makeReferenceLoader("RECEIVER_UNIT"),
+    [makeReferenceLoader]
   );
 
-  const fetchWarehouses = useCallback(async () => {
-    try {
-      setWarehouseLoading(true);
+  const loadReleaseTargets = useMemo(
+    () => makeReferenceLoader("RELEASE_TARGET"),
+    [makeReferenceLoader]
+  );
 
-      const response = await getWarehouses({
-        search: "",
-        page: 1,
-        page_size: 100,
-      });
+  // Tải danh sách kho một lần khi mở trang. Mọi setState đều nằm SAU await, nên
+  // không có cập nhật state đồng bộ ngay trong effect (React 19 cảnh báo vì nó
+  // gây render dây chuyền). Rời trang khi request chưa về thì bỏ kết quả.
+  useEffect(() => {
+    let cancelled = false;
 
-      setWarehouses(unwrapList(response));
-    } catch (error) {
-      console.error(
-        "LOAD WAREHOUSE LIST ERROR:",
-        error?.response?.data || error
-      );
-
-      setWarehouses([]);
-      setErrorMessage("Không tải được danh sách kho xuất.");
-    } finally {
-      setWarehouseLoading(false);
-    }
-  }, []);
-
-  const fetchReleaseReferences = useCallback(async (warehouseId) => {
-    if (!warehouseId) {
-      setReceiverUnits([]);
-      setReleaseTargets([]);
-      return;
-    }
-
-    try {
-      setReferenceLoading(true);
-
-      const [targetResponse, receiverResponse] = await Promise.all([
-        getReleaseReferencesPageable({
-          warehouse_id: warehouseId,
-          type: "RELEASE_TARGET",
+    (async () => {
+      try {
+        const response = await getWarehouses({
+          search: "",
           page: 1,
           page_size: 100,
-        }),
-        getReleaseReferencesPageable({
-          warehouse_id: warehouseId,
-          type: "RECEIVER_UNIT",
-          page: 1,
-          page_size: 100,
-        }),
-      ]);
+        });
+        if (cancelled) return;
+        setWarehouses(unwrapList(response));
+      } catch (error) {
+        if (cancelled) return;
+        console.error(
+          "LOAD WAREHOUSE LIST ERROR:",
+          error?.response?.data || error
+        );
+        setWarehouses([]);
+        setErrorMessage("Không tải được danh sách kho xuất.");
+      } finally {
+        if (!cancelled) setWarehouseLoading(false);
+      }
+    })();
 
-      setReleaseTargets(unwrapList(targetResponse));
-      setReceiverUnits(unwrapList(receiverResponse));
-    } catch (error) {
-      console.error(
-        "LOAD RELEASE REFERENCES ERROR:",
-        error?.response?.data || error
-      );
-
-      setReceiverUnits([]);
-      setReleaseTargets([]);
-      setErrorMessage("Không tải được đơn vị lĩnh và đối tượng xuất kho.");
-    } finally {
-      setReferenceLoading(false);
-    }
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  useEffect(() => {
-    fetchWarehouses();
-  }, [fetchWarehouses]);
-
-  useEffect(() => {
-    fetchReleaseReferences(filters.warehouse_id);
-  }, [filters.warehouse_id, fetchReleaseReferences]);
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
@@ -188,10 +189,11 @@ function ReleaseReportPage() {
     setErrorMessage("");
 
     setFilters((current) => {
-      if (name === "warehouse_id") {
+      // Mục đã chọn có thể không còn trong kho / khoảng ngày mới.
+      if (["warehouse_id", "start_date", "end_date"].includes(name)) {
         return {
           ...current,
-          warehouse_id: value,
+          [name]: value,
           receiver_unit_id: "",
           release_target_id: "",
         };
@@ -235,8 +237,6 @@ function ReleaseReportPage() {
       goods_group_ids: [],
       goods_ids: [],
     });
-    setReceiverUnits([]);
-    setReleaseTargets([]);
     setErrorMessage("");
   };
 
@@ -402,58 +402,50 @@ function ReleaseReportPage() {
 
           {/* HÀNG 4: ĐƠN VỊ LĨNH */}
           <div className="release-report-filter-row">
-            <label className="release-report-field release-report-field-full">
+            <div className="release-report-field release-report-field-full">
               <span>Đơn vị lĩnh vật tư</span>
 
-              <select
-                name="receiver_unit_id"
+              <SearchableSelect
+                id="release-report-receiver-unit"
                 value={filters.receiver_unit_id}
-                onChange={handleFilterChange}
-                disabled={!filters.warehouse_id || referenceLoading}
-              >
-                <option value="">
-                  {!filters.warehouse_id
-                    ? "-- Chọn kho để lọc thêm --"
-                    : referenceLoading
-                    ? "Đang tải đơn vị lĩnh..."
-                    : "-- Tất cả đơn vị lĩnh --"}
-                </option>
-
-                {receiverUnitOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onChange={(option) =>
+                  setFilters((current) => ({
+                    ...current,
+                    receiver_unit_id: option ? option.value : "",
+                  }))
+                }
+                loadOptions={loadReceiverUnits}
+                reloadKey={referenceReloadKey}
+                disabled={!canPickReferences}
+                disabledHint={referenceHint}
+                allLabel="-- Tất cả đơn vị lĩnh --"
+                searchPlaceholder="Gõ tên đơn vị lĩnh (không cần dấu)…"
+              />
+            </div>
           </div>
 
           {/* HÀNG 5: ĐỐI TƯỢNG XUẤT KHO */}
           <div className="release-report-filter-row">
-            <label className="release-report-field release-report-field-full">
+            <div className="release-report-field release-report-field-full">
               <span>Đối tượng xuất kho</span>
 
-              <select
-                name="release_target_id"
+              <SearchableSelect
+                id="release-report-release-target"
                 value={filters.release_target_id}
-                onChange={handleFilterChange}
-                disabled={!filters.warehouse_id || referenceLoading}
-              >
-                <option value="">
-                  {!filters.warehouse_id
-                    ? "-- Chọn kho để lọc thêm --"
-                    : referenceLoading
-                    ? "Đang tải đối tượng xuất..."
-                    : "-- Tất cả đối tượng xuất --"}
-                </option>
-
-                {releaseTargetOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onChange={(option) =>
+                  setFilters((current) => ({
+                    ...current,
+                    release_target_id: option ? option.value : "",
+                  }))
+                }
+                loadOptions={loadReleaseTargets}
+                reloadKey={referenceReloadKey}
+                disabled={!canPickReferences}
+                disabledHint={referenceHint}
+                allLabel="-- Tất cả đối tượng xuất --"
+                searchPlaceholder="Gõ tên đối tượng xuất (không cần dấu)…"
+              />
+            </div>
           </div>
 
           {/* HÀNG 6: LỌC MÃ VẬT TƯ - GIỮ NGUYÊN LOGIC CŨ */}
@@ -494,7 +486,7 @@ function ReleaseReportPage() {
             <button
               type="submit"
               className="release-report-search-button"
-              disabled={warehouseLoading || referenceLoading}
+              disabled={warehouseLoading}
             >
               Xem báo cáo
             </button>

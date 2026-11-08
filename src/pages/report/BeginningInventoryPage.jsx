@@ -20,7 +20,10 @@ import { getWarehouses } from "../../services/warehouseService";
 import {
   getBeginningInventories,
   captureBeginningInventory,
+  getCapturePeriods,
+  checkBeginningInventoryCapture,
 } from "../../services/openingStockService";
+import NegativeStockModal from "../../components/beginning-inventory/NegativeStockModal";
 
 const WAREHOUSE_PAGE_SIZE = 10;
 
@@ -107,6 +110,18 @@ const formatDateTime = (value) => {
   return date.toLocaleString("vi-VN");
 };
 
+/** "2026-10" -> "10/2026" */
+const formatPeriod = (value) => {
+  const [year, month] = String(value || "").split("-");
+  return year && month ? `${month}/${year}` : value || "";
+};
+
+const readApiError = (error, fallback) =>
+  error?.response?.data?.message ||
+  error?.response?.data?.detail ||
+  error?.response?.data?.error ||
+  fallback;
+
 function BeginningInventoryPage() {
   const warehouseRequestIdRef = useRef(0);
   const inventoryRequestIdRef = useRef(0);
@@ -155,6 +170,18 @@ function BeginningInventoryPage() {
   const [selectedWarehouses, setSelectedWarehouses] = useState({});
 
   const [captureLoading, setCaptureLoading] = useState(false);
+
+  // Kỳ cần trích xuất: user PHẢI tự chọn, không có mặc định — thao tác này ghi
+  // đè dữ liệu. Danh sách kỳ hợp lệ lấy từ BE để không bao giờ hiện một kỳ mà
+  // bấm vào lại bị từ chối.
+  const [captureOptions, setCaptureOptions] = useState([]);
+  const [captureOptionsLoading, setCaptureOptionsLoading] = useState(false);
+  const [capturePeriod, setCapturePeriod] = useState("");
+  // Trạng thái của kỳ đã chọn theo ĐÚNG các kho đã chọn, lấy lúc bấm xác nhận.
+  const [captureCheck, setCaptureCheck] = useState(null);
+  const [captureChecking, setCaptureChecking] = useState(false);
+  // Danh sách mã sẽ bị âm khi trích xuất — hiện trong modal riêng, cuộn được.
+  const [negativeReport, setNegativeReport] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -465,13 +492,29 @@ function BeginningInventoryPage() {
   // MỞ / ĐÓNG MODAL
   // =========================================================
 
-  const openCaptureModal = () => {
+  const openCaptureModal = async () => {
     setWarehouseSearch("");
     setDebouncedWarehouseSearch("");
     setWarehousePage(1);
     setSelectedWarehouses({});
     setErrorMessage("");
+    setCapturePeriod("");
+    setCaptureCheck(null);
     setShowCaptureModal(true);
+
+    try {
+      setCaptureOptionsLoading(true);
+      const response = await getCapturePeriods();
+      const list = response?.data ?? response ?? [];
+      setCaptureOptions(Array.isArray(list) ? list : []);
+    } catch (error) {
+      console.error("LOAD CAPTURE PERIODS ERROR:", error?.response?.data || error);
+      setCaptureOptions([]);
+      setErrorMessage(readApiError(error, "Không tải được danh sách kỳ."));
+      setShowErrorModal(true);
+    } finally {
+      setCaptureOptionsLoading(false);
+    }
   };
 
   const closeCaptureModal = () => {
@@ -482,6 +525,8 @@ function BeginningInventoryPage() {
     setWarehouseSearch("");
     setWarehousePage(1);
     setSelectedWarehouses({});
+    setCapturePeriod("");
+    setCaptureCheck(null);
   };
 
   // =========================================================
@@ -542,7 +587,13 @@ function BeginningInventoryPage() {
     });
   };
 
-  const handleOpenConfirm = () => {
+  const handleOpenConfirm = async () => {
+    if (!capturePeriod) {
+      setErrorMessage("Vui lòng chọn kỳ cần trích xuất.");
+      setShowErrorModal(true);
+      return;
+    }
+
     if (selectedWarehouseIds.length === 0) {
       setErrorMessage(
         "Vui lòng chọn ít nhất một kho để trích xuất."
@@ -552,7 +603,54 @@ function BeginningInventoryPage() {
       return;
     }
 
-    setShowConfirmModal(true);
+    // Chạy mọi chốt chặn của BE với ĐÚNG kỳ và các kho đã chọn, không ghi gì:
+    // thiếu mốc, tồn sắp ghi bị âm, kỳ đã có dữ liệu. Báo ngay ở đây thay vì để
+    // user bấm "chắc chắn" rồi mới nhận lỗi.
+    try {
+      setCaptureChecking(true);
+      const response = await checkBeginningInventoryCapture(
+        selectedWarehouseIds,
+        capturePeriod
+      );
+      const result = response?.data ?? response ?? {};
+      const period = result.period || {};
+
+      if (!period.selectable) {
+        // Lý do do BE đặt (kỳ tương lai, quá xa, thiếu mốc…); chỉ gợi ý
+        // "trích xuất kỳ trước" khi đúng là thiếu mốc.
+        const missingAnchor = period.missing_anchor_warehouses?.length > 0;
+        setErrorMessage(
+          [
+            `Không trích xuất được tồn đầu kỳ ${formatPeriod(capturePeriod)}.`,
+            period.reason,
+            missingAnchor &&
+              `Hãy trích xuất kỳ ${formatPeriod(period.source_month)} trước, hoặc nhập tồn đầu kỳ từ file.`,
+          ]
+            .filter(Boolean)
+            .join("\n")
+        );
+        setShowErrorModal(true);
+        return;
+      }
+
+      if (result.negative_stock_lines?.length) {
+        setNegativeReport({
+          period: capturePeriod,
+          summary: result.negative_summary,
+          lines: result.negative_stock_lines,
+        });
+        return;
+      }
+
+      setCaptureCheck(period);
+      setShowConfirmModal(true);
+    } catch (error) {
+      console.error("CHECK CAPTURE ERROR:", error?.response?.data || error);
+      setErrorMessage(readApiError(error, "Không kiểm tra được kỳ đã chọn."));
+      setShowErrorModal(true);
+    } finally {
+      setCaptureChecking(false);
+    }
   };
 
   // =========================================================
@@ -573,7 +671,7 @@ function BeginningInventoryPage() {
       setCaptureLoading(true);
       setErrorMessage("");
 
-      await captureBeginningInventory(selectedWarehouseIds);
+      await captureBeginningInventory(selectedWarehouseIds, capturePeriod);
 
       setShowConfirmModal(false);
       setShowCaptureModal(false);
@@ -582,8 +680,10 @@ function BeginningInventoryPage() {
       setWarehousePage(1);
 
       setSuccessMessage(
-        `Trích xuất tồn kho đầu kỳ thành công cho ${selectedCount} kho.`
+        `Trích xuất tồn kho đầu kỳ ${formatPeriod(capturePeriod)} thành công cho ${selectedCount} kho.`
       );
+      setCapturePeriod("");
+      setCaptureCheck(null);
 
       setInventoryPage(1);
 
@@ -595,6 +695,19 @@ function BeginningInventoryPage() {
       );
 
       const responseData = error.response?.data;
+      const negativeLines = responseData?.data?.negative_stock_lines;
+
+      // Giữa lúc kiểm tra và lúc bấm "chắc chắn" có thể có phiếu mới hoàn
+      // thành: BE vẫn tự kiểm lại và trả danh sách có cấu trúc.
+      if (Array.isArray(negativeLines) && negativeLines.length > 0) {
+        setShowConfirmModal(false);
+        setNegativeReport({
+          period: capturePeriod,
+          summary: responseData?.message,
+          lines: negativeLines,
+        });
+        return;
+      }
 
       setErrorMessage(
         responseData?.message ||
@@ -965,7 +1078,7 @@ function BeginningInventoryPage() {
                 <h3>Trích xuất tồn kho đầu kỳ</h3>
 
                 <p>
-                  Tìm kiếm và chọn một hoặc nhiều kho cần
+                  Chọn kỳ, rồi chọn một hoặc nhiều kho cần
                   trích xuất.
                 </p>
               </div>
@@ -981,6 +1094,47 @@ function BeginningInventoryPage() {
             </div>
 
             <div className="beginning-inventory-modal-body">
+              <div className="beginning-inventory-period-picker">
+                <label htmlFor="beginning-inventory-capture-period">
+                  Kỳ cần trích xuất
+                </label>
+
+                <select
+                  id="beginning-inventory-capture-period"
+                  value={capturePeriod}
+                  disabled={captureLoading || captureOptionsLoading}
+                  onChange={(event) => setCapturePeriod(event.target.value)}
+                >
+                  <option value="">
+                    {captureOptionsLoading
+                      ? "Đang tải danh sách kỳ..."
+                      : "-- Chọn kỳ --"}
+                  </option>
+
+                  {captureOptions.map((option) => (
+                    <option
+                      key={option.period_month}
+                      value={option.period_month}
+                    >
+                      Tồn đầu kỳ tháng {formatPeriod(option.period_month)}
+                      {option.is_current ? " (tháng hiện tại)" : ""}
+                    </option>
+                  ))}
+                </select>
+
+                <span className="beginning-inventory-period-hint">
+                  {capturePeriod
+                    ? (() => {
+                        const chosen = captureOptions.find(
+                          (item) => item.period_month === capturePeriod
+                        );
+                        const source = formatPeriod(chosen?.source_month);
+                        return `Lấy tồn đầu kỳ ${source} cộng toàn bộ chứng từ tháng ${source} để tính tồn đầu kỳ ${formatPeriod(capturePeriod)}.`;
+                      })()
+                    : "Chỉ chọn được kỳ trong khoảng cho phép (tối đa lùi vài tháng, không có kỳ tương lai)."}
+                </span>
+              </div>
+
               <div className="beginning-inventory-search-box">
                 <RiSearchLine />
 
@@ -1132,10 +1286,12 @@ function BeginningInventoryPage() {
                 onClick={handleOpenConfirm}
                 disabled={
                   captureLoading ||
+                  captureChecking ||
+                  !capturePeriod ||
                   selectedWarehouseIds.length === 0
                 }
               >
-                Xác nhận trích xuất
+                {captureChecking ? "Đang kiểm tra..." : "Xác nhận trích xuất"}
               </button>
             </div>
           </div>
@@ -1153,7 +1309,9 @@ function BeginningInventoryPage() {
             <h3>Xác nhận trích xuất tồn kho đầu kỳ</h3>
 
             <p>
-              Bạn đang chọn{" "}
+              Trích xuất <strong>tồn đầu kỳ tháng {formatPeriod(capturePeriod)}</strong>{" "}
+              (lăn từ tồn đầu kỳ và chứng từ tháng{" "}
+              {formatPeriod(captureCheck?.source_month)}) cho{" "}
               <strong>
                 {selectedWarehouseIds.length}
               </strong>{" "}
@@ -1181,11 +1339,18 @@ function BeginningInventoryPage() {
               )}
             </div>
 
-            <div className="beginning-inventory-warning">
-              Hãy kiểm tra kỹ danh sách kho trước khi
-              xác nhận. Dữ liệu tồn kho đầu kỳ sau khi
-              trích xuất không thể thay đổi.
-            </div>
+            {captureCheck?.captured_warehouses?.length > 0 ? (
+              <div className="beginning-inventory-warning">
+                Kỳ {formatPeriod(capturePeriod)} ĐÃ có dữ liệu ở kho{" "}
+                <strong>{captureCheck.captured_warehouses.join(", ")}</strong>.
+                Trích xuất lại sẽ GHI ĐÈ dữ liệu cũ của các kho này, và các kỳ
+                sau đang lăn từ kỳ này cũng sẽ đổi theo khi được trích xuất lại.
+              </div>
+            ) : (
+              <div className="beginning-inventory-warning">
+                Hãy kiểm tra kỹ kỳ và danh sách kho trước khi xác nhận.
+              </div>
+            )}
 
             <div className="beginning-inventory-confirm-actions">
               <button
@@ -1231,6 +1396,14 @@ function BeginningInventoryPage() {
         </div>
       )}
 
+      <NegativeStockModal
+        open={Boolean(negativeReport)}
+        period={negativeReport?.period}
+        summary={negativeReport?.summary}
+        lines={negativeReport?.lines}
+        onClose={() => setNegativeReport(null)}
+      />
+
       {/* MODAL LỖI */}
       {showErrorModal && (
         <div className="beginning-inventory-overlay beginning-inventory-error-overlay">
@@ -1241,7 +1414,7 @@ function BeginningInventoryPage() {
 
             <h3>Không thể thực hiện</h3>
 
-            <p>{errorMessage}</p>
+            <p className="beginning-inventory-error-text">{errorMessage}</p>
 
             <button
               type="button"

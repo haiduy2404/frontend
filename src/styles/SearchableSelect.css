@@ -1,0 +1,122 @@
+/* Ô chọn có tìm kiếm. Kích thước và màu viền bám theo .release-report-field
+   để đứng cạnh các <select> gốc không bị lệch. */
+
+.searchable-select {
+  position: relative;
+  width: 100%;
+}
+
+.searchable-select-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #cfd8e5;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #1d2a3f;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.searchable-select-button:focus-visible,
+.searchable-select-button[aria-expanded="true"] {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.searchable-select-button:disabled {
+  background: #f5f7fa;
+  color: #9aa6b6;
+  cursor: not-allowed;
+}
+
+.searchable-select-button > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchable-select-placeholder {
+  color: #6b778a;
+}
+
+.searchable-select-caret {
+  flex: 0 0 auto;
+  color: #6b778a;
+}
+
+.searchable-select-dropdown {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  padding: 8px;
+  border: 1px solid #cfd8e5;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.searchable-select-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #cfd8e5;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.searchable-select-input:focus {
+  border-color: #2563eb;
+}
+
+.searchable-select-list {
+  max-height: 280px;
+  margin: 6px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.searchable-select-option {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1d2a3f;
+  cursor: pointer;
+}
+
+.searchable-select-option.is-highlighted {
+  background: #eef3fb;
+}
+
+.searchable-select-option.is-selected {
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.searchable-select-all {
+  color: #6b778a;
+  font-style: italic;
+}
+
+.searchable-select-status {
+  padding: 6px 4px 0;
+  font-size: 12px;
+  color: #6b778a;
+}
+
+.searchable-select-status:empty {
+  display: none;
+}

@@ -203,6 +203,43 @@
   overflow-y: auto;
 }
 
+/* Ô chọn kỳ trong modal trích xuất — bám kích thước và viền của ô tìm kho. */
+.beginning-inventory-period-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.beginning-inventory-period-picker label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.beginning-inventory-period-picker select {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.beginning-inventory-period-picker select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 12%);
+  outline: none;
+}
+
+.beginning-inventory-period-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
 .beginning-inventory-search-box {
   display: flex;
   height: 42px;
@@ -366,6 +403,11 @@
 
 .beginning-inventory-confirm-modal,
 .beginning-inventory-error-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Thông báo dài đến đâu cũng không đẩy nút Đóng ra khỏi màn hình. */
+  max-height: 88vh;
   width: min(500px, 100%);
   padding: 26px;
   border-radius: 12px;
@@ -763,4 +805,12 @@
     align-items: flex-start;
     flex-direction: column;
   }
+}
+
+/* Phần chữ của modal lỗi chung: cuộn được, giữ xuống dòng của thông báo. */
+.beginning-inventory-error-text {
+  max-height: 50vh;
+  overflow-y: auto;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }

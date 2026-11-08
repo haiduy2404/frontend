@@ -23,6 +23,26 @@ export const getReleaseReferencesPageable = async (params = {}) => {
   return response.data;
 };
 
+/**
+ * Danh mục đơn vị lĩnh / đối tượng xuất kho, cho ô chọn CÓ TÌM KIẾM.
+ *
+ * params: { type, warehouse_id, start_date, end_date, search, limit }
+ *   - start_date / end_date: chỉ lấy mục có trên lệnh xuất ĐÃ HOÀN THÀNH trong
+ *     khoảng đó. Không truyền = mọi mục của kho (trang tạo lệnh xuất dùng kiểu
+ *     này qua getReleaseReferencesPageable bên trên).
+ *   - search: không phân biệt hoa thường và dấu.
+ *
+ * signal: AbortSignal để huỷ request cũ khi user gõ tiếp — chỉ kết quả của lần
+ * gõ cuối mới có ý nghĩa.
+ */
+export const searchReleaseReferences = async (params = {}, { signal } = {}) => {
+  const response = await axiosInstance.get("/inventory/release-references", {
+    params,
+    signal,
+  });
+  return response.data;
+};
+
 export const createReleaseOrder = async (payload) => {
   const response = await axiosInstance.post(
     "/inventory/warehouse-releases",

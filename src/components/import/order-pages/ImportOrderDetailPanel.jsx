@@ -28,7 +28,6 @@ import ImportInspectionPrintModal
 
 function ImportOrderDetailPanel({
   selectedRow,
-  getReceiptStatusText,
 
   canCreate,
   onAdd,
@@ -120,10 +119,6 @@ function ImportOrderDetailPanel({
       <ImportOrderDetailHeader
         selectedRow={
           selectedRow
-        }
-
-        getReceiptStatusText={
-          getReceiptStatusText
         }
 
         canCreate={

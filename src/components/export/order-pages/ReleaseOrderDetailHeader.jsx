@@ -10,17 +10,9 @@ import {
 
 function ReleaseOrderDetailHeader({
   selectedRow,
-  getReleaseStatusText,
   canCreate,
   onAdd,
 }) {
-  const status =
-    String(
-      selectedRow?.status ||
-      ""
-    ).toUpperCase();
-
-
   return (
     <header className="release-order-detail-header">
       <div className="release-order-detail-header-main">

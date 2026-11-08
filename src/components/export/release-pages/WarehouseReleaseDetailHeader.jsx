@@ -1,10 +1,7 @@
 import { RiUser3Line } from "react-icons/ri";
 import { formatApiDateTimeVi } from "../../../utils/dateUtils";
 
-function WarehouseReleaseDetailHeader({
-  selectedRow,
-  getReleaseStatusText,
-}) {
+function WarehouseReleaseDetailHeader({ selectedRow }) {
   if (!selectedRow) {
     return (
       <header className="warehouse-release-detail-header">
@@ -15,9 +12,6 @@ function WarehouseReleaseDetailHeader({
       </header>
     );
   }
-
-  const statusClass = String(selectedRow.status || "")
-    .toLowerCase();
 
   return (
     <header className="warehouse-release-detail-header">

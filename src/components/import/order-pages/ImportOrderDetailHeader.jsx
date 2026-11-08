@@ -7,29 +7,10 @@ import { formatApiDateTimeVi } from "../../../utils/dateUtils";
 
 function ImportOrderDetailHeader({
   selectedRow,
-  getReceiptStatusText,
 
   canCreate,
   onAdd,
 }) {
-  const getStatusClass = (
-    status
-  ) => {
-    switch (status) {
-      case "WAITING_DELIVERY":
-        return "waiting";
-
-      case "RECEIVED":
-        return "received";
-
-      case "COMPLETED":
-        return "completed";
-
-      default:
-        return "default";
-    }
-  };
-
   // new Date(value) từng đọc "05/10/2026" theo kiểu Mỹ và hiện ra 10/05/2026;
   // ngày > 12 thì ra Invalid Date, UI mất hẳn ngày. Xem parseApiDateTime.
   const formatDateTime = (value) =>

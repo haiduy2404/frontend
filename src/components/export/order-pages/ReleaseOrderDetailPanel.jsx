@@ -12,7 +12,6 @@ function ReleaseOrderDetailPanel({
   selectedRow,
   releaseId,
   selectedCount,
-  getReleaseStatusText,
 
   canCreate,
   canUpdate,
@@ -45,7 +44,6 @@ function ReleaseOrderDetailPanel({
     <div className="release-order-detail-panel">
       <ReleaseOrderDetailHeader
         selectedRow={selectedRow}
-        getReleaseStatusText={getReleaseStatusText}
         canCreate={canCreate}
         onAdd={onAdd}
       />

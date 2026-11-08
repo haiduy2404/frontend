@@ -177,9 +177,6 @@ function WarehouseReleasePage() {
             selectedId={list.selectedId}
             selectedIds={list.selectedIds}
             isAllChecked={list.isAllChecked}
-            getReleaseStatusText={
-              list.getReleaseStatusText
-            }
             onToggleAll={
               list.handleToggleAll
             }
