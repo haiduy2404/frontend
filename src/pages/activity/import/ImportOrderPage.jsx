@@ -349,6 +349,10 @@ const handleInspectionCompleted =
             isWaitingDeliveryStatus
           }
 
+          getReceiptStatusText={
+            getReceiptStatusText
+          }
+
           total={
             total
           }

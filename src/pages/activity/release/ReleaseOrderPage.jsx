@@ -313,6 +313,10 @@ function ReleaseOrderPage() {
               isAllChecked
             }
 
+            getReleaseStatusText={
+              getReleaseStatusText
+            }
+
             onToggleAll={
               handleToggleAll
             }
