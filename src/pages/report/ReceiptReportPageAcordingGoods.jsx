@@ -2,9 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom";
 import "../../styles/ReceiptReportViewPage.css";
 
-import { getWarehouseReceiptDetailReport } from "../../services/warehouseReceiptDetailReportService";
+import {
+  getWarehouseReceiptDetailReport,
+  getWarehouseReceiptDetailReportSummary,
+} from "../../services/warehouseReceiptDetailReportService";
 import ReportExcelExportButton from "../../components/ReportExcelExportButton";
 import { REPORT_RECEIPT_DETAIL } from "../../services/reportExportService";
+import ReportGrandTotal from "../../components/report/ReportGrandTotal";
 import { useAuth } from "../../contexts/AuthContext";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -68,6 +72,13 @@ function ReceiptReportPageAcordingGoods() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+
+  // Tổng của toàn bộ kết quả lọc — chỉ phụ thuộc bộ lọc, KHÔNG gọi lại khi
+  // lật trang hay đổi số dòng.
+  const summaryRequestIdRef = useRef(0);
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState("");
 
   const [pagination, setPagination] = useState({
     total: 0,
@@ -220,11 +231,58 @@ function ReceiptReportPageAcordingGoods() {
     [buildPayload, config]
   );
 
+  // Gọi API tổng rồi ghi kết quả trong callback .then — effect không setState
+  // đồng bộ. requestId bỏ qua kết quả về muộn của lần gọi cũ.
+  const loadSummary = useCallback(() => {
+    const requestId = ++summaryRequestIdRef.current;
+    const isCurrent = () => requestId === summaryRequestIdRef.current;
+
+    // Cùng payload với bảng (bỏ page/page_size): hai con số không thể lệch bộ lọc.
+    return getWarehouseReceiptDetailReportSummary(buildExportPayload()).then(
+      (response) => {
+        if (!isCurrent()) return;
+        setSummary(response?.data ?? response ?? null);
+        setSummaryError("");
+        setSummaryLoading(false);
+      },
+      (error) => {
+        if (!isCurrent()) return;
+        console.error(
+          "LOAD RECEIPT GOODS SUMMARY ERROR:",
+          error?.response?.data || error
+        );
+        setSummary(null);
+        setSummaryError(
+          error?.response?.data?.message || "Không tính được tổng tiền."
+        );
+        setSummaryLoading(false);
+      }
+    );
+  }, [buildExportPayload]);
+
+  const retrySummary = () => {
+    setSummaryLoading(true);
+    setSummaryError("");
+    loadSummary();
+  };
+
+  // Phụ thuộc vào boolean, không phải hàm canDo: canDo được tạo lại mỗi lần
+  // AuthProvider render, phụ thuộc vào nó làm báo cáo và tổng bị tải lại.
+  const canViewReport = canDo("view_report");
+
   useEffect(() => {
-    if (!config || !canDo("view_report")) return;
+    if (!config || !canViewReport) return;
 
     fetchReport(1, DEFAULT_PAGE_SIZE);
-  }, [config, canDo, fetchReport]);
+  }, [config, canViewReport, fetchReport]);
+
+  // Tách effect riêng, chỉ theo bộ lọc (config): fetchReport đổi trang không
+  // chạm tới đây.
+  useEffect(() => {
+    if (!config || !canViewReport) return;
+
+    loadSummary();
+  }, [config, canViewReport, loadSummary]);
 
   const visiblePages = useMemo(() => {
     if (pagination.total_pages <= 1) return [];
@@ -267,7 +325,7 @@ function ReceiptReportPageAcordingGoods() {
     }
   };
 
-  if (!canDo("view_report")) {
+  if (!canViewReport) {
     return (
       <div className="receipt-report-view-no-permission">
         Tài khoản không có quyền truy cập báo cáo kho
@@ -381,6 +439,46 @@ function ReceiptReportPageAcordingGoods() {
               disabled={loading}
               fileName="bao-cao-nhap-kho-theo-ma-vat-tu.xlsx"
             />
+        </div>
+
+        <div className="receipt-report-grand-total-slot">
+          <ReportGrandTotal
+            label="Tổng tiền (gồm VAT)"
+            amount={summary ? formatMoney(summary.amount_with_vat) : null}
+            loading={summaryLoading}
+            error={summaryError}
+            onRetry={retrySummary}
+            stats={[
+              {
+                label: "Tiền trước VAT",
+                value: summary ? formatMoney(summary.amount_before_vat) : null,
+              },
+              {
+                label: "Tiền VAT",
+                value: summary ? formatMoney(summary.vat_amount) : null,
+              },
+              {
+                label: "Số phiếu nhập",
+                value: summary ? formatQuantity(summary.receipt_count) : null,
+              },
+              {
+                label: "Số công ty",
+                value: summary ? formatQuantity(summary.company_count) : null,
+              },
+              {
+                label: "Số mã vật tư",
+                value: summary ? formatQuantity(summary.goods_count) : null,
+              },
+              {
+                // Chỉ có nghĩa khi kết quả chỉ gồm một mã vật tư (một đơn vị).
+                label: "Tổng SL quy đổi",
+                hidden: summary?.total_quantity_in_default_unit == null,
+                value: `${formatQuantity(summary?.total_quantity_in_default_unit)} ${
+                  summary?.default_unit_name || ""
+                }`.trim(),
+              },
+            ]}
+          />
         </div>
 
         <div className="receipt-report-view-table-wrap">

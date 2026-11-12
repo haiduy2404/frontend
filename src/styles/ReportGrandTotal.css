@@ -1,0 +1,96 @@
+/* Tổng của toàn bộ kết quả lọc (mọi trang) */
+.report-grand-total {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  flex-wrap: wrap;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  background: #eff6ff;
+}
+
+.report-grand-total-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.report-grand-total-main span {
+  color: #1e40af;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.report-grand-total-main strong {
+  color: #0f172a;
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.report-grand-total-main small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.report-grand-total-stats {
+  margin: 0;
+  display: flex;
+  gap: 12px 28px;
+  flex-wrap: wrap;
+}
+
+.report-grand-total-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.report-grand-total-stats dt {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.report-grand-total-stats dd {
+  margin: 0;
+  color: #172033;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-grand-total-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.report-grand-total-error button {
+  padding: 5px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #991b1b;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 780px) {
+  .report-grand-total {
+    padding: 12px 14px;
+  }
+
+  .report-grand-total-main strong {
+    font-size: 20px;
+  }
+}

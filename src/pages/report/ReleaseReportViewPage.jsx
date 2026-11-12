@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/ReleaseReportPage.css";
 
-import { getReleaseReportPageable } from "../../services/releaseReportService";
+import {
+  getReleaseReportPageable,
+  getReleaseReportSummary,
+} from "../../services/releaseReportService";
 import ReportExcelExportButton from "../../components/ReportExcelExportButton";
 import { REPORT_RELEASE } from "../../services/reportExportService";
+import ReportGrandTotal from "../../components/report/ReportGrandTotal";
 import { useAuth } from "../../contexts/AuthContext";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -137,6 +141,7 @@ function buildPageItems(currentPage, totalPages) {
 function ReleaseReportViewPage() {
   const { canDo } = useAuth();
   const requestIdRef = useRef(0);
+  const summaryRequestIdRef = useRef(0);
 
   const [config, setConfig] = useState(null);
   const [rows, setRows] = useState([]);
@@ -146,6 +151,11 @@ function ReleaseReportViewPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Tổng của toàn bộ kết quả lọc — chỉ phụ thuộc bộ lọc, không đổi khi lật trang.
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -269,11 +279,47 @@ function ReleaseReportViewPage() {
     [buildPayload, config, page, pageSize]
   );
 
+  const fetchSummary = useCallback(async () => {
+    if (!config) return;
+
+    const requestId = ++summaryRequestIdRef.current;
+
+    try {
+      setSummaryLoading(true);
+      setSummaryError("");
+
+      // Cùng payload với trang dữ liệu: hai con số không thể lệch bộ lọc.
+      const response = await getReleaseReportSummary(buildExportFilters());
+
+      if (requestId !== summaryRequestIdRef.current) return;
+
+      setSummary(response?.data ?? response ?? null);
+    } catch (error) {
+      if (requestId !== summaryRequestIdRef.current) return;
+
+      setSummary(null);
+      setSummaryError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Không tính được tổng."
+      );
+    } finally {
+      if (requestId === summaryRequestIdRef.current) {
+        setSummaryLoading(false);
+      }
+    }
+  }, [buildExportFilters, config]);
+
+  // Phụ thuộc vào boolean, không phải hàm canDo: canDo được tạo lại mỗi lần
+  // AuthProvider render, phụ thuộc vào nó làm báo cáo và tổng bị tải lại.
+  const canViewReport = canDo("view_report");
+
   useEffect(() => {
-    if (!config || !canDo("view_report")) return;
+    if (!config || !canViewReport) return;
 
     fetchReport(1, DEFAULT_PAGE_SIZE);
-  }, [config, canDo]);
+    fetchSummary();
+  }, [config, canViewReport]);
 
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
 
@@ -406,7 +452,7 @@ function ReleaseReportViewPage() {
     );
   }, [rows]);
 
-  if (!canDo("view_report")) {
+  if (!canViewReport) {
     return (
       <div className="no-permission-page">
         Tài khoản không có quyền truy cập báo cáo kho
@@ -460,6 +506,40 @@ function ReleaseReportViewPage() {
             <span>Mã vật tư</span>
             <strong>{goodsCount > 0 ? `${goodsCount} mã` : "Tất cả"}</strong>
           </div>
+        </div>
+      )}
+
+      {config && (
+        <div className="release-report-grand-total-slot">
+          <ReportGrandTotal
+            label="Tổng thành tiền"
+            amount={summary ? formatMoney(summary.total_price) : null}
+            loading={summaryLoading}
+            error={summaryError}
+            onRetry={fetchSummary}
+            stats={[
+              {
+                label: "Số lệnh xuất",
+                value: summary ? formatQuantity(summary.release_count) : null,
+              },
+              {
+                label: "Số mã vật tư",
+                value: summary ? formatQuantity(summary.goods_count) : null,
+              },
+              {
+                label: "Số dòng",
+                value: summary ? formatQuantity(summary.total_rows) : null,
+              },
+              {
+                // Chỉ có nghĩa khi kết quả chỉ gồm một mã vật tư (một đơn vị).
+                label: "Tổng SL thực xuất",
+                hidden: summary?.total_quantity == null,
+                value: `${formatQuantity(summary?.total_quantity)} ${
+                  summary?.default_goods_unit || ""
+                }`.trim(),
+              },
+            ]}
+          />
         </div>
       )}
 
@@ -573,7 +653,7 @@ function ReleaseReportViewPage() {
             <tfoot>
               <tr className="release-report-summary-row">
                 <td colSpan={9} className="release-report-summary-label">
-                  TỔNG
+                  {totalPages > 1 ? `CỘNG TRANG ${page}/${totalPages}` : "TỔNG"}
                 </td>
 
                 <td className="release-report-number">

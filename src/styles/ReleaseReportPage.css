@@ -532,7 +532,15 @@
   font-size: 12px;
 }
 
+.release-report-grand-total-slot {
+  margin: 0 24px 14px;
+}
+
 @media (max-width: 780px) {
+  .release-report-grand-total-slot {
+    margin: 0 16px 14px;
+  }
+
   .release-report-view-header {
     align-items: flex-start;
     flex-direction: column;

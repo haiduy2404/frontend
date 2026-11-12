@@ -810,199 +810,6 @@
 }
 
 /* =========================================================
-   COMPANY MULTI SELECT
-========================================================= */
-
-.company-multiselect {
-  position: relative;
-  min-width: 280px;
-  flex: 0 1 320px;
-}
-
-.company-dropdown-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.company-dropdown-button {
-  width: 100%;
-  height: 38px;
-  padding: 0 11px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  box-sizing: border-box;
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  background: #ffffff;
-  color: #111827;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.company-dropdown-button:hover {
-  border-color: #9ca3af;
-  background: #f9fafb;
-}
-
-.company-dropdown-button span:first-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.company-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
-  z-index: 50;
-  width: 100%;
-  min-width: 320px;
-  max-height: 390px;
-  overflow: hidden;
-  border: 1px solid #d8e0ea;
-  border-radius: 9px;
-  background: #ffffff;
-  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.18);
-}
-
-.company-dropdown-search {
-  position: relative;
-  padding: 9px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.company-dropdown-search input {
-  width: 100%;
-  height: 36px;
-  padding: 0 36px 0 10px;
-  box-sizing: border-box;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 13px;
-  outline: none;
-}
-
-.company-dropdown-search input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.company-dropdown-search button {
-  position: absolute;
-  top: 11px;
-  right: 11px;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: #64748b;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-.company-dropdown-search button:hover {
-  background: #f1f5f9;
-}
-
-.company-dropdown-list {
-  max-height: 265px;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-.company-dropdown-loading,
-.company-dropdown-empty {
-  padding: 14px 12px;
-  color: #64748b;
-  font-size: 13px;
-  text-align: center;
-}
-
-.company-dropdown-option {
-  min-height: 42px;
-  padding: 8px 11px;
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  box-sizing: border-box;
-  color: #111827;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.company-dropdown-option:hover {
-  background: #f1f5f9;
-}
-
-.company-dropdown-option input {
-  width: 15px;
-  height: 15px;
-  margin: 3px 0 0;
-  accent-color: #2563eb;
-  cursor: pointer;
-}
-
-.company-dropdown-option > span {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.company-dropdown-option strong {
-  overflow: hidden;
-  color: #111827;
-  font-size: 13px;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.company-dropdown-option small {
-  color: #64748b;
-  font-size: 12px;
-}
-
-.company-dropdown-option.all-option {
-  align-items: center;
-  background: #f8fafc;
-  font-weight: 700;
-}
-
-.company-dropdown-divider {
-  height: 1px;
-  background: #e5e7eb;
-}
-
-.company-dropdown-footer {
-  min-height: 40px;
-  padding: 0 11px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border-top: 1px solid #e5e7eb;
-  background: #f8fafc;
-  color: #64748b;
-  font-size: 12px;
-}
-
-.company-dropdown-footer button {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-/* =========================================================
    BẢNG THEO CÔNG TY
 ========================================================= */
 
@@ -1222,26 +1029,12 @@
   .report-filter-mode-switch button {
     flex: 1;
   }
-
-  .company-multiselect {
-    min-width: calc(50% - 6px);
-    flex: 1 1 calc(50% - 6px);
-  }
 }
 
 @media (max-width: 640px) {
   .report-filter-mode-switch {
     display: grid;
     grid-template-columns: 1fr;
-  }
-
-  .company-multiselect {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .company-dropdown-menu {
-    min-width: 100%;
   }
 
   .report-detail-panel {
@@ -1330,7 +1123,6 @@
 }
 
 .receipt-report-filter-layout .report-filter-item > input,
-.receipt-report-filter-layout .company-dropdown-button,
 .receipt-report-filter-layout .report-goods-filter-btn {
   width: 100%;
   min-height: 46px;

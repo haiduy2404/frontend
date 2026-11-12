@@ -517,3 +517,7 @@ body {
   height: auto !important;
   overflow: visible !important;
 }
+/* Khối tổng của toàn bộ kết quả lọc (component ReportGrandTotal). */
+.receipt-report-grand-total-slot {
+  margin-bottom: 14px;
+}

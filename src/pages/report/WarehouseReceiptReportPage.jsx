@@ -1,16 +1,23 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "../../styles/WarehouseReceiptReportPage.css";
 
 import { getCompanies } from "../../services/companyService";
 import GoodsFilterModal from "../../components/GoodsFilterModal";
+import CompanyMultiSelect from "../../components/report/CompanyMultiSelect";
 import { useAuth } from "../../contexts/AuthContext";
+
+// Chỉ gọi API và bóc danh sách — không đụng state, để effect và nút "Thử lại"
+// cùng dùng mà effect không setState đồng bộ.
+async function fetchCompanyList() {
+  const response = await getCompanies();
+  const body = response?.data ?? response;
+  const data = body?.data ?? body;
+  if (Array.isArray(data?.results)) return data.results;
+  return Array.isArray(data) ? data : [];
+}
 
 function WarehouseReceiptReportPage() {
   const { canDo } = useAuth();
-
-  const companyDropdownRef = useRef(null);
-  const companyRequestIdRef = useRef(0);
-  const skipFirstCompanySearchRef = useRef(true);
 
   const [filterMode, setFilterMode] = useState("company");
 
@@ -23,9 +30,8 @@ function WarehouseReceiptReportPage() {
      COMPANY FILTER
   ========================= */
   const [companies, setCompanies] = useState([]);
-  const [companySearch, setCompanySearch] = useState("");
-  const [companyLoading, setCompanyLoading] = useState(false);
-  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+  const [companyLoading, setCompanyLoading] = useState(true);
+  const [companyError, setCompanyError] = useState("");
   const [selectedCompanyIds, setSelectedCompanyIds] = useState([]);
 
   /* =========================
@@ -37,8 +43,6 @@ function WarehouseReceiptReportPage() {
     goods_ids: [],
   });
   const [goodsSearch, setGoodsSearch] = useState("");
-
-  const unwrapData = (response) => response?.data ?? response;
 
   const validateDateRange = () => {
     if (
@@ -55,159 +59,42 @@ function WarehouseReceiptReportPage() {
 
   /* =========================
      LOAD COMPANIES
+     Danh sách công ty nhỏ (~100) và /inventory/company trả về toàn bộ, nên nạp
+     MỘT lần rồi để ô chọn tự lọc theo tên/MST — không request nào theo phím gõ.
   ========================= */
-  const fetchCompanies = useCallback(async (keyword = "") => {
-    const requestId = ++companyRequestIdRef.current;
-
-    try {
-      setCompanyLoading(true);
-
-      const searchText = String(keyword || "").trim();
-      const taxCodeKeyword = searchText.replace(/\D/g, "");
-
-      const looksLikeTaxCode =
-        searchText.length > 0 &&
-        taxCodeKeyword.length > 0 &&
-        /^[\d\s.\-]+$/.test(searchText);
-
-      const params = {
-        page: 1,
-        page_size: 1000,
-      };
-
-      if (searchText) {
-        params.search = searchText;
-      }
-
-      let response = await getCompanies(params);
-      let body = unwrapData(response);
-      let data = body?.data ?? body;
-
-      let results = Array.isArray(data?.results)
-        ? data.results
-        : Array.isArray(data)
-        ? data
-        : [];
-
-      if (looksLikeTaxCode) {
-        const filterByTaxCode = (list) =>
-          list.filter((company) => {
-            const companyTaxCode = String(
-              company?.tax_code ||
-                company?.taxCode ||
-                company?.tax_office_code ||
-                ""
-            ).replace(/\D/g, "");
-
-            return companyTaxCode.includes(taxCodeKeyword);
-          });
-
-        let taxMatches = filterByTaxCode(results);
-
-        // Nếu API search chưa hỗ trợ MST thì lấy danh sách và tự dò tax_code.
-        if (taxMatches.length === 0) {
-          response = await getCompanies({
-            page: 1,
-            page_size: 1000,
-          });
-
-          body = unwrapData(response);
-          data = body?.data ?? body;
-
-          const allCompanies = Array.isArray(data?.results)
-            ? data.results
-            : Array.isArray(data)
-            ? data
-            : [];
-
-          taxMatches = filterByTaxCode(allCompanies);
-        }
-
-        results = taxMatches;
-      }
-
-      if (requestId !== companyRequestIdRef.current) return;
-
-      setCompanies(results);
-    } catch (error) {
-      if (requestId !== companyRequestIdRef.current) return;
-
-      console.error(
-        "LOAD COMPANIES ERROR:",
-        error?.response?.data || error
-      );
-      setCompanies([]);
-    } finally {
-      if (requestId === companyRequestIdRef.current) {
-        setCompanyLoading(false);
-      }
+  const applyCompanyResult = useCallback((list, error) => {
+    if (error) {
+      console.error("LOAD COMPANIES ERROR:", error?.response?.data || error);
     }
+    setCompanies(list);
+    setCompanyError(
+      error
+        ? error?.response?.data?.message || "Không tải được danh sách công ty."
+        : ""
+    );
+    setCompanyLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchCompanies("");
-  }, [fetchCompanies]);
+    let alive = true;
 
-  useEffect(() => {
-    if (skipFirstCompanySearchRef.current) {
-      skipFirstCompanySearchRef.current = false;
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      fetchCompanies(companySearch);
-    }, 700);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [companySearch, fetchCompanies]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        companyDropdownRef.current &&
-        !companyDropdownRef.current.contains(event.target)
-      ) {
-        setIsCompanyDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
+    fetchCompanyList().then(
+      (list) => alive && applyCompanyResult(list, null),
+      (error) => alive && applyCompanyResult([], error)
+    );
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      alive = false;
     };
-  }, []);
+  }, [applyCompanyResult]);
 
-  const selectedCompanyText = useMemo(() => {
-    if (selectedCompanyIds.length === 0) return "Tất cả công ty";
-
-    if (selectedCompanyIds.length === 1) {
-      const company = companies.find(
-        (item) => String(item.id) === String(selectedCompanyIds[0])
-      );
-
-      return company?.supplier_name || "Đã chọn 1 công ty";
-    }
-
-    return `Đã chọn ${selectedCompanyIds.length} công ty`;
-  }, [companies, selectedCompanyIds]);
-
-  const handleToggleCompany = (companyId) => {
-    setSelectedCompanyIds((prev) =>
-      prev.includes(companyId)
-        ? prev.filter((id) => id !== companyId)
-        : [...prev, companyId]
+  const retryLoadCompanies = () => {
+    setCompanyLoading(true);
+    setCompanyError("");
+    fetchCompanyList().then(
+      (list) => applyCompanyResult(list, null),
+      (error) => applyCompanyResult([], error)
     );
-  };
-
-  const handleToggleAllCompanies = () => {
-    const allIds = companies.map((company) => company.id);
-
-    const allSelected =
-      allIds.length > 0 &&
-      allIds.every((id) => selectedCompanyIds.includes(id));
-
-    setSelectedCompanyIds(allSelected ? [] : allIds);
   };
 
   const handleConfirmGoodsFilter = (value) => {
@@ -230,18 +117,15 @@ function WarehouseReceiptReportPage() {
     });
 
     setSelectedCompanyIds([]);
-    setCompanySearch("");
     setSelectedGoodsFilter({
       goods_group_ids: [],
       goods_ids: [],
     });
     setGoodsSearch("");
-    setIsCompanyDropdownOpen(false);
   };
 
   const handleChangeMode = (mode) => {
     setFilterMode(mode);
-    setIsCompanyDropdownOpen(false);
   };
 
   const selectedGoodsFilterText = useMemo(() => {
@@ -269,89 +153,16 @@ function WarehouseReceiptReportPage() {
     selectedGoodsFilter.goods_group_ids.length > 0 ||
     selectedGoodsFilter.goods_ids.length > 0;
 
-  const renderCompanyDropdown = () => (
-    <div
-      ref={companyDropdownRef}
-      className="company-dropdown-wrapper"
-    >
-      <button
-        type="button"
-        className="company-dropdown-button"
-        onClick={() =>
-          setIsCompanyDropdownOpen((prev) => !prev)
-        }
-      >
-        <span>{selectedCompanyText}</span>
-        <span>{isCompanyDropdownOpen ? "▴" : "▾"}</span>
-      </button>
-
-      {isCompanyDropdownOpen && (
-        <div className="company-dropdown-menu">
-          <div className="company-dropdown-list">
-            {companyLoading && (
-              <div className="company-dropdown-loading">
-                Đang tìm công ty...
-              </div>
-            )}
-
-            {!companyLoading && (
-              <>
-                <label className="company-dropdown-option all-option">
-                  <input
-                    type="checkbox"
-                    checked={
-                      companies.length > 0 &&
-                      companies.every((company) =>
-                        selectedCompanyIds.includes(company.id)
-                      )
-                    }
-                    onChange={handleToggleAllCompanies}
-                  />
-                  <span>Chọn tất cả kết quả</span>
-                </label>
-
-                <div className="company-dropdown-divider" />
-
-                {companies.length === 0 && (
-                  <div className="company-dropdown-empty">
-                    Không tìm thấy công ty
-                  </div>
-                )}
-
-                {companies.map((company) => (
-                  <label
-                    key={company.id}
-                    className="company-dropdown-option"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedCompanyIds.includes(company.id)}
-                      onChange={() => handleToggleCompany(company.id)}
-                    />
-
-                    <span>
-                      <strong>{company.supplier_name}</strong>
-                      <small>MST: {company.tax_code || "-"}</small>
-                    </span>
-                  </label>
-                ))}
-              </>
-            )}
-          </div>
-
-          <div className="company-dropdown-footer">
-            <span>Đã chọn {selectedCompanyIds.length} công ty</span>
-
-            <button
-              type="button"
-              onClick={() => setSelectedCompanyIds([])}
-            >
-              Xóa chọn
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+  const renderCompanySelect = (inputId) => (
+    <CompanyMultiSelect
+      id={inputId}
+      companies={companies}
+      value={selectedCompanyIds}
+      onChange={setSelectedCompanyIds}
+      loading={companyLoading}
+      error={companyError}
+      onRetry={retryLoadCompanies}
+    />
   );
 
   /*
@@ -504,25 +315,9 @@ function WarehouseReceiptReportPage() {
               </div>
 
               <div className="receipt-report-filter-row">
-                <label className="report-filter-item receipt-report-wide-field">
-                  <span>Tìm kiếm theo tên công ty</span>
-                  <input
-                    type="text"
-                    value={companySearch}
-                    placeholder="Nhập nhanh tên công ty hoặc MST để xem báo cáo"
-                    onFocus={() => setIsCompanyDropdownOpen(true)}
-                    onChange={(event) => {
-                      setCompanySearch(event.target.value);
-                      setIsCompanyDropdownOpen(true);
-                    }}
-                  />
-                </label>
-              </div>
-
-              <div className="receipt-report-filter-row">
-                <div className="report-filter-item company-multiselect receipt-report-wide-field">
-                  <span>Lọc tên công ty muốn xem báo cáo</span>
-                  {renderCompanyDropdown()}
+                <div className="report-filter-item receipt-report-wide-field">
+                  <label htmlFor="receipt-report-company-by-company"><span>Công ty</span></label>
+                  {renderCompanySelect("receipt-report-company-by-company")}
                 </div>
               </div>
 
@@ -577,39 +372,6 @@ function WarehouseReceiptReportPage() {
               </div>
 
               <div className="receipt-report-filter-row receipt-report-two-column-row">
-                <label className="report-filter-item">
-                  <span>Tìm nhanh mã vật tư</span>
-                  <input
-                    type="text"
-                    value={goodsSearch}
-                    placeholder="Mã vật tư / tên vật tư / số phiếu..."
-                    onChange={(event) =>
-                      setGoodsSearch(event.target.value)
-                    }
-                  />
-                </label>
-
-                <label className="report-filter-item">
-                  <span>Tìm nhanh công ty / MST</span>
-                  <input
-                    type="text"
-                    value={companySearch}
-                    placeholder="Nhập tên công ty hoặc MST..."
-                    onFocus={() => setIsCompanyDropdownOpen(true)}
-                    onChange={(event) => {
-                      setCompanySearch(event.target.value);
-                      setIsCompanyDropdownOpen(true);
-                    }}
-                  />
-                </label>
-              </div>
-
-              <div className="receipt-report-filter-row receipt-report-two-column-row">
-                <div className="report-filter-item company-multiselect">
-                  <span>Lọc công ty</span>
-                  {renderCompanyDropdown()}
-                </div>
-
                 <div className="report-filter-item report-goods-filter-item">
                   <span>Lọc mã vật tư</span>
 
@@ -638,6 +400,25 @@ function WarehouseReceiptReportPage() {
                       </button>
                     )}
                   </div>
+                </div>
+
+                <label className="report-filter-item">
+                  <span>Tìm nhanh vật tư / số phiếu</span>
+                  <input
+                    type="text"
+                    value={goodsSearch}
+                    placeholder="Mã vật tư / tên vật tư / số phiếu..."
+                    onChange={(event) =>
+                      setGoodsSearch(event.target.value)
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="receipt-report-filter-row">
+                <div className="report-filter-item receipt-report-wide-field">
+                  <label htmlFor="receipt-report-company-by-goods"><span>Công ty</span></label>
+                  {renderCompanySelect("receipt-report-company-by-goods")}
                 </div>
               </div>
 
