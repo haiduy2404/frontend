@@ -111,9 +111,16 @@ export const updateReleasePrinted = async (
   return response.data;
 };
 
-export const checkReleaseDuplicate = async (payload) => {
+/**
+ * Kiểm tra lại phiếu trước khi lưu / trình: xuất trùng cho cùng đối tượng +
+ * nguy cơ âm tồn ở kho xuất. Chỉ cảnh báo, không ghi gì.
+ *
+ * POST /inventory/warehouse-releases/recheck
+ * -> { has_warning, duplicate: {...}, stock: {...} }
+ */
+export const recheckRelease = async (payload) => {
   const response = await axiosInstance.post(
-    "/inventory/warehouse-releases/check-duplicate",
+    "/inventory/warehouse-releases/recheck",
     payload
   );
 
@@ -132,5 +139,5 @@ export default {
   cancelReleaseOrder,
   updateWarehouseReleaseStatus,
   updateReleasePrinted,
-  checkReleaseDuplicate,
+  recheckRelease,
 };
